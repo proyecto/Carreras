@@ -173,15 +173,6 @@ function hudLayout() {
   L[6] = hr; L[7] = Math.round(cy + r * 0.3);                                   // raio do cubo; y dos números grandes
   const g = H.g; g.setTransform(1 / 16, 0, 0, 1 / 16, 0, 0); g.lineCap = 'round'; g.lineWidth = Math.round(r * 0.034 * 16); g.strokeStyle = '#ff5a36';
 
-  // Configuração do minimapa (posicionado exatamente em cima de #hg com mesmo tamanho)
-  if (H.cm) {
-    H.cm.width = W; H.cm.height = Hh;
-    H.cm.style.width = W / dpr + 'px'; H.cm.style.height = Hh / dpr + 'px';
-    const gap = Math.round(12 * (innerHeight / 1080) * dpr) / dpr;
-    H.cm.style.bottom = 'calc(1.6vh + ' + (Hh / dpr + gap + 4) + 'px)';
-    hudBuildMap(W, Hh, r);
-  }
-
   // cronômetro (m:ss.cc) e estatísticas
   const tw = B.w[0] * 5 + B.w[10] + B.w[11];
   const tLabels = (typeof I18N !== 'undefined') ? I18N.t('hud_timer_labels') : ['LAP', 'LAST', 'BEST'];
@@ -189,6 +180,21 @@ function hudLayout() {
   H.bgT = hudStrip(H.ct, tLabels, [tw, tw, tw], ['', '', ''], B, B.h / 1.16, 10);
   H.bgS = hudStrip(H.cs, sLabels, [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   H.K.fill(-9);
+
+  // Configuração do minimapa (posicionado centralizado logo abaixo do cronômetro #ht)
+  if (H.cm) {
+    const mW = Math.round(r * 4.2), mH = Math.round(r * 1.85);
+    H.cm.width = mW; H.cm.height = mH;
+    H.cm.style.width = mW / dpr + 'px'; H.cm.style.height = mH / dpr + 'px';
+    const htCssH = H.ct.height / dpr;
+    const gap = Math.round(8 * (innerHeight / 1080) * dpr) / dpr;
+    H.cm.style.top = 'calc(1.6vh + ' + (htCssH + gap + 4) + 'px)';
+    H.cm.style.bottom = 'auto';
+    H.cm.style.left = '50%';
+    H.cm.style.right = 'auto';
+    H.cm.style.transform = 'translateX(-50%)';
+    hudBuildMap(mW, mH, r);
+  }
 }
 
 // copia o caractere i do atlas para (x, y) em pixels (q = 16 no canvas dos mostradores, 1 nos outros); devolve a largura
@@ -213,7 +219,7 @@ function hudDec(g, A, v10, x, y) {
 function hudDrawMinimap() {
   const H = HUD, m = H.m, trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (!H.cm || !m || !H.bgMap || !trk || trk.N < 2) return;
-  const L = H.L, W = L[4], Hh = L[5], r = L[3];
+  const W = H.cm.width, Hh = H.cm.height, r = H.L[3];
 
   m.clearRect(0, 0, W, Hh);
   m.drawImage(H.bgMap, 0, 0);
