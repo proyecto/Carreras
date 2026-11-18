@@ -349,5 +349,5 @@ function sndOffline(mix, mudoDe, pausaDe) {
     S.render(L, Rr, f * 800, 800);
   }
   let pk = 0; for (let i = 0; i < n * 800; i++) { const a = Math.abs(L[i]), b = Math.abs(Rr[i]); if (a > pk) pk = a; if (b > pk) pk = b; pcm[i * 2] = Math.round(L[i] * 32767); pcm[i * 2 + 1] = Math.round(Rr[i] * 32767); }
-  return { quadros: n, amostras: n * 800, taxa: 48000, pico: pk };
+  return { frames: n, muestras: n * 800, tasa: 48000, pico: pk };
 }

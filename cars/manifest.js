@@ -1,17 +1,110 @@
 'use strict';
-// Lista de coches activos en el juego.
-// Para añadir un coche nuevo: guarda su archivo en esta carpeta (cars/) y añade su nombre aquí.
-// Para quitar un coche: simplemente borra o comenta su línea aquí.
-window.CAR_LIST = [
-  'uno-mille-1996.js',
-  'porsche-911-1979.js',
-  'mclaren-x2-2018.js',
-  'bmw-m8-gte-2018.js',
-  'mercedes-amg-gt3-2020.js',
-  'porsche-992-gt3-r-2024.js',
-  'nissan-gtr-gt3-2018.js',
-  'mclaren-720s-gt3-2020.js',
-  'audi-r8-lms-evo-2020.js',
-  'bmw-m3-touring-2026.js',
-  'mclaren-650s-gt3-2015.js',
+// Catálogo y metadatos de coches disponibles.
+// Cada entrada define la ficha visual para el menú de selección sin tener que cargar los megabytes de mallas y texturas 3D.
+window.CAR_MANIFEST = [
+  {
+    file: 'uno-mille-1996.js',
+    id: 'uno-mille-1996',
+    name: 'Uno con escalera',
+    subtitle: 'Fiat Uno Mille EP 1996',
+    specs: '900 kg · 5 marchas · FWD · Escalera en el techo',
+    accent: '#4a7eb8'
+  },
+  {
+    file: 'porsche-911-1979.js',
+    id: 'porsche-911-1979',
+    name: 'Porsche 911 / 935 Turbo',
+    subtitle: '1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD',
+    specs: '1040 kg · 750 CV · Moby Dick Aero · Chasis Gr.5 Competición · RWD',
+    accent: '#e8251e'
+  },
+  {
+    file: 'mclaren-x2-2018.js',
+    id: 'mclaren-x2-2018',
+    name: 'McLaren Ultimate Vision GT',
+    subtitle: '2018 Vision Gran Turismo Concept · 4.0L Twin-Turbo V8 Hybrid · AWD',
+    specs: '1000 kg · 1150 CV · Ground Effect Aero · Active Aero · AWD',
+    accent: '#ff6600'
+  },
+  {
+    file: 'bmw-m8-gte-2018.js',
+    id: 'bmw-m8-gte-2018',
+    name: 'BMW M8 GTE',
+    subtitle: '2018 Le Mans & IMSA Endurance Racer · 4.0L Twin-Turbo V8 · RWD',
+    specs: '1220 kg · 600 CV · Le Mans Aero Spec · Xtrac 6-speed seq · RWD',
+    accent: '#1c69d4'
+  },
+  {
+    file: 'mercedes-amg-gt3-2020.js',
+    id: 'mercedes-amg-gt3-2020',
+    name: 'Mercedes-AMG GT3 Evo',
+    subtitle: '2020 GT3 Spec · 6.2L V8 atmosférico M159 · 550 CV',
+    specs: '1285 kg · 550 CV · Hewland 6-vel seq · RWD · Shark Nose Aero',
+    accent: '#c0c0c0'
+  },
+  {
+    file: 'porsche-992-gt3-r-2024.js',
+    id: 'porsche-992-gt3-r-2024',
+    name: 'Porsche 911 GT3 R (992)',
+    subtitle: '2024 GT3 Spec · Manthey Grello #91 · 4.2L Flat-6 · 565 CV',
+    specs: '1250 kg · 565 CV · Secuencial 6-vel · RWD · Manthey Aero',
+    accent: '#f5c500'
+  },
+  {
+    file: 'nissan-gtr-gt3-2018.js',
+    id: 'nissan-gtr-gt3-2018',
+    name: 'Nissan GT-R Nismo GT3',
+    subtitle: '2018 GT3 Spec · 3.8L Twin-Turbo V6 VR38DETT · RWD',
+    specs: '1290 kg · 550 CV · Hewland 6-vel seq · RWD · Nismo Aero',
+    accent: '#e60012'
+  },
+  {
+    file: 'mclaren-720s-gt3-2020.js',
+    id: 'mclaren-720s-gt3-2020',
+    name: 'McLaren 720S GT3',
+    subtitle: '2020 GT3 Spec · 4.0L Twin-Turbo V8 M840T · RWD',
+    specs: '1220 kg · 500 CV · 6-vel seq · RWD · MonoCage II Aero',
+    accent: '#ff8000'
+  },
+  {
+    file: 'audi-r8-lms-evo-2020.js',
+    id: 'audi-r8-lms-evo-2020',
+    name: 'Audi R8 LMS Evo',
+    subtitle: '2020 GT3 Spec · 5.2L Naturally-Aspirated V10 · RWD',
+    specs: '1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Aero',
+    accent: '#e60000'
+  },
+  {
+    file: 'bmw-m3-touring-2026.js',
+    id: 'bmw-m3-touring-2026',
+    name: 'BMW M3 Touring 24H',
+    subtitle: '2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD',
+    specs: '1560 kg · 530 CV · 8-vel M Steptronic · RWD · Shell Helix Aero',
+    accent: '#ffcc00'
+  },
+  {
+    file: 'mclaren-650s-gt3-2015.js',
+    id: 'mclaren-650s-gt3-2015',
+    name: 'McLaren 650S GT3',
+    subtitle: '2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD',
+    specs: '1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero',
+    accent: '#ff5500'
+  }
 ];
+
+// Compatibilidad con CAR_LIST para tests y scripts
+window.CAR_LIST = window.CAR_MANIFEST.map(c => c.file);
+
+// Registrar metadatos en CARS si el registro ya está disponible
+if (typeof CARS !== 'undefined') {
+  for (const item of window.CAR_MANIFEST) {
+    CARS.register({
+      id: item.id,
+      name: item.name,
+      subtitle: item.subtitle,
+      specs: item.specs,
+      accent: item.accent,
+      file: item.file
+    });
+  }
+}

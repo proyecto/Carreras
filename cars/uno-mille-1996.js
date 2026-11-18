@@ -952,12 +952,12 @@ function carBuildSteer(mb) {
 }
 
 // ---- 30_car_d_main.js
-// Montagem do carro, contrato com o jogo (CAR) e registro em CARS.
+// Montaje del coche, contrato con el juego (CAR) y registro en CARS.
 const CAR = {
   id: 'uno-mille-1996',
-  name: 'Uno com escada',
+  name: 'Uno con escalera',
   subtitle: 'Fiat Uno Mille EP 1996',
-  specs: '900 kg · 5 marchas · FWD · Escada no teto',
+  specs: '900 kg · 5 marchas · FWD · Escalera en el techo',
   accent: '#4a7eb8',
   physics: {
     m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
@@ -965,7 +965,7 @@ const CAR = {
     gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
     cdA: 0.62, crr: 0.014, brakeF: 0.64, halfW: 0.78, front: 1.92, rear: 1.72,
     clA: 0.02, aeroSplitF: 0.50,
-    // curva de torque (N·m): um Mille bem mais disposto que o de fábrica
+    // Curva de par motor (N·m): un Mille más potente que el de fábrica
     torqueBase: 180, torquePeak: 118, torqueDrop: 110, torquePeakStart: 0.6, torquePeakSpan: 5.4, torqueDropRpm: 6.0,
     shiftUpRpm: 6250, shiftDownRpm: 5350, revLimitRpm: 6500, maxRpm: 6700, idleRpm: 900,
   },

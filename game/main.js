@@ -86,9 +86,9 @@ async function main() {
     for (let k = 0; k < 2; k++) { for (let i = 0; i < 6; i++) renderFrame(); await computeSH(); }
     if (GAME.prewarm) {
       const worst = await GAME.prewarm(); await computeSH();
-      // Cadência: a 120 Hz só sobram 8,3 ms por quadro. Se a vista mais pesada não cabe com folga, os quadros se enfileiram
-      // na GPU e o tempo de quadro oscila; nesse caso o jogo roda estável a 60 quadros por segundo (um quadro a cada dois
-      // do monitor de 120 Hz). ?hz=120 ou ?hz=60 força a escolha.
+      // Cadencia: a 120 Hz solo quedan 8,3 ms por frame. Si la vista más pesada no cabe con holgura, los frames se encolan
+      // en la GPU y el tiempo de frame oscila; en ese caso el juego corre estable a 60 fps (un frame cada dos
+      // del monitor de 120 Hz). ?hz=120 o ?hz=60 fuerza la elección.
       GAME.gpuWorstMs = worst; GAME.minFrameMs = Q.get('hz') === '120' ? 0 : (Q.get('hz') === '60' || worst > 6.2) ? 14.6 : 0;
     }
     for (let i = 0; i < 8; i++) renderFrame();

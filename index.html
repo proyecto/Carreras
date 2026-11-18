@@ -182,10 +182,26 @@
   <script src="world/props.js"></script>
   <script src="world/vegetation.js"></script>
 
-  <!-- 4. Coches (gestionados desde cars/manifest.js) -->
+  <!-- 4. Coches (metadatos de selección + carga bajo demanda exclusiva del coche activo) -->
   <script src="cars/manifest.js"></script>
   <script>
-    (window.CAR_LIST || []).forEach(f => document.write('<script src="cars/' + f + '"><\/script>'));
+    (() => {
+      // Determina el coche activo desde URL (?car=id), última selección guardada o el primero disponible
+      let carId = null;
+      try {
+        const p = new URLSearchParams(location.search);
+        if (p.get('car')) carId = p.get('car');
+      } catch (e) {}
+      if (!carId && typeof loadSelection === 'function') {
+        const saved = loadSelection();
+        if (saved && saved.car) carId = saved.car;
+      }
+      const manifest = window.CAR_MANIFEST || [];
+      const entry = (carId && manifest.find(c => c.id === carId)) || manifest[0];
+      if (entry && entry.file) {
+        document.write('<script src="cars/' + entry.file + '"><\/script>');
+      }
+    })();
   </script>
 
   <!-- 5. Circuitos (gestionados desde tracks/manifest.js) -->

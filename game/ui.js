@@ -215,7 +215,7 @@ function benchEnd() {
     const r = perfReport(), stat = a => { a = a.slice(5).filter(x => x > 0).sort((p, q) => p - q); const n = a.length; return n ? { n, media: a.reduce((p, q) => p + q, 0) / n, p99: a[Math.min(n - 1, Math.round(0.99 * (n - 1)))], max: a[n - 1], acima: a.filter(x => Math.round(x * 10) > 167).length } : null; };
     const q = stat(r.raf), g = PERF.qs ? stat(r.gpu) : null, f = x => x.toFixed(2).replace('.', ',');
     benchStop(); gameRestart();
-    UI.bench = { quadros: r.n, quadro_ms: q, gpu_ms: g, fps: q ? 1000 / q.media : 0, acima_16_7: q ? q.acima : 0, gpu_acima_16_7: g ? g.acima : null, tick: 3600, resolucao: G.W + '×' + G.H };
+    UI.bench = { frames: r.n, frame_ms: q, gpu_ms: g, fps: q ? 1000 / q.media : 0, sobre_16_7: q ? q.acima : 0, gpu_sobre_16_7: g ? g.acima : null, tick: 3600, resolucion: G.W + '×' + G.H };
     const row = (n, s) => '<tr><th>' + n + '</th>' + (s ? '<td>' + f(s.media) + '</td><td>' + f(s.p99) + '</td><td>' + f(s.max) + '</td>' : '<td colspan=3>' + ((typeof I18N !== 'undefined') ? I18N.t('bench_unavailable') : 'unavailable') + '</td>') + '</tr>';
     const title = (typeof I18N !== 'undefined') ? I18N.t('bench_title', { w: G.W, h: G.H }) : ('<h2>Benchmark · ' + G.W + '×' + G.H + '</h2>');
     const thAvg = (typeof I18N !== 'undefined') ? I18N.t('bench_avg') : 'avg (ms)';

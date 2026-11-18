@@ -31,7 +31,10 @@ const CARS = {
 
   register(def) {
     if (!def || !def.id) throw new Error('Coche inválido: falta el campo id.');
-    if (this.byId[def.id]) throw new Error('Coche duplicado: ' + def.id);
+    if (this.byId[def.id]) {
+      Object.assign(this.byId[def.id], def);
+      return this.byId[def.id];
+    }
     this.list.push(def);
     this.byId[def.id] = def;
     return def;
@@ -55,7 +58,10 @@ const TRACKS = {
 
   register(def) {
     if (!def || !def.id) throw new Error('Circuito inválido: falta el campo id.');
-    if (this.byId[def.id]) throw new Error('Circuito duplicado: ' + def.id);
+    if (this.byId[def.id]) {
+      Object.assign(this.byId[def.id], def);
+      return this.byId[def.id];
+    }
     this.list.push(def);
     this.byId[def.id] = def;
     return def;
