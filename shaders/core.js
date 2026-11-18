@@ -80,7 +80,7 @@ fn matA(m: u32) -> f32 { return f32((m >> 8u) & 255u) / 255.0; }
 fn matB(m: u32) -> f32 { return f32((m >> 16u) & 255u) / 255.0; }
 fn matC(m: u32) -> f32 { return f32((m >> 24u) & 255u) / 255.0; }
 `;
-WGSL["entry"] = `// Pontos de entrada por passe, gerados em torno de vert()/surf() da família.
+WGSL["entry"] = `// Puntos de entrada por pase, generados en torno a vert()/surf() de la familia.
 @vertex fn vs(in: VIn) -> V2F {
   let o = vert(in);
   var r: V2F;

@@ -8,7 +8,15 @@
     name: 'Nürburgring GP',
     subtitle: 'GP-Strecke',
     specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio',
-    storageKey: 'melhor-nurburgring-gp',
+    storageKey: 'mejor-nurburgring-gp',
+
+    glb: 'tracks/nurburgring-gp.glb',
+    glbOptions: {
+      transform: {
+        yaw: Math.PI / 2,
+        pos: [580.5, -65.03, -24.52]
+      }
+    },
 
     hw: 7.2, // Pista ancha de 14,4 m para GT3
     startS: -18,

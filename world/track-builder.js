@@ -23,7 +23,7 @@ const ZONE = { ASPHALT: 0, KERB: 1, GRASS: 2, GRAVEL: 3, ROUGH: 4, PIT: 5, CONCR
 
 function trackBuild(spec) {
   spec = spec || (typeof TRACKS !== 'undefined' ? TRACKS.active : null);
-  if (!spec || !spec.segments) throw new Error('Nenhum circuito ativo registrado em TRACKS.');
+  if (!spec || !spec.segments) throw new Error('Ningún circuito activo registrado en TRACKS.');
   TRK.spec = spec;
   TRK.segs = []; TRK.corners = [];
   TRK.hw = spec.hw ?? 5.5;

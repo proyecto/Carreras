@@ -76,18 +76,22 @@ function personSprite(g, ox, oy, W, H, kind, rnd) {
     }
   }
   // ---- tronco: trapézio do pescoço, ombros caídos, cintura ----
-  const torso = () => { g.beginPath(); g.moveTo(sx - u * 0.2, sy - u * 0.12); g.bezierCurveTo(sx - shw * 0.55, sy - u * 0.08, sx - shw * 0.95, sy + u * 0.02, sx - shw, sy + u * 0.24);
+  const torso = () => {
+    g.beginPath(); g.moveTo(sx - u * 0.2, sy - u * 0.12); g.bezierCurveTo(sx - shw * 0.55, sy - u * 0.08, sx - shw * 0.95, sy + u * 0.02, sx - shw, sy + u * 0.24);
     g.bezierCurveTo(sx - shw * 1.02, sy + u * 0.9, sx - ww, wy - u * 0.3, sx - ww, wy); g.bezierCurveTo(sx - ww, wy + u * 0.2, sx - hipW, hipY - u * 0.1, sx - hipW, hipY);
     g.lineTo(sx + hipW, hipY); g.bezierCurveTo(sx + hipW, hipY - u * 0.1, sx + ww, wy + u * 0.2, sx + ww, wy); g.bezierCurveTo(sx + ww, wy - u * 0.3, sx + shw * 1.02, sy + u * 0.9, sx + shw, sy + u * 0.24);
-    g.bezierCurveTo(sx + shw * 0.95, sy + u * 0.02, sx + shw * 0.55, sy - u * 0.08, sx + u * 0.2, sy - u * 0.12); g.closePath(); };
+    g.bezierCurveTo(sx + shw * 0.95, sy + u * 0.02, sx + shw * 0.55, sy - u * 0.08, sx + u * 0.2, sy - u * 0.12); g.closePath();
+  };
   g.fillStyle = grad(0, sy - u * 0.1, 0, hipY, 238, 138, 1); torso(); g.fill();
   g.save(); torso(); g.clip();
   // volume: laterais mais escuras, sombra sob o peito/barriga, dobras do tecido
   for (const sd of [-1, 1]) { const q = g.createLinearGradient(sx + sd * shw * 1.02, 0, sx + sd * shw * 0.35, 0); q.addColorStop(0, CA(70, 1, 0.6)); q.addColorStop(1, CA(70, 1, 0)); g.fillStyle = q; g.fillRect(sx + (sd < 0 ? -shw * 1.1 : shw * 0.3), sy - u * 0.2, shw * 0.8, hipY - sy + u * 0.3); }
   { const q = g.createLinearGradient(0, wy - u * 0.5, 0, hipY); q.addColorStop(0, CA(80, 1, 0)); q.addColorStop(1, CA(80, 1, 0.45)); g.fillStyle = q; g.fillRect(sx - shw * 1.1, wy - u * 0.5, shw * 2.2, hipY - wy + u * 0.5); }
-  g.lineWidth = 2.2; for (let k = 0; k < 5; k++) { const fy = sy + u * (0.5 + rnd() * 1.4), fx = sx + (rnd() - 0.5) * shw * 1.3, fl = u * (0.25 + rnd() * 0.35), sg = rnd() < 0.5 ? -1 : 1;
+  g.lineWidth = 2.2; for (let k = 0; k < 5; k++) {
+    const fy = sy + u * (0.5 + rnd() * 1.4), fx = sx + (rnd() - 0.5) * shw * 1.3, fl = u * (0.25 + rnd() * 0.35), sg = rnd() < 0.5 ? -1 : 1;
     g.strokeStyle = CA(95, 1, 0.3); g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + sg * fl * 0.5, fy + fl * 0.5, fx + sg * fl, fy + fl * 0.25); g.stroke();
-    g.strokeStyle = CA(250, 1, 0.22); g.beginPath(); g.moveTo(fx, fy - 2.5); g.quadraticCurveTo(fx + sg * fl * 0.5, fy + fl * 0.5 - 2.5, fx + sg * fl, fy + fl * 0.25 - 2.5); g.stroke(); }
+    g.strokeStyle = CA(250, 1, 0.22); g.beginPath(); g.moveTo(fx, fy - 2.5); g.quadraticCurveTo(fx + sg * fl * 0.5, fy + fl * 0.5 - 2.5, fx + sg * fl, fy + fl * 0.25 - 2.5); g.stroke();
+  }
   if (rnd() < 0.3) { g.strokeStyle = CA(105, 1, 0.5); g.lineWidth = 1.6; g.beginPath(); g.moveTo(sx, sy + u * 0.1); g.lineTo(sx + lean * 0.1, hipY); g.stroke(); }      // abertura de jaqueta/camisa
   g.restore();
   // decote/gola: pele em V ou redondo, ou gola polo clara
@@ -95,10 +99,12 @@ function personSprite(g, ox, oy, W, H, kind, rnd) {
   g.fillStyle = C(178, 0); g.beginPath(); if (neckT < 0.45) { g.moveTo(sx - u * 0.19, sy - u * 0.13); g.lineTo(sx, sy + u * (0.12 + rnd() * 0.2)); g.lineTo(sx + u * 0.19, sy - u * 0.13); } else g.ellipse(sx, sy - u * 0.1, u * 0.2, u * 0.12, 0, 0, PI); g.fill();
   if (neckT > 0.75) { g.strokeStyle = C(250, 1); g.lineWidth = 3; g.beginPath(); g.moveTo(sx - u * 0.24, sy - u * 0.14); g.lineTo(sx - u * 0.06, sy + u * 0.1); g.moveTo(sx + u * 0.24, sy - u * 0.14); g.lineTo(sx + u * 0.06, sy + u * 0.1); g.stroke(); }
   // ---- braços: braço (manga) + antebraço + mão, em poses variadas ----
-  const limb = (x0, y0, x1, y1, w0, w1, r0, r1, m) => { const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+  const limb = (x0, y0, x1, y1, w0, w1, r0, r1, m) => {
+    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
     g.fillStyle = grad(x0, y0, x1, y1, r0, r1, m); g.beginPath(); g.moveTo(x0 + nx * w0, y0 + ny * w0); g.lineTo(x1 + nx * w1, y1 + ny * w1); g.arc(x1, y1, w1, Math.atan2(ny, nx), Math.atan2(-ny, -nx), dx * ny - dy * nx > 0);
     g.lineTo(x0 - nx * w0, y0 - ny * w0); g.arc(x0, y0, w0, Math.atan2(-ny, -nx), Math.atan2(ny, nx), dx * ny - dy * nx > 0); g.closePath(); g.fill();
-    g.strokeStyle = CA(60, m, 0.35); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0 - nx * w0, y0 - ny * w0); g.lineTo(x1 - nx * w1, y1 - ny * w1); g.stroke(); };
+    g.strokeStyle = CA(60, m, 0.35); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0 - nx * w0, y0 - ny * w0); g.lineTo(x1 - nx * w1, y1 - ny * w1); g.stroke();
+  };
   const aw = u * (fem ? 0.14 : 0.17) * big, raise = !kind && pose > 0.86 ? (rnd() < 0.5 ? -1 : 1) : 0, crossed = pose < 0.2, hips = kind && pose > 0.55 && pose < 0.75;
   for (const sd of [-1, 1]) {
     const ax = sx + sd * (shw - aw * 0.7), ay = sy + u * 0.3; let ex, ey, fx, fy;
@@ -120,8 +126,10 @@ function personSprite(g, ox, oy, W, H, kind, rnd) {
   // orelhas, crânio oval com queixo mais estreito
   g.fillStyle = C(185, 0); for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(hx + sd * rx * 0.98 - look * 2, hy + ry * 0.08, rx * 0.16, ry * 0.2, 0, 0, TAU); g.fill(); }
   const hg = g.createRadialGradient(hx - rx * 0.3 + look * 3, hy - ry * 0.35, 1, hx, hy, ry * 1.25); hg.addColorStop(0, C(246, 0)); hg.addColorStop(0.65, C(205, 0)); hg.addColorStop(1, C(150, 0));
-  const skull = () => { g.beginPath(); g.moveTo(hx, hy - ry); g.bezierCurveTo(hx + rx * 1.1, hy - ry, hx + rx * 1.12, hy + ry * 0.1, hx + rx * 0.82, hy + ry * 0.55); g.bezierCurveTo(hx + rx * 0.55, hy + ry * 1.0, hx - rx * 0.55, hy + ry * 1.0, hx - rx * 0.82, hy + ry * 0.55);
-    g.bezierCurveTo(hx - rx * 1.12, hy + ry * 0.1, hx - rx * 1.1, hy - ry, hx, hy - ry); g.closePath(); };
+  const skull = () => {
+    g.beginPath(); g.moveTo(hx, hy - ry); g.bezierCurveTo(hx + rx * 1.1, hy - ry, hx + rx * 1.12, hy + ry * 0.1, hx + rx * 0.82, hy + ry * 0.55); g.bezierCurveTo(hx + rx * 0.55, hy + ry * 1.0, hx - rx * 0.55, hy + ry * 1.0, hx - rx * 0.82, hy + ry * 0.55);
+    g.bezierCurveTo(hx - rx * 1.12, hy + ry * 0.1, hx - rx * 1.1, hy - ry, hx, hy - ry); g.closePath();
+  };
   g.fillStyle = hg; skull(); g.fill();
   // rosto sugerido (deslocado conforme o olhar): órbitas sombreadas, sobrancelhas, nariz e boca discretos
   const fxo = look * rx * 0.3, ey0 = hy - ry * 0.02;
@@ -135,8 +143,10 @@ function personSprite(g, ox, oy, W, H, kind, rnd) {
   if (!fem && rnd() < 0.3) { g.fillStyle = CA(70, 2, 0.5); g.beginPath(); g.ellipse(hx + fxo, hy + ry * 0.72, rx * 0.62, ry * 0.3, 0, 0, PI); g.fill(); }                    // barba
   g.restore();
   // ---- cabelo / boné / chapéu ----
-  const hs = rnd(), hairTop = (lowY) => { g.beginPath(); g.moveTo(hx - rx * 1.08, lowY); g.bezierCurveTo(hx - rx * 1.25, hy - ry * 1.0, hx - rx * 0.6, hy - ry * 1.22, hx, hy - ry * 1.18);
-    g.bezierCurveTo(hx + rx * 0.6, hy - ry * 1.22, hx + rx * 1.25, hy - ry * 1.0, hx + rx * 1.08, lowY); };
+  const hs = rnd(), hairTop = (lowY) => {
+    g.beginPath(); g.moveTo(hx - rx * 1.08, lowY); g.bezierCurveTo(hx - rx * 1.25, hy - ry * 1.0, hx - rx * 0.6, hy - ry * 1.22, hx, hy - ry * 1.18);
+    g.bezierCurveTo(hx + rx * 0.6, hy - ry * 1.22, hx + rx * 1.25, hy - ry * 1.0, hx + rx * 1.08, lowY);
+  };
   const fr = hy - ry * (0.48 + rnd() * 0.2);
   if (fem && hs < 0.7) {       // cabelo comprido caindo sobre os ombros (ou preso)
     const len = hs < 0.45 ? sy + u * (0.2 + rnd() * 0.5) : hy + ry * 0.7;
@@ -411,7 +421,7 @@ function propsBuild() {
   };
   // roupas de arquibancada: maioria em tons sóbrios (jeans, cinzas, cáqui, branco encardido, vinho), poucas cores vivas
   const CROWD = [[0.42, 0.42, 0.4], [0.5, 0.49, 0.45], [0.07, 0.09, 0.14], [0.045, 0.045, 0.05], [0.26, 0.06, 0.06], [0.1, 0.16, 0.28], [0.3, 0.26, 0.15], [0.2, 0.21, 0.22], [0.11, 0.17, 0.11],
-    [0.33, 0.2, 0.1], [0.13, 0.13, 0.15], [0.28, 0.3, 0.34], [0.36, 0.33, 0.27], [0.09, 0.12, 0.2], [0.45, 0.09, 0.07], [0.4, 0.33, 0.08], [0.16, 0.1, 0.07], [0.5, 0.5, 0.48]];
+  [0.33, 0.2, 0.1], [0.13, 0.13, 0.15], [0.28, 0.3, 0.34], [0.36, 0.33, 0.27], [0.09, 0.12, 0.2], [0.45, 0.09, 0.07], [0.4, 0.33, 0.08], [0.16, 0.1, 0.07], [0.5, 0.5, 0.48]];
   // sentada: (u, y do assento, v do encosto); a pista fica em +v
   const sitter = (u, y, v, ao) => figure(u + (rng() - 0.5) * 0.26, y - 0.1 - rng() * 0.05, v + 0.2 + (rng() - 0.5) * 0.16, 'p' + Math.floor(rng() * 16) % 16, 0.98 * (0.84 + rng() * 0.28), pick(CROWD), ao);
   // En pie en (u, y del suelo, v)
@@ -711,8 +721,10 @@ function propsBuild() {
     mb.push(frame(s, 0)); md.push(frame(s, 0));
     gantry(0, dL, dR, null, false, true);
     const wd = dR - dL - 1.2, hh = 1.3;
-    for (const q of [0, 1]) { const nm = ['b0', 'b9'][q], x = q ? 0.58 : -0.58; md.mat(7); col(md, 1, 1, 1); const r = REG[nm], zc = (dL + dR) / 2, w2 = Math.min(wd / 2, hh * 2);
-      for (const [za, zb] of [[zc - w2 * 2 - 0.2, zc - 0.2], [zc + 0.2, zc + w2 * 2 + 0.2]]) { if (q) md.quad(x, yB + 0.08, zb, x, yB + 0.08, za, x, yB + 0.08 + hh, za, x, yB + 0.08 + hh, zb, r[0], r[3], r[2], r[1]); else md.quad(x, yB + 0.08, za, x, yB + 0.08, zb, x, yB + 0.08 + hh, zb, x, yB + 0.08 + hh, za, r[0], r[3], r[2], r[1]); } }
+    for (const q of [0, 1]) {
+      const nm = ['b0', 'b9'][q], x = q ? 0.58 : -0.58; md.mat(7); col(md, 1, 1, 1); const r = REG[nm], zc = (dL + dR) / 2, w2 = Math.min(wd / 2, hh * 2);
+      for (const [za, zb] of [[zc - w2 * 2 - 0.2, zc - 0.2], [zc + 0.2, zc + w2 * 2 + 0.2]]) { if (q) md.quad(x, yB + 0.08, zb, x, yB + 0.08, za, x, yB + 0.08 + hh, za, x, yB + 0.08 + hh, zb, r[0], r[3], r[2], r[1]); else md.quad(x, yB + 0.08, za, x, yB + 0.08, zb, x, yB + 0.08 + hh, zb, x, yB + 0.08 + hh, za, r[0], r[3], r[2], r[1]); }
+    }
     mb.pop(); md.pop(); S1.add(mb, i0, 7, 1500); S2.add(md, k0, 3, 1500);
   }
   // ---- postos de fiscal ----
@@ -791,8 +803,10 @@ function propsBuild() {
       m.mat(1); col(m, 1, 1, 1); for (const [a, b] of [[-2, -2], [2, -2], [2, 2], [-2, 2]]) m.cyl(a, -0.3, b, 0.03, 2.5, 0.03, 5, false, false);
       m.mat(10); col(m, c[0], c[1], c[2]);
       const ap = [0, 3.6, 0], cs = [[-2.15, 2.5, -2.15], [2.15, 2.5, -2.15], [2.15, 2.5, 2.15], [-2.15, 2.5, 2.15]];
-      for (let k = 0; k < 4; k++) { const a = cs[k], b = cs[(k + 1) % 4]; const e1 = [b[0] - a[0], 0, b[2] - a[2]], e2 = [ap[0] - a[0], 1.1, ap[2] - a[2]]; const nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0]; const sg = ny < 0 ? -1 : 1; const i1 = m.v(a[0], a[1], a[2], nx * sg, ny * sg, nz * sg, 0, 0), i2 = m.v(b[0], b[1], b[2], nx * sg, ny * sg, nz * sg, 1, 0), i3 = m.v(ap[0], ap[1], ap[2], nx * sg, ny * sg, nz * sg, 0.5, 1); if (sg > 0) m.tri(i1, i2, i3); else m.tri(i1, i3, i2);
-        m.quad(b[0], 2.2, b[2], a[0], 2.2, a[2], a[0], 2.5, a[2], b[0], 2.5, b[2]); }
+      for (let k = 0; k < 4; k++) {
+        const a = cs[k], b = cs[(k + 1) % 4]; const e1 = [b[0] - a[0], 0, b[2] - a[2]], e2 = [ap[0] - a[0], 1.1, ap[2] - a[2]]; const nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0]; const sg = ny < 0 ? -1 : 1; const i1 = m.v(a[0], a[1], a[2], nx * sg, ny * sg, nz * sg, 0, 0), i2 = m.v(b[0], b[1], b[2], nx * sg, ny * sg, nz * sg, 1, 0), i3 = m.v(ap[0], ap[1], ap[2], nx * sg, ny * sg, nz * sg, 0.5, 1); if (sg > 0) m.tri(i1, i2, i3); else m.tri(i1, i3, i2);
+        m.quad(b[0], 2.2, b[2], a[0], 2.2, a[2], a[0], 2.5, a[2], b[0], 2.5, b[2]);
+      }
     };
     const cols = [[0.75, 0.08, 0.06], [0.08, 0.2, 0.55], [0.85, 0.85, 0.83], [0.1, 0.1, 0.11], [0.8, 0.6, 0.05]];
     const i0 = mb.ni, k0 = md.ni;
@@ -848,4 +862,7 @@ function propsBuild() {
     });
   }
 }
-if (WORLD.active) queueMicrotask(() => BUILD.push(async () => { propsBuild(); }));
+if (WORLD.active) queueMicrotask(() => BUILD.push(async () => {
+  if (TRK.spec && TRK.spec.glb && !TRK.spec.glbFailed) return; // El circuito GLB ya incluye sus propias gradas, boxes, pantallas y vallas escaneadas
+  propsBuild();
+}));

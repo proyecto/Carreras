@@ -107,16 +107,6 @@ const I18N = {
           subtitle: 'GP-Strecke',
           specs: '5.15 km · 16 turns · FIA GT3 width · Official Grand Prix circuit',
         },
-        'nurburgring-nordschleife': {
-          name: 'Nürburgring Nordschleife',
-          subtitle: 'The Green Hell',
-          specs: '6.86 km · The Green Hell · Flugplatz, Fuchsröhre, Karussell & Döttinger Höhe',
-        },
-        'nurburgring-24h': {
-          name: 'Nürburgring 24 Hours',
-          subtitle: '24h Combined Course',
-          specs: '8.55 km · 24h Endurance · GP Paddock, Arena & the entire Green Hell',
-        },
       },
     },
 
@@ -221,16 +211,6 @@ const I18N = {
           name: 'Nürburgring GP',
           subtitle: 'GP-Strecke',
           specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio',
-        },
-        'nurburgring-nordschleife': {
-          name: 'Nürburgring Nordschleife',
-          subtitle: 'El Infierno Verde',
-          specs: '6,86 km · El Infierno Verde · Flugplatz, Fuchsröhre, Karussell y Döttinger Höhe',
-        },
-        'nurburgring-24h': {
-          name: 'Nürburgring 24 Horas',
-          subtitle: '24h Gesamstrecke',
-          specs: '8,55 km · Resistencia 24 Horas · GP Paddock, Arena y todo el Infierno Verde',
         },
       },
     },

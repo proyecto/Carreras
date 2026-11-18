@@ -4,6 +4,4 @@
 // Para quitar un circuito: simplemente borra o comenta su línea aquí.
 window.TRACK_LIST = [
   'nurburgring-gp.js',
-  'nurburgring-nordschleife.js',
-  'nurburgring-24h.js',
 ];

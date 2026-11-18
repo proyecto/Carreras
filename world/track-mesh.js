@@ -219,9 +219,20 @@ function worldBuild() {
   R.drawables.push(WORLD.terrain, WORLD.ribbon);
   if (GAME.mode === 'world') {
     GAME.init = () => { const p = trackPos(-40, -1.5, new Float64Array(5)), q = trackPos(40, 0, new Float64Array(5)); setCamera(p[0], p[1] + 1.6, p[2], q[0], q[1] + 0.8, q[2], 1.0); R.cube.pos.set([q[0], q[1] + 1.2, q[2]]); };
-    // pose de câmera relativa à pista: olho em (s,d,altura) olhando para (s2,d2,altura2)
+    // Pose de cámara relativa a la pista: ojo en (s,d,altura) mirando hacia (s2,d2,altura2)
     window.__cap.trackCam = (s, d, h, s2, d2, h2, fov) => { const p = trackPos(s, d, new Float64Array(5)), q = trackPos(s2, d2, new Float64Array(5)); const py = Math.max(p[1], hfAt(p[0], p[2])) + h; setCamera(p[0], py, p[2], q[0], q[1] + h2, q[2], fov || 1.0); R.cube.pos.set([q[0], q[1] + 1.2, q[2]]); return [p[0], py, p[2]]; };
   }
 }
-window.__world = WORLD; window.__trackPos = trackPos;   // auxiliares de depuração para os scripts de captura
-if (WORLD.active) queueMicrotask(() => BUILD.push(async () => { worldBuild(); }));
+window.__world = WORLD; window.__trackPos = trackPos;   // Auxiliares de depuración para los scripts de captura
+if (WORLD.active) queueMicrotask(() => BUILD.push(async () => {
+  if (TRK.spec && TRK.spec.glb && typeof TrackGLB !== 'undefined') {
+    try {
+      await TrackGLB.load(TRK.spec.glb, TRK.spec.glbOptions);
+      return;
+    } catch (e) {
+      console.warn('Aviso: no se pudo cargar el circuito GLB, usando generador procedural:', e);
+      TRK.spec.glbFailed = true;
+    }
+  }
+  worldBuild();
+}));

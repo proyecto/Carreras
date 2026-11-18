@@ -79,7 +79,7 @@ const R = {
 const _objViews = [];
 function _objMk(i) { _objViews[i] = [R.objData.subarray(i * 64, i * 64 + 16), R.objData.subarray(i * 64 + 16, i * 64 + 32), R.objData.subarray(i * 64 + 32, i * 64 + 48)]; m4ident(_objViews[i][0]); m4ident(_objViews[i][1]); }
 _objMk(0);
-function objSlot() { const i = R.objCount++; if (i >= 64) throw new Error('slots de objeto esgotados'); _objMk(i); return i; }
+function objSlot() { const i = R.objCount++; if (i >= 64) throw new Error('Slots de objeto agotados'); _objMk(i); return i; }
 const objModel = i => _objViews[i][0];
 const objPrev = i => _objViews[i][1];
 const objParams = i => _objViews[i][2];

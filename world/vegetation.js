@@ -677,9 +677,9 @@ const vegDrawable = {
   }
 };
 
-// BUILD é declarado em 90_main.js (depois deste arquivo): registra numa microtarefa, que roda antes do laço de construção.
+// BUILD se declara en 90_main.js: registra en microtarea que corre antes del bucle de construcción
 queueMicrotask(() => BUILD.push(async () => {
-  if (GAME.mode === 'test' || GAME.mode === 'car' || Q.has('noveg')) return;
+  if (GAME.mode === 'test' || GAME.mode === 'car' || Q.has('noveg') || (typeof TRK !== 'undefined' && TRK.spec && TRK.spec.glb && !TRK.spec.glbFailed)) return;
   const V = VEG, dev = G.dev;
   V.leafTex = vegAtlasBuild(); V.leafView = V.leafTex.createView(); R.view.vegLeaf = V.leafView;
   V.sLeaf = dev.createSampler({ minFilter: 'linear', magFilter: 'linear', mipmapFilter: 'linear', maxAnisotropy: 8 });

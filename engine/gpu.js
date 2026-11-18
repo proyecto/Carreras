@@ -13,14 +13,14 @@ const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real
 const G = { dev: null, ctx: null, fmt: 'bgra8unorm', W: 0, H: 0, hasTS: false, canvas: null };
 
 async function gpuInit() {
-  if (!navigator.gpu) throw new Error('WebGPU indisponível neste navegador.');
+  if (!navigator.gpu) throw new Error('WebGPU no disponible en este navegador.');
   const ad = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-  if (!ad) throw new Error('Nenhum adaptador WebGPU.');
+  if (!ad) throw new Error('Ningún adaptador WebGPU disponible.');
   const feats = [];
   // "timestamp-query" se solicita para medición de rendimiento (?perf) y juego interactivo
   // (muestra el tiempo de GPU si el navegador lo permite); ?nots lo desactiva.
   for (const f of ['float32-filterable', 'rg11b10ufloat-renderable'].concat((Q.has('perf') || GAME.ui) && !Q.has('nots') ? ['timestamp-query'] : [])) if (ad.features.has(f)) feats.push(f);
-  if (!ad.features.has('float32-filterable')) throw new Error('GPU sem float32-filterable.');
+  if (!ad.features.has('float32-filterable')) throw new Error('GPU sin soporte para float32-filterable.');
   G.hasTS = feats.includes('timestamp-query');
   G.dev = await ad.requestDevice({
     requiredFeatures: feats,
