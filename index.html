@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Carreras</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+
+<body>
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="msg" data-i18n="loading">loading…</div>
+    <div id="hint" data-i18n="hint">W accelerate · S brake/reverse · A/D steer · Space handbrake · C camera · R reset to
+      track</div>
+    <canvas id="hm"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas>
+    <div id="tag"></div>
+  </div>
+
+  <div id="ui" role="dialog" aria-modal="true" aria-labelledby="ui-title">
+    <div class="panel">
+      <div class="lang-selector" role="radiogroup" aria-label="Language / Idioma">
+        <button type="button" class="lang-btn" data-lang="en">English</button>
+        <button type="button" class="lang-btn" data-lang="es">Español</button>
+        <button type="button" class="lang-btn" data-lang="pt">Português</button>
+      </div>
+
+      <h1 id="ui-title">Uno with Ladder</h1>
+      <p class="sub">Fiat Uno Mille EP 1996 · Circuit</p>
+      <div id="res"></div>
+
+      <div class="selectors">
+        <fieldset class="pick-group">
+          <legend data-i18n="legend_car">Car</legend>
+          <div id="pick-cars" class="pick-grid"></div>
+        </fieldset>
+        <fieldset class="pick-group">
+          <legend data-i18n="legend_track">Track</legend>
+          <div id="pick-tracks" class="pick-grid"></div>
+        </fieldset>
+      </div>
+
+      <details class="controls-box">
+        <summary data-i18n="controls_summary">Controls and shortcuts</summary>
+        <div class="cols">
+          <div>
+            <h2 data-i18n="controls_keyboard">Keyboard</h2>
+            <table>
+              <tr>
+                <td>W or ↑</td>
+                <td data-i18n="ctrl_w">accelerate</td>
+              </tr>
+              <tr>
+                <td>S or ↓</td>
+                <td data-i18n="ctrl_s">brake and reverse</td>
+              </tr>
+              <tr>
+                <td>A D or ← →</td>
+                <td data-i18n="ctrl_ad">steer</td>
+              </tr>
+              <tr>
+                <td>Space</td>
+                <td data-i18n="ctrl_space">handbrake</td>
+              </tr>
+              <tr>
+                <td>C</td>
+                <td data-i18n="ctrl_c">change camera</td>
+              </tr>
+              <tr>
+                <td>V (hold)</td>
+                <td data-i18n="ctrl_v">look back</td>
+              </tr>
+              <tr>
+                <td>R</td>
+                <td data-i18n="ctrl_r">reset car to track</td>
+              </tr>
+              <tr>
+                <td>Esc</td>
+                <td data-i18n="ctrl_esc">pause and open menu</td>
+              </tr>
+            </table>
+          </div>
+          <div>
+            <h2 data-i18n="controls_gamepad">Gamepad</h2>
+            <table>
+              <tr>
+                <td data-i18n="gp_rt">Right trigger</td>
+                <td data-i18n="ctrl_w">accelerate</td>
+              </tr>
+              <tr>
+                <td data-i18n="gp_lt">Left trigger</td>
+                <td data-i18n="ctrl_s">brake and reverse</td>
+              </tr>
+              <tr>
+                <td data-i18n="gp_stick">Left stick</td>
+                <td data-i18n="ctrl_ad">steer</td>
+              </tr>
+              <tr>
+                <td>A</td>
+                <td data-i18n="ctrl_space">handbrake</td>
+              </tr>
+              <tr>
+                <td>Y</td>
+                <td data-i18n="ctrl_c">change camera</td>
+              </tr>
+              <tr>
+                <td data-i18n="gp_rb">RB (hold)</td>
+                <td data-i18n="ctrl_v">look back</td>
+              </tr>
+              <tr>
+                <td>X</td>
+                <td data-i18n="ctrl_r">reset car to track</td>
+              </tr>
+              <tr>
+                <td>Start</td>
+                <td data-i18n="gp_start">open menu</td>
+              </tr>
+            </table>
+          </div>
+          <div>
+            <h2 data-i18n="controls_tools">Tools</h2>
+            <table>
+              <tr>
+                <td>M</td>
+                <td data-i18n="tool_m">toggle sound</td>
+              </tr>
+              <tr>
+                <td>H</td>
+                <td data-i18n="tool_h">performance stats</td>
+              </tr>
+              <tr>
+                <td>B</td>
+                <td data-i18n="tool_b">benchmark (60 s lap)</td>
+              </tr>
+              <tr>
+                <td>F</td>
+                <td data-i18n="tool_f">watch replay lap</td>
+              </tr>
+              <tr>
+                <td>1 to 6</td>
+                <td data-i18n="tool_poses">fixed camera poses</td>
+              </tr>
+              <tr>
+                <td colspan="2" data-i18n="tool_footer" style="font-weight:400;color:#ddd;opacity:.75;padding-top:.5em">
+                  Automatic transmission · Lap times start upon crossing the finish line</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="bt">
+        <button id="b0" type="button" data-i18n="btn_start">Start</button>
+        <button id="b1" type="button" data-i18n="btn_bench">Benchmark</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Shaders WGSL -->
+  <script src="shaders/core.js"></script>
+  <script src="shaders/lighting.js"></script>
+  <script src="shaders/post.js"></script>
+  <script src="shaders/world.js"></script>
+  <script src="shaders/vegetation.js"></script>
+  <script src="shaders/glass.js"></script>
+
+  <!-- 2. Motor gráfico y utilidades -->
+  <script src="engine/math.js"></script>
+  <script src="engine/gpu.js"></script>
+  <script src="engine/mesh.js"></script>
+  <script src="game/registry.js"></script>
+  <script src="engine/renderer.js"></script>
+  <script src="engine/post.js"></script>
+  <script src="engine/sky.js"></script>
+  <script src="engine/forward.js"></script>
+  <script src="engine/perf.js"></script>
+
+  <!-- 3. Constructores genéricos del mundo (pista, terreno, entorno, vegetación) -->
+  <script src="world/track-builder.js"></script>
+  <script src="world/track-mesh.js"></script>
+  <script src="world/props.js"></script>
+  <script src="world/vegetation.js"></script>
+
+  <!-- 4. Coches (gestionados desde cars/manifest.js) -->
+  <script src="cars/manifest.js"></script>
+  <script>
+    (window.CAR_LIST || []).forEach(f => document.write('<script src="cars/' + f + '"><\/script>'));
+  </script>
+
+  <!-- 5. Circuitos (gestionados desde tracks/manifest.js) -->
+  <script src="tracks/manifest.js"></script>
+  <script>
+    (window.TRACK_LIST || []).forEach(f => document.write('<script src="tracks/' + f + '"><\/script>'));
+  </script>
+
+  <!-- 6. Física, IA, efectos, audio, HUD, interfaz y arranque -->
+  <script src="game/i18n.js"></script>
+  <script src="game/physics.js"></script>
+  <script src="game/ai.js"></script>
+  <script src="game/fx.js"></script>
+  <script src="game/game.js"></script>
+  <script src="game/audio.js"></script>
+  <script src="game/hud.js"></script>
+  <script src="game/ui.js"></script>
+  <script src="game/main.js"></script>
+</body>
+
+</html>
