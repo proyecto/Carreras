@@ -1,8 +1,8 @@
 'use strict';
 // ---- 52_ui.js
-// Interface do jogo aberto por uma pessoa (GAME.ui): tela de início, pausa, benchmark, volta roteirizada para assistir,
-// poses, teclas de ferramenta e leitura do controle. Nas ferramentas de trabalho/ (captura, poses, teste, medição) nada
-// disto é ligado: sem menu, sem painel, sem som.
+// Interfaz de usuario interactiva (GAME.ui): inicio, pausa, benchmark, repetición guiada,
+// poses fijas y soporte para gamepad.
+
 const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
 const UI = { st: ST.INICIO, back: ST.JOGO, el: null, stage: null, tag: null, res: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, selCar: '', selTrack: '' };
 const $ = id => document.getElementById(id);
@@ -163,7 +163,7 @@ function uiInit() {
     uiSet(ST.INICIO);
   }
 }
-// troca de estado: mostra/esconde menu, painel e etiqueta, pausa/retoma o som
+// Cambio de estado: muestra/oculta menús, HUD y pausa sonido
 function uiSet(st) {
   const menu = st === ST.INICIO || st === ST.PAUSA || st === ST.RESULT;
   UI.st = st; UI.el.style.display = menu ? 'flex' : 'none'; UI.el.className = st === ST.INICIO ? 'ini' : '';
@@ -184,7 +184,7 @@ function uiPause() { if (UI.st === ST.BENCH) benchStop(); UI.back = UI.st === ST
 function uiResume() {
   if (UI.st === ST.RESULT || UI.st === ST.POSE) uiDrive(); else if (UI.st === ST.PAUSA) uiSet(UI.back);
 }
-// volta ao volante: carro no grid, câmeras e simulação soltas
+// Regreso a pista: coche en grid y simulación activa
 function uiDrive() { GS.frozen = false; GS.freeCam = false; GS.replayOn = false; gameRestart(); uiSet(ST.JOGO); }
 function uiReplay() { if (!GS.replay) return; GS.frozen = false; GS.freeCam = false; GS.replayOn = true; gameRestart(); uiSet(ST.FITA); }
 function uiPose(i) { if (!POSES[i]) return; if (UI.st === ST.BENCH) benchStop(); UI.pose = i; poseApply(i); GS.replayOn = false; uiSet(ST.POSE); }
@@ -193,14 +193,14 @@ function uiKey(e) {
   const c = e.code, st = UI.st;
   if (c === 'KeyM') { sndMute(!SND.mute); return; }
   if (c === 'KeyH') { UI.stats = !UI.stats; hudStats(UI.stats); if (st !== ST.BENCH) perfAttach(UI.stats, 12); return; }
-  if (st === ST.INICIO) return;                                   // na tela de início só o botão começa o jogo (e o som)
+  if (st === ST.INICIO) return;                                   // En pantalla de inicio el botón inicia el juego y audio
   if (c === 'Escape') { if (st === ST.JOGO || st === ST.FITA || st === ST.BENCH) uiPause(); else uiResume(); e.preventDefault(); }
   else if (c === 'KeyB') benchStart();
   else if (c === 'KeyF') uiReplay();
   else if (c === 'KeyR' && st === ST.FITA) uiDrive();
   else if (c.length === 6 && c.startsWith('Digit') && c[5] >= '1' && c[5] <= '6') uiPose(+c[5] - 1);
 }
-// ---- benchmark: a volta roteirizada de 60 s em tempo real, sem painel, medindo tempo de quadro e (se houver) tempo de GPU
+// ---- Benchmark: vuelta guiada de 60 s midiendo frametime y tiempo GPU
 function benchStart() {
   if (!GS.replay || UI.st === ST.INICIO) return;
   GS.frozen = false; GS.freeCam = false; GS.replayOn = true; gameRestart(); UI.bench = null; UI.benchN++;
@@ -210,7 +210,7 @@ function benchStart() {
 function benchStop() { PERF.rec = false; perfAttach(UI.stats, 12); GS.replayOn = false; }
 function benchEnd() {
   const id = UI.benchN; PERF.rec = false; uiSet(ST.RESULT);
-  setTimeout(() => {   // espera as últimas leituras de tempo de GPU chegarem
+  setTimeout(() => {   // Espera las últimas lecturas de GPU
     if (id !== UI.benchN || UI.st !== ST.RESULT) return;
     const r = perfReport(), stat = a => { a = a.slice(5).filter(x => x > 0).sort((p, q) => p - q); const n = a.length; return n ? { n, media: a.reduce((p, q) => p + q, 0) / n, p99: a[Math.min(n - 1, Math.round(0.99 * (n - 1)))], max: a[n - 1], acima: a.filter(x => Math.round(x * 10) > 167).length } : null; };
     const q = stat(r.raf), g = PERF.qs ? stat(r.gpu) : null, f = x => x.toFixed(2).replace('.', ',');
@@ -232,9 +232,9 @@ function benchEnd() {
     UI.res.innerHTML = title + '<table><tr><th></th><th>' + thAvg + '</th><th>' + thP99 + '</th><th>' + thMax + '</th></tr>' + row(lblFrame, q) + row(lblGPU, g) + '</table><p>' + summary + '</p>';
   }, 400);
 }
-// ---- controle (Gamepad API, layout padrão). Só é consultado enquanto houver um controle ligado.
+// ---- Gamepad API (estándar). Solo se consulta si hay mando conectado.
 function padCount() { let n = 0; const l = navigator.getGamepads ? navigator.getGamepads() : []; for (let i = 0; i < l.length; i++) if (l[i] && l[i].connected) n++; UI.padN = n; if (!n) { GS.padKeys = 0; UI.padPrev = 0; } }
-// A API devolve um retrato novo dos controles a cada consulta (vetor e números criados pelo navegador): fica isolado aqui.
+// Aislado para evitar allocations en el loop principal.
 const PADR = new Float64Array(3), PADB = new Int32Array(1);
 function apiGamepad() {
   const l = navigator.getGamepads(); let p = null;
@@ -243,13 +243,13 @@ function apiGamepad() {
   const b = p.buttons, n = b.length; let m = 0; for (let i = 0; i < n && i < 16; i++) if (b[i].pressed) m |= 1 << i;
   PADB[0] = m; PADR[0] = n > 7 ? b[7].value : 0; PADR[1] = n > 6 ? b[6].value : 0; PADR[2] = p.axes.length ? p.axes[0] : 0;
 }
-// traduz a leitura do controle (PADB, PADR) para as mesmas teclas do jogo + valores analógicos (PADV)
+// Traduce lectura del mando a entradas analógicas y digitales
 function padPoll() { apiGamepad(); padApply(); }
 function padApply() {
   const m = PADB[0]; if (m < 0) { GS.padKeys = 0; return; }
   let k = K_PAD | K_PADS, x = PADR[2]; const rt = PADR[0], lt = PADR[1], ax = x < 0 ? -x : x;
   PADV[0] = rt < 0.04 ? 0 : rt; PADV[1] = lt < 0.04 ? 0 : lt;
-  if (ax < 0.12) x = 0; else { const u = (ax - 0.12) / 0.88; x = (x < 0 ? -1 : 1) * u * (0.45 + 0.55 * u); }   // zona morta + curva suave no centro
+  if (ax < 0.12) x = 0; else { const u = (ax - 0.12) / 0.88; x = (x < 0 ? -1 : 1) * u * (0.45 + 0.55 * u); }   // Zona muerta + curva suave progresiva
   PADV[2] = x;
   if (rt > 0.06) k |= K_W; if (lt > 0.06) k |= K_S;
   if (m & 1) k |= K_SPACE; if (m & 8) k |= K_C; if (m & 4) k |= K_R; if (m & 32) k |= K_V;
@@ -257,15 +257,13 @@ function padApply() {
   const edge = m & ~UI.padPrev; UI.padPrev = m;
   if (edge & 516) padMenu(edge);
 }
-// botões de menu do controle, na borda: Start abre/fecha o menu; X assume o volante durante a volta roteirizada
+// Botones de menú del gamepad: Start abre/cierra; X toma el control
 function padMenu(edge) {
   if (UI.warm) return;
   if (edge & 512) { if (UI.st === ST.JOGO || UI.st === ST.FITA || UI.st === ST.BENCH) uiPause(); else if (UI.st !== ST.INICIO) uiResume(); }
   else if (UI.st === ST.FITA) uiDrive();
 }
-// Aquece o JIT das funções novas que rodam uma vez por quadro (controle, painel, estatísticas): são baratas, e sem isto o V8
-// levaria dezenas de segundos de jogo para otimizá-las — rodando até lá no interpretador, que aloca a cada conta.
-// (A parte do som que lê a simulação, sndControl, é aquecida junto com a física em gameWarmup.)
+// Calentamiento JIT de funciones de interfaz (control, panel, estadísticas)
 function uiWarmup() {
   const H = HUD, g = H.g, t = H.t, s = H.s, sc = document.createElement('canvas'); sc.width = sc.height = 4; const x = sc.getContext('2d'), V = H.V, rt3 = RT[3];
   const po = PERF.on; UI.warm = true; H.g = H.t = H.s = x; PERF.on = true;
@@ -277,13 +275,13 @@ function uiWarmup() {
   }
   H.g = g; H.t = t; H.s = s; H.K.fill(-9); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
 }
-// chamado no começo de cada quadro; devolve true quando o jogo está parado num menu (não simula nem renderiza)
+// Invocado al inicio de cada frame; devuelve true si el juego está pausado en menú
 function uiFrame() {
   if (UI.padN) padPoll();
   const st = UI.st;
   return st === ST.INICIO || st === ST.PAUSA || st === ST.RESULT || st === ST.POSE;
 }
-// chamado depois de simular e renderizar o quadro
+// Invocado tras simular y renderizar el frame
 function uiAfter() {
   const st = UI.st;
   if (st === ST.BENCH) { if (GS.tick60 >= 3600) benchEnd(); }

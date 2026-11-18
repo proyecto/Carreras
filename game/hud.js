@@ -1,7 +1,7 @@
 'use strict';
 // ---- 51_painel.js
-// Painel na tela: velocímetro, conta-giros, marcha, cronômetro da volta, última e melhor volta, estatísticas e minimapa com radar de curvas.
-// Quatro canvas 2D sobre o jogo. Nenhuma alocação por quadro: mostradores e traçado estático são pré-renderizados em canvas offscreen.
+// Panel en pantalla: velocímetro, tacómetro, marcha, cronómetro de vuelta, última y mejor vuelta, estadísticas y minimapa con radar de curvas.
+// Cuatro lienzos 2D sobre el juego. Cero asignaciones por frame: relojes y trazado estático pre-renderizados.
 const HUD = {
   cg: null, ct: null, cs: null, cm: null,
   g: null, t: null, s: null, m: null,
@@ -13,7 +13,7 @@ const HUD = {
 };
 const HCH = '0123456789:.,-R';
 
-// atlas de algarismos: cada caractere centrado numa célula; números não "dançam"
+// Atlas numérico: caracteres centrados en celda para evitar oscilaciones
 function hudAtlas(px) {
   const c = document.createElement('canvas'), g = c.getContext('2d'), font = '600 ' + px + 'px "Helvetica Neue",Helvetica,Arial,sans-serif', n = HCH.length, w = new Int32Array(n), x = new Int32Array(n);
   g.font = font; let dw = 0, X = 0; for (let i = 0; i < 10; i++) dw = Math.max(dw, Math.ceil(g.measureText(HCH[i]).width));
@@ -37,7 +37,7 @@ function hudInit() {
   addEventListener('resize', hudLayout);
 }
 
-// tira com rótulos fixos e vãos para os números; devolve o canvas de fundo
+// Franja con etiquetas fijas para números; devuelve canvas de fondo
 function hudStrip(cv, labels, widths, units, At, px, o) {
   const dpr = devicePixelRatio || 1, f = document.createElement('canvas'), g = f.getContext('2d'), font = '600 ' + Math.round(px * 0.62) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif', pad = Math.round(px * 0.7), L = HUD.L;
   g.font = font; let X = pad; const xs = [];
@@ -50,14 +50,14 @@ function hudStrip(cv, labels, widths, units, At, px, o) {
   return f;
 }
 
-// Pré-renderiza a base visual do minimapa e traçado completo
+// Pre-renderiza la base visual del minimapa y trazado completo
 function hudBuildMap(W, Hh, r) {
   const H = HUD;
   const fc = H.bgMap = document.createElement('canvas');
   fc.width = W; fc.height = Hh;
   const g = fc.getContext('2d');
 
-  // Painel estético de vidro escuro fosco unificado
+  // Panel estético de cristal oscuro mate unificado
   g.beginPath();
   g.roundRect(0, 0, W, Hh, Math.round(r * 0.16));
   g.fillStyle = 'rgba(9, 11, 14, 0.72)';
@@ -170,10 +170,10 @@ function hudLayout() {
   const kmStep = maxKmh > 240 ? 40 : 20, kmMinor = kmStep / 2;
   dial(cx1, maxKmh, kmStep, kmMinor, 0, 'km/h'); dial(cx2, maxRpm, 1, 0.5, redRpm, 'rpm × 1000');
   const hb = H.hub = document.createElement('canvas'), hr = Math.round(r * 0.085); hb.width = hb.height = hr * 2; const hg = hb.getContext('2d'); hg.beginPath(); hg.arc(hr, hr, hr, 0, TAU); hg.fillStyle = '#16181b'; hg.fill(); hg.lineWidth = hr * 0.25; hg.strokeStyle = '#ff5a36'; hg.stroke();
-  L[6] = hr; L[7] = Math.round(cy + r * 0.3);                                   // raio do cubo; y dos números grandes
+  L[6] = hr; L[7] = Math.round(cy + r * 0.3);                                   // Radio de cubo; coordenada Y de números principales
   const g = H.g; g.setTransform(1 / 16, 0, 0, 1 / 16, 0, 0); g.lineCap = 'round'; g.lineWidth = Math.round(r * 0.034 * 16); g.strokeStyle = '#ff5a36';
 
-  // cronômetro (m:ss.cc) e estatísticas
+  // Cronómetro (m:ss.cc) y estadísticas
   const tw = B.w[0] * 5 + B.w[10] + B.w[11];
   const tLabels = (typeof I18N !== 'undefined') ? I18N.t('hud_timer_labels') : ['LAP', 'LAST', 'BEST'];
   const sLabels = (typeof I18N !== 'undefined') ? I18N.t('hud_stats_labels') : ['FPS', 'FRAME', 'GPU'];
@@ -181,7 +181,7 @@ function hudLayout() {
   H.bgS = hudStrip(H.cs, sLabels, [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   H.K.fill(-9);
 
-  // Configuração do minimapa (posicionado centralizado logo abaixo do cronômetro #ht)
+  // Configuración del minimapa (centrado bajo cronómetro #ht)
   if (H.cm) {
     const mW = Math.round(r * 4.2), mH = Math.round(r * 1.85);
     H.cm.width = mW; H.cm.height = mH;
@@ -197,9 +197,9 @@ function hudLayout() {
   }
 }
 
-// copia o caractere i do atlas para (x, y) em pixels (q = 16 no canvas dos mostradores, 1 nos outros); devolve a largura
+// Copia carácter del atlas a (x, y) en píxeles
 function hudCh(g, A, i, x, y, q) { const w = A.w[i]; g.drawImage(A.c, A.x[i], 0, w, A.h, x * q, y * q, w * q, A.h * q); return w; }
-// inteiro v alinhado à direita em n células, sem zeros à esquerda
+// Entero alineado a la derecha sin ceros precedentes
 function hudInt(g, A, v, n, x, y, q) { const w = A.w[0]; for (let k = n - 1; k >= 0; k--) { hudCh(g, A, v % 10, x + k * w, y, q); v = (v / 10) | 0; if (v === 0) break; } }
 // tempo em centésimos como m:ss.cc; negativo = sem tempo (-:--.--)
 function hudTime(g, A, cs, x, y) {
@@ -208,14 +208,14 @@ function hudTime(g, A, cs, x, y) {
   x += hudCh(g, A, no ? 13 : m, x, y, 1); x += hudCh(g, A, 10, x, y, 1); x += hudCh(g, A, no ? 13 : (s / 10) | 0, x, y, 1); x += hudCh(g, A, no ? 13 : s % 10, x, y, 1);
   x += hudCh(g, A, 11, x, y, 1); x += hudCh(g, A, no ? 13 : (c / 10) | 0, x, y, 1); hudCh(g, A, no ? 13 : c % 10, x, y, 1);
 }
-// valor com uma casa decimal (v10 = valor × 10) em NN,N; negativo = indisponível
+// Valor con un decimal en NN,N; negativo = no disponible
 function hudDec(g, A, v10, x, y) {
   const w = A.w[0]; if (v10 > 9999) v10 = 9999;
   if (v10 < 0) { hudCh(g, A, 13, x + w * 2, y, 1); hudCh(g, A, 13, x + w * 3 + A.w[12], y, 1); return; }
   hudInt(g, A, (v10 / 10) | 0, 3, x, y, 1); hudCh(g, A, 12, x + w * 3, y, 1); hudCh(g, A, v10 % 10, x + w * 3 + A.w[12], y, 1);
 }
 
-// Renderiza o radar de curva antecipada e a posição no minimapa
+// Renderiza el radar de curva anticipada y la posición en el minimapa
 function hudDrawMinimap() {
   const H = HUD, m = H.m, trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (!H.cm || !m || !H.bgMap || !trk || trk.N < 2) return;
@@ -385,7 +385,7 @@ function hudDrawMinimap() {
   m.restore();
 }
 
-// chamado a cada quadro do jogo: lê o estado (hudRead) e redesenha só o que mudou (hudDraw)
+// Invocado en cada frame: lee el estado (hudRead) y redibuja solo los cambios (hudDraw)
 function hudFrame() { hudRead(); hudDraw(); }
 function hudRead() {
   const V = HUD.V, L = HUD.L, v = VEH, mK = L[8] || 2000, mR = L[9] || 7000;
@@ -419,7 +419,7 @@ function hudDraw() {
   if (H.vis) hudDrawMinimap();
 }
 
-// estatísticas de desempenho (tecla H): média de meio segundo de quadros; RT[3] = intervalo do último quadro (ms)
+// Estadísticas de rendimiento (tecla H): promedio de frametimes (ms)
 function hudStatsFrame() {
   const H = HUD, a = H.acc; a[0] += RT[3]; a[1]++;
   if (a[0] < 500) return;

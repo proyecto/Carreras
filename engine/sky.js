@@ -1,9 +1,9 @@
 'use strict';
 // ---- 22_sky.js
-// Geração única das texturas de ruído e do céu; cor do sol; harmônicos esféricos do ambiente.
+// Generación única de texturas de ruido y cielo; color solar; armónicos esféricos ambientales.
 let SUN_EL = 17 * PI / 180, SUN_AZ = 180.5 * PI / 180;
 function atmSunColor(dirY) {
-  // mesma atmosfera do shader (atmos.wgsl): transmitância do sol até o chão
+  // Misma atmósfera que el shader (atmos.wgsl): transmitancia del sol hasta el suelo
   const RP = 6360e3, RA = 6440e3, o = RP + 40, n = 32;
   const b = o * dirY, cc = o * o - RA * RA, t = -b + Math.sqrt(b * b - cc), dt = t / n; let oR = 0, oM = 0, oO = 0;
   for (let i = 0; i < n; i++) { const s = (i + 0.5) * dt, h = Math.sqrt(o * o + s * s + 2 * o * s * dirY) - RP; oR += Math.exp(-h / 8000) * dt; oM += Math.exp(-h / 1300) * dt; oO += Math.max(0, 1 - Math.abs(h - 25000) / 15000) * dt; }
@@ -17,9 +17,9 @@ async function skyInit(progress) {
   SUN_AZ = ((sunCfg && sunCfg.azDeg != null) ? sunCfg.azDeg : 180.5) * PI / 180;
   const sunColEl = ((sunCfg && sunCfg.colorElDeg != null) ? sunCfg.colorElDeg : 14.5) * PI / 180;
   R.sun[0] = Math.cos(SUN_EL) * Math.cos(SUN_AZ); R.sun[1] = Math.sin(SUN_EL); R.sun[2] = Math.cos(SUN_EL) * Math.sin(SUN_AZ);
-  // cor do sol: transmitância da atmosfera como se o sol estivesse um pouco mais baixo (tom mais quente), com ganho artístico
+  // Color del sol: transmitancia atmosférica con tono cálido y realce artístico
   const sc = atmSunColor(Math.sin(sunColEl)); R.sunCol[0] = sc[0] * 1.5; R.sunCol[1] = sc[1] * 1.5; R.sunCol[2] = sc[2] * 1.5;
-  // ruído
+  // Ruido
   const nb = mkPost('noisebake', {}, ['rgba8unorm']);
   const ub = mkBuf(65 * 256, BU.U), ud = new Float32Array(65 * 64);
   for (let z = 0; z < 64; z++) { ud[z * 64] = (z + 0.5) / 64; ud[z * 64 + 1] = 0; } ud[64 * 64 + 1] = 1;
@@ -30,7 +30,7 @@ async function skyInit(progress) {
   for (let z = 0; z < 64; z++) { const p = enc.beginRenderPass({ colorAttachments: [{ view: V.noise3, depthSlice: z, loadOp: 'clear', storeOp: 'store' }] }); p.setPipeline(nbp); p.setBindGroup(0, nbg, [z * 256]); p.draw(3); p.end(); }
   dev.queue.submit([enc.finish()]);
   genMips(T.noise, 'rgba8unorm');
-  // céu, em faixas (para não travar a GPU num único comando longo)
+  // Cielo en franjas (para evitar timeout de GPU en comandos largos)
   const sb = mkPost('skybake', {}, ['rgba16float']);
   const su = mkBuf(32, BU.U, new Float32Array([R.sun[0], R.sun[1], R.sun[2], 0, 0.57, 0, 0, 0]));
   const sbg = bgOf(sb, 0, [su, V.noise3, V.noise, R.sLin]);
@@ -44,7 +44,7 @@ async function skyInit(progress) {
   }
 }
 function halfToFloat(h) { const s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 31, f = h & 1023; if (e === 0) return s * Math.pow(2, -14) * (f / 1024); if (e === 31) return f ? NaN : s * Infinity; return s * Math.pow(2, e - 15) * (1 + f / 1024); }
-// lê um mip do cubemap de ambiente e projeta em SH de ordem 2 (irradiância/π)
+// Lee mipmap del cubemap ambiental y proyecta en armónicos esféricos (SH) de orden 2 (irradiancia/π)
 async function computeSH() {
   const dev = G.dev, mip = 3, n = ENV_RES >> mip, bpr = Math.ceil(n * 8 / 256) * 256;
   const buf = dev.createBuffer({ size: bpr * n * 6, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });

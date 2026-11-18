@@ -1,22 +1,22 @@
 'use strict';
 // ---- 31_world.js
-// Cenário: terreno estático em quadtree (fino junto à pista, grosso longe) e a faixa da pista (asfalto, zebras, acostamento).
-// Tudo estático: nenhum LOD em tempo de execução, portanto nada "pula" à vista.
+// Escenario: terreno estático en quadtree (denso junto a la pista, grueso lejos) y cinta de pista (asfalto, pianos, arcén).
+// Todo estático: sin cambios bruscos de LOD en tiempo de ejecución.
 const WORLD = {
   active: !['test', 'car', 'placeholder'].includes(Q.get('scene') || 'game'),
-  line: null,            // afastamento lateral da trajetória por amostra (usa TRK.line se existir)
-  // trechos molhados: preenchidos a partir do circuito ativo (TRK.spec.wet) em worldBuild()
+  line: null,            // Desviación lateral de la trazada por muestra (usa TRK.line si existe)
+  // Tramos mojados definidos por el circuito activo
   wet: [],
   tvCams: [],            // preenchido em 32_props.js: {x, y, z, s} (posições sugeridas das câmeras de TV)
   stats: { tris: {}, ranges: {} },
-  cnt: new Int32Array(6),   // contadores acumulados [desenhos, triângulos] por tipo de passe (GBUF, SHADOW, CUBE) — só diagnóstico
-  canopyStart: 320, canopyEnd: 900,   // distância em que o chão de mata vira textura de copa
+  cnt: new Int32Array(6),   // Contadores de diagnóstico [draws, triángulos]
+  canopyStart: 320, canopyEnd: 900,   // Distancia en que el sotobosque transiciona a textura de copa
 };
-// Conjunto de faixas de índice de uma única malha, com esfera envolvente por faixa (culling por passe).
-// flags: 1 principal, 2 sombra, 4 cubo. maxDist: some além dessa distância da câmera (o shader deve ter terminado o fade antes).
+// Conjunto de rangos de índices con esfera envolvente para frustum culling por pass.
+// flags: 1 principal, 2 sombra, 4 cubemap. maxDist: distancia de desvanecimiento.
 class RangeSet {
   constructor(fam, bg3) { this.fam = fam; this.bg3 = bg3 || null; this.r = []; this.vb = null; this.ib = null; }
-  // registra como faixa os índices adicionados ao MeshBuilder desde i0
+  // Registra como rango los índices generados desde i0
   add(mb, i0, flags, maxDist) {
     if (mb.ni <= i0) return;
     let x0 = 1e9, y0 = 1e9, z0 = 1e9, x1 = -1e9, y1 = -1e9, z1 = -1e9; const f = mb.f32, ix = mb.idx;
@@ -143,7 +143,7 @@ function ribbonBuild() {
   // presença de zebra suavizada (rampa nas pontas)
   const sm = src => { const o = new Float32Array(N); for (let i = 0; i < N; i++) { let s = 0; for (let q = -2; q <= 2; q++) s += src[(i + q + N) % N]; o[i] = s / 5; } return o; };
   const kL = sm(TRK.kerbL), kR = sm(TRK.kerbR);
-  // zonas de frenagem (para as marcas de pneu pintadas no asfalto): onde a velocidade-alvo da trajetória cai
+  // Zonas de frenada (marcas de neumático en asfalto): donde cae la velocidad objetivo
   const brk = new Float32Array(N);
   if (typeof AI !== 'undefined' && AI.vt) {
     const t = new Float32Array(N);
@@ -185,7 +185,7 @@ function ribbonBuild() {
           let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
           const col = st.cols[c], d = st.side === 0 ? col.d : st.side * (hw + col.x);
           if (st.mat === 2) {
-            // acostamento: a normal vai da normal da pista (junto à zebra) à normal do terreno logo depois dele,
+            // Arcén: a normal vai da normal da pista (junto à zebra) à normal do terreno logo depois dele,
             // para a luz rasante não denunciar a emenda entre a faixa e o terreno
             const w = c === 3 ? 0 : c === 2 ? 0.55 : 1;
             if (w > 0) {

@@ -1,7 +1,7 @@
 'use strict';
 // ---- 02_mesh.js
-// Construtor de malhas procedurais (usado só na inicialização).
-// Vértice (36 bytes): pos f32x3 | normal snorm16x4 (w = peso livre, ex. balanço) | uv f32x2 | mat u8x4 | cor unorm8x4
+// Constructor de mallas procedurales (usado solo durante inicialización).
+// Vértice (36 bytes): pos f32x3 | normal snorm16x4 (w = peso libre, ej. balanceo viento) | uv f32x2 | mat u8x4 | color unorm8x4
 const VSTRIDE = 36;
 const VLAYOUT = {
   arrayStride: VSTRIDE, attributes: [
@@ -28,7 +28,7 @@ class MeshBuilder {
   mat(id, a, b, c) { this.m[0] = id; this.m[1] = a || 0; this.m[2] = b || 0; this.m[3] = c || 0; return this; }
   color(r, g, b, a) { this.c[0] = Math.round(sat(r) * 255); this.c[1] = Math.round(sat(g) * 255); this.c[2] = Math.round(sat(b) * 255); this.c[3] = Math.round(sat(a === undefined ? 1 : a) * 255); return this; }
   weight(w) { this.w = w; return this; }
-  // pilha de transformações (afins). det<0 inverte o sentido dos triângulos.
+  // Pila de transformaciones (afines). det < 0 invierte el devanado de los triángulos.
   push(mx) { this.xfStack.push(this.xf); this.xf = this.xf ? m4mul(m4(), this.xf, mx) : new Float32Array(mx); this._det(); return this; }
   pop() { this.xf = this.xfStack.pop(); this._det(); return this; }
   _det() { const m = this.xf; this.flipW = !!m && (m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5])) < 0; }
@@ -51,7 +51,7 @@ class MeshBuilder {
   }
   tri(a, b, c) { if (this.ni + 3 > this.icap) this._growI(); if (this.flipW) { const t = b; b = c; c = t; } this.idx[this.ni++] = a; this.idx[this.ni++] = b; this.idx[this.ni++] = c; }
   quadI(a, b, c, d) { this.tri(a, b, c); this.tri(a, c, d); }
-  // quad plano com normal de face; pontos em sentido anti-horário visto de fora
+  // Quad plano con normal de cara; vértices en sentido antihorario visto desde fuera
   quad(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, u0, v0, u1, v1) {
     const e1x = bx - ax, e1y = by - ay, e1z = bz - az, e2x = dx - ax, e2y = dy - ay, e2z = dz - az;
     const nx = e1y * e2z - e1z * e2y, ny = e1z * e2x - e1x * e2z, nz = e1x * e2y - e1y * e2x;
@@ -59,24 +59,24 @@ class MeshBuilder {
     const a = this.v(ax, ay, az, nx, ny, nz, u0, v0), b = this.v(bx, by, bz, nx, ny, nz, u1, v0), c = this.v(cx, cy, cz, nx, ny, nz, u1, v1), d = this.v(dx, dy, dz, nx, ny, nz, u0, v1);
     this.quadI(a, b, c, d);
   }
-  // caixa centrada (faces planas). uv em metros.
+  // Caja centrada (caras planas). UV en metros.
   box(cx, cy, cz, sx, sy, sz) {
     const x0 = cx - sx / 2, x1 = cx + sx / 2, y0 = cy - sy / 2, y1 = cy + sy / 2, z0 = cz - sz / 2, z1 = cz + sz / 2;
     this.quad(x1, y0, z0, x1, y1, z0, x1, y1, z1, x1, y0, z1, 0, 0, sy, sz); this.quad(x0, y0, z1, x0, y1, z1, x0, y1, z0, x0, y0, z0, 0, 0, sy, sz);
     this.quad(x0, y1, z0, x0, y1, z1, x1, y1, z1, x1, y1, z0, 0, 0, sz, sx); this.quad(x0, y0, z1, x0, y0, z0, x1, y0, z0, x1, y0, z1, 0, 0, sz, sx);
     this.quad(x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, 0, 0, sx, sy); this.quad(x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0, 0, 0, sx, sy);
   }
-  // caixa com cantos arredondados (superfície suave): raio r, seg subdivisões por canto
+  // Caja con esquinas redondeadas (superficie suave): radio r, seg subdivisiones por esquina
   rbox(cx, cy, cz, sx, sy, sz, r, seg) {
     seg = seg || 3; r = Math.min(r, sx / 2, sy / 2, sz / 2);
     const hx = sx / 2 - r, hy = sy / 2 - r, hz = sz / 2 - r, n = seg * 2 + 2;
-    // esfera cúbica deslocada: cada face é uma grade; direção normalizada * r + deslocamento do canto
+    // Esfera cúbica desplazada: cada cara es una cuadrícula; dirección normalizada * r + desplazamiento de esquina
     const face = (ax, ay, az, ux, uy, uz, vx, vy, vz) => {
       const base = this.nv;
       for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
         const ti = i < n / 2 ? (i / (n / 2 - 1)) * 0.5 : 0.5 + ((i - n / 2) / (n / 2 - 1)) * 0.5;
         const tj = j < n / 2 ? (j / (n / 2 - 1)) * 0.5 : 0.5 + ((j - n / 2) / (n / 2 - 1)) * 0.5;
-        // ângulo dentro do canto: metade inferior vai de -45°..0 e metade superior 0..45° colapsados nos cantos
+        // Ángulo en la esquina: mitad inferior de -45°..0 y mitad superior 0..45° colapsados en esquinas
         const su = i < n / 2 ? -1 : 1, sv = j < n / 2 ? -1 : 1;
         const au = i < n / 2 ? (1 - ti * 2) : (ti * 2 - 1), av = j < n / 2 ? (1 - tj * 2) : (tj * 2 - 1);
         const tu = Math.tan(au * PI / 4) * su, tv = Math.tan(av * PI / 4) * sv;
@@ -91,7 +91,7 @@ class MeshBuilder {
     face(1, 0, 0, 0, 1, 0, 0, 0, 1); face(-1, 0, 0, 0, 0, 1, 0, 1, 0); face(0, 1, 0, 0, 0, 1, 1, 0, 0);
     face(0, -1, 0, 1, 0, 0, 0, 0, 1); face(0, 0, 1, 1, 0, 0, 0, 1, 0); face(0, 0, -1, 0, 1, 0, 1, 0, 0);
   }
-  // cilindro/cone ao longo de Y local: de y0 (raio r0) a y1 (raio r1)
+  // Cilindro/cono a lo largo de Y local: de y0 (radio r0) a y1 (radio r1)
   cyl(cx, y0, cz, r0, y1, r1, seg, cap0, cap1) {
     const base = this.nv, sl = (r0 - r1) / (y1 - y0);
     for (let i = 0; i <= seg; i++) {
@@ -106,7 +106,7 @@ class MeshBuilder {
     };
     if (cap0) cap(y0, r0, -1); if (cap1) cap(y1, r1, 1);
   }
-  // revolução em torno do eixo X local: perfil = [[x, r], ...] (normais suaves; repita pontos para aresta viva)
+  // Revolución alrededor del eje X local: perfil = [[x, r], ...] (normales suaves; repetir puntos para arista viva)
   lathe(profile, seg, closedLoop) {
     const base = this.nv, n = profile.length;
     for (let j = 0; j < n; j++) {
@@ -121,8 +121,8 @@ class MeshBuilder {
     }
     for (let j = 0; j < n - 1; j++) for (let i = 0; i < seg; i++) { const a = base + j * (seg + 1) + i; this.quadI(a, a + 1, a + seg + 2, a + seg + 1); }
   }
-  // varre um perfil 2D fechado ou aberto ao longo de um caminho 3D. path: [[x,y,z],...]; prof: [[a,b],...] no plano (lado, cima)
-  // up: vetor de referência. closedPath fecha o laço. Normais do perfil suaves, a menos que hard=true (faces planas).
+  // Barre un perfil 2D cerrado o abierto a lo largo de una trayectoria 3D. path: [[x,y,z],...]; prof: [[a,b],...] en el plano (lateral, arriba)
+  // up: vector de referencia. closedPath cierra el bucle. Normales de perfil suaves, salvo hard=true (caras planas).
   sweep(path, prof, opts) {
     opts = opts || {}; const up = opts.up || [0, 1, 0], n = path.length, np = prof.length, closedP = !!opts.closedProfile, hard = !!opts.hard;
     const frames = [];
@@ -134,7 +134,7 @@ class MeshBuilder {
       frames.push([sx, sy, sz, ux, uy, uz]);
     }
     const cnt = closedP ? np : np - 1; const rows = opts.closed ? n + 1 : n;
-    const emit = (k0, k1) => { // tira para o segmento de perfil k0->k1 (hard) ou todos (suave)
+    const emit = (k0, k1) => { // franja para el segmento de perfil k0->k1 (hard) o todos (suave)
       const base = this.nv; const ks = hard ? [k0, k1] : null; const m = hard ? 2 : (closedP ? np + 1 : np);
       for (let r = 0; r < rows; r++) {
         const i = r % n, p = path[i], f = frames[i]; let dist = opts.vScale ? r * opts.vScale : r / (rows - 1);
@@ -150,14 +150,14 @@ class MeshBuilder {
     };
     if (hard) for (let k = 0; k < cnt; k++) emit(k, (k + 1) % np); else emit();
   }
-  // tubo redondo ao longo de um caminho
+  // Tubo cilíndrico a lo largo de una trayectoria
   tube(path, r, seg, opts) {
     const prof = []; for (let i = 0; i < seg; i++) { const a = i / seg * TAU; prof.push([Math.cos(a) * r, Math.sin(a) * r]); }
     this.sweep(path, prof, Object.assign({ closedProfile: true }, opts || {}));
   }
-  // Superfície paramétrica P=fn(u,v,out) em [u0,u1]x[v0,v1], com recorte por campo escalar field(u,v,P)<0 = manter
-  // (marching squares: borda nítida no nível zero). opts: nu,nv, field, flip, rim (profundidade da aba na borda do recorte),
-  // rimMat (fn chamada antes de emitir a aba), uv(u,v,P)->[u,v], eps (passo da diferença finita)
+  // Superficie paramétrica P=fn(u,v,out) en [u0,u1]x[v0,v1], con recorte por campo escalar field(u,v,P) < 0 = conservar
+  // (marching squares: borde nítido en nivel cero). opts: nu,nv, field, flip, rim (profundidad del reborde en el corte),
+  // rimMat (fn invocada antes de emitir el reborde), uv(u,v,P)->[u,v], eps (paso de diferencia finita)
   patch(fn, u0, u1, v0, v1, opts) {
     const nu = opts.nu, nv = opts.nv, field = opts.field, flip = !!opts.flip, eps = opts.eps || 1e-3;
     const du = (u1 - u0) / nu, dv = (v1 - v0) / nv, W = nu + 1;
@@ -179,7 +179,7 @@ class MeshBuilder {
     };
     if (field) for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) { const u = u0 + i * du, v = v0 + j * dv; fn(u, v, P); sv[j * W + i] = field(u, v, P); }
     const gv = (i, j) => { const k = j * W + i; if (vi[k] < 0) vi[k] = emit(u0 + i * du, v0 + j * dv); return vi[k]; };
-    // cruzamento na aresta entre (i,j) e vizinho (horizontal: i+1; vertical: j+1), refinado por bisseção no campo
+    // Cruce en arista entre (i,j) y vecino (horizontal: i+1; vertical: j+1), refinado por bisección
     const cross = (i, j, horiz) => {
       const k = j * W + i; const cache = horiz ? eh : ev; if (cache[k] >= 0) return cache[k];
       const sa = sv[k], sb = horiz ? sv[k + 1] : sv[k + W]; let ta = 0, tb = 1, fa = sa, fb = sb, t = sa / (sa - sb);
@@ -214,7 +214,7 @@ class MeshBuilder {
         const anx = s16[a * 18 + 6] / 32767, any = s16[a * 18 + 7] / 32767, anz = s16[a * 18 + 8] / 32767;
         const bnx = s16[b * 18 + 6] / 32767, bny = s16[b * 18 + 7] / 32767, bnz = s16[b * 18 + 8] / 32767;
         const ex = bx - ax, ey = by - ay, ez = bz - az;
-        // normal da aba = e × n (aponta para fora da região mantida). Posições já estão no espaço final: escreve direto.
+        // Normal del reborde = e × n (apunta hacia fuera). Las posiciones ya están en espacio final: escritura directa.
         const rx = ey * anz - ez * any, ry = ez * anx - ex * anz, rz = ex * any - ey * anx;
         const sx = this.xf; this.xf = null;
         const i0 = this.v(ax, ay, az, rx, ry, rz, 0, 0), i1 = this.v(ax - anx * d, ay - any * d, az - anz * d, rx, ry, rz, 0, 1);
@@ -224,7 +224,7 @@ class MeshBuilder {
       }
     }
   }
-  // espelha (em um plano de coordenada) os vértices/índices adicionados desde (v0,i0): axis 0=x,1=y,2=z
+  // Refleja (en plano de coordenadas) vértices/índices añadidos desde (v0,i0): axis 0=x,1=y,2=z
   mirror(v0, i0, axis) {
     const nvEnd = this.nv, niEnd = this.ni, off = nvEnd - v0;
     for (let i = v0; i < nvEnd; i++) {
@@ -234,7 +234,7 @@ class MeshBuilder {
     }
     for (let i = i0; i < niEnd; i += 3) { if (this.ni + 3 > this.icap) this._growI(); this.idx[this.ni++] = this.idx[i] + off; this.idx[this.ni++] = this.idx[i + 2] + off; this.idx[this.ni++] = this.idx[i + 1] + off; }
   }
-  // anexa outra malha (com a transformação atual)
+  // Añade otra malla (con la transformación actual aplicada)
   append(o) {
     const base = this.nv;
     for (let i = 0; i < o.nv; i++) {
@@ -252,7 +252,7 @@ class MeshBuilder {
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
     return { min: [x0, y0, z0], max: [x1, y1, z1], c: [cx, cy, cz], r: Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 };
   }
-  // envia para a GPU. Retorna {vb, ib, count, bounds}
+  // Sube los búferes a GPU. Devuelve {vb, ib, count, bounds}
   upload() {
     const vb = mkBuf(this.nv * VSTRIDE, BU.V, new Uint8Array(this.buf, 0, this.nv * VSTRIDE));
     const ib = mkBuf(this.ni * 4, BU.I, new Uint32Array(this.idx.buffer, 0, this.ni));

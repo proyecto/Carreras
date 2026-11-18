@@ -1,15 +1,15 @@
 'use strict';
 // ---- 01_gpu.js
-// Dispositivo WebGPU, utilitários de recurso e pré-processador de WGSL.
+// Dispositivo WebGPU, utilidades de recursos y preprocesador de WGSL.
 const Q = new URLSearchParams(location.search);
-const BUILD = [];           // construtores de cena registrados pelos outros arquivos: async fn(), executados em ordem por main()
+const BUILD = [];           // constructores de escena registrados por los demás módulos: async fn(), ejecutados en orden por main()
 const GAME = { ready: false, mode: Q.get('scene') || 'game', capture: Q.has('cap'), tick: null, init: null, minFrameMs: 0, gpuWorstMs: 0, ui: false };
 // Jogo aberto por uma pessoa (tela de início, painel, som) × ferramenta (captura, poses, teste, medição): as ferramentas de
 // trabalho/ usam ?cap, ?perf, ?replay ou rodam num navegador automatizado, e para elas nada muda — sem menu, sem painel.
 // ?ui=1 força o jogo completo (é como os testes de menu, entrada e som o abrem); ?ui=0 força o modo de ferramenta.
 GAME.ui = Q.has('ui') ? Q.get('ui') !== '0' : !(Q.has('cap') || Q.has('perf') || Q.has('replay') || Q.has('auto') || Q.has('scene') || navigator.webdriver);
-// Tempo em vetor tipado (escrita por quadro sem caixa na heap): RT[0] = tempo acumulado (s), RT[1] = dt do quadro renderizado, RT[2] = dt pedido ao jogo
-const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real do último quadro (ms), para as estatísticas
+// Tiempo en vector tipado (escritura por frame sin asignaciones en heap): RT[0] = tiempo acumulado (s), RT[1] = dt renderizado, RT[2] = dt solicitado al juego
+const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real del último frame (ms), para estadísticas
 const G = { dev: null, ctx: null, fmt: 'bgra8unorm', W: 0, H: 0, hasTS: false, canvas: null };
 
 async function gpuInit() {
@@ -17,8 +17,8 @@ async function gpuInit() {
   const ad = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
   if (!ad) throw new Error('Nenhum adaptador WebGPU.');
   const feats = [];
-  // 'timestamp-query' é pedido na medição de desempenho (?perf) e no jogo aberto por uma pessoa (benchmark e estatísticas
-  // mostram o tempo de GPU quando o navegador permite); ?nots desliga. Captura, poses e testes continuam sem o recurso.
+  // "timestamp-query" se solicita para medición de rendimiento (?perf) y juego interactivo
+  // (muestra el tiempo de GPU si el navegador lo permite); ?nots lo desactiva.
   for (const f of ['float32-filterable', 'rg11b10ufloat-renderable'].concat((Q.has('perf') || GAME.ui) && !Q.has('nots') ? ['timestamp-query'] : [])) if (ad.features.has(f)) feats.push(f);
   if (!ad.features.has('float32-filterable')) throw new Error('GPU sem float32-filterable.');
   G.hasTS = feats.includes('timestamp-query');
@@ -52,7 +52,7 @@ function mkBuf(size, usage, data) {
 }
 const BU = { V: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST, I: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST, U: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, S: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST };
 
-// Pré-processador: #include nome, #define NOME [valor], #ifdef/#ifndef/#else/#endif. Substitui macros por palavra inteira.
+// Preprocesador: #include nombre, #define NOMBRE [valor], #ifdef/#ifndef/#else/#endif. Sustituye macros por palabra completa.
 function wgslPP(name, defs) {
   defs = Object.assign({}, defs);
   const seen = {};
@@ -94,7 +94,7 @@ function mkShader(name, defs) {
   });
   return _modCache[key] = m;
 }
-// Pipeline de tela cheia (triângulo único) com layout automático.
+// Pipeline de pantalla completa (triángulo único) con layout automático.
 function mkFsPipe(name, defs, targets, opts) {
   const mod = mkShader(name, defs);
   return G.dev.createRenderPipeline({
@@ -110,7 +110,7 @@ function mkBG(pipe, idx, entries) {
 function mkBGL(layout, entries) {
   return G.dev.createBindGroup({ layout, entries: entries.map((r, i) => ({ binding: i, resource: (r instanceof GPUBuffer) ? { buffer: r } : (r && r.buffer instanceof GPUBuffer) ? r : r })) });
 }
-// descritor de passe reutilizável (nenhuma alocação por quadro: só troca .view)
+// Descriptor de render pass reutilizable (cero asignaciones por frame: solo conmuta .view)
 function mkPassDesc(nColor, depth, clear, label) {
   const d = { label, colorAttachments: [] };
   for (let i = 0; i < nColor; i++) d.colorAttachments.push({ view: null, loadOp: clear ? 'clear' : 'load', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } });
@@ -118,7 +118,7 @@ function mkPassDesc(nColor, depth, clear, label) {
   if (depth === 'ro') { const a = d.depthStencilAttachment; delete a.depthLoadOp; delete a.depthStoreOp; delete a.depthClearValue; a.depthReadOnly = true; }
   return d;
 }
-// gera mips por blit linear (uso na inicialização)
+// Genera mipmaps mediante blit lineal (uso durante inicialización)
 let _mipPipe = {};
 function genMips(tex, format, layers) {
   const dev = G.dev;

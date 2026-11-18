@@ -1,7 +1,7 @@
 'use strict';
 // ---- 32_props.js
-// Adereços do circuito: guard-rails, barreiras de pneus, muros e alambrados, pórtico, arquibancada, boxes, torre,
-// postos de fiscal, placas, painéis publicitários (marcas inventadas, letras desenhadas por traços), paddock.
+// Elementos de pista: guardarraíles, barreras de neumáticos, muros, vallas, semáforo de salida, gradas, boxes, torre,
+// puestos de comisarios, señalización, paneles de patrocinio y paddock.
 const PROPS = { sets: [], regions: {} };
 
 // ---------- letras desenhadas por caminhos (retas + curvas de Bézier) numa caixa 4x6; traço grosso de ponta redonda ----------
@@ -17,7 +17,7 @@ const GLY = {
   6: 'M3.6,5.4C2.6,6.6 .1,6.2 .1,2.8C.1,-.7 4,-.6 4,1.9C4,4.2 .6,4.2 .1,2.4', 7: 'M0,6L4,6L1.4,0', 8: 'M2,3.2C-.2,3.2 -.2,6 2,6C4.2,6 4.2,3.2 2,3.2C-.6,3.2 -.6,0 2,0C4.6,0 4.6,3.2 2,3.2Z',
   9: 'M.4,.6C1.4,-.6 3.9,-.2 3.9,3.2C3.9,6.7 0,6.6 0,4.1C0,1.8 3.4,1.8 3.9,3.6', '-': 'M.2,2.8L2.6,2.8', '.': 'M.55,.05L.65,.05',
 };
-// fonte proporcional: largura própria de cada letra (caixa 0..w) + entreletra; o espaço é mais curto que uma letra
+// Fuente proporcional con interletraje
 const GWID = { I: 2.2, 1: 3.0, ' ': 1.9, '-': 2.8, '.': 1.2, J: 3.7, L: 3.8, M: 4.7, W: 5.0, E: 3.9, F: 3.8, T: 4.0, C: 4.0, S: 3.95 };
 const gAdv = ch => (GWID[ch] === undefined ? 4.1 : GWID[ch]) + 1.05;
 function textW(txt, h) { let w = 0; for (const ch of txt) w += gAdv(ch); return (w - 1.05) * h / 6; }
@@ -39,9 +39,9 @@ function strokeText(g, txt, x, y, h, color, weight, skew) {
   }
   g.restore();
 }
-// Figuras de gente no atlas: R = sombreamento, G = máscara da camisa (tingida pela cor do vértice), B = máscara de cabelo/calça,
-// A = recorte. Desenhadas por caminhos em dois canvas (cor e máscara) e combinadas em pixels de alfa reto: a cor é dilatada
-// para fora do recorte, então a borda filtrada não escurece (sem contorno preto) e os mips mantêm a silhueta suave.
+// Figuras humanas en el atlas para público y comisarios
+// Canales: sombreado, máscara de vestimenta y recorte
+// Filtrado anti-aliasing con bordes limpios sin halos
 // kind 0 = sentada (160x224), kind 1 = em pé (104x288). Coordenadas lógicas; o canvas está em escala 2x.
 // ---------- gente pintada: figura humana desenhada por caminhos (curvas de Bézier, gradientes, sombras) ----------
 // Canais do desenho: R = sombreamento pintado (claro/escuro) | G = máscara da roupa de cima (recebe a tinta da instância)
@@ -230,14 +230,14 @@ function propsBuild() {
   const bg3 = G.dev.createBindGroup({ layout: fam.bgl3, entries: [{ binding: 0, resource: atlas.createView() }] });
   const S1 = new RangeSet(fam, bg3), S2 = new RangeSet(famDS, bg3);     // S1: sólidos (culling de face); S2: chapas de dupla face
   const mb = new MeshBuilder(1 << 18), md = new MeshBuilder(1 << 17);
-  // gente (público, equipes, fiscais): cartões que giram em torno do eixo vertical para encarar a câmera (família própria)
+  // Personajes (público, comisarios, mecánicos): carteles orientados verticalmente hacia la cámara
   const famP = mkFamily('crowd', { src: 'world_crowd', cull: 'none', noShadow: true });
   const SP = new RangeSet(famP, G.dev.createBindGroup({ layout: famP.bgl3, entries: [{ binding: 0, resource: atlas.createView() }] })), mp = new MeshBuilder(1 << 15);
   const fenceMB = new MeshBuilder(1 << 12), fenceR = [];
   const o5 = new Float64Array(5), mt = m4();
   const sI = s => (((Math.round(s / ds)) % N) + N) % N;
   const srOf = i => { const s = i * ds; return s > TRK.L / 2 ? s - TRK.L : s; };
-  // ponto do mundo em (s, d) com a altura do chão ali
+  // Punto del mundo en (s, d) con la altura del terreno
   const P = (s, d) => { trackPos(s, d, o5); const y = Math.abs(d) < hw + 1.5 ? o5[1] : hfAt(o5[0], o5[2]); return [o5[0], y, o5[2], o5[3], o5[4]]; };
   // matriz local→mundo em (s,d): X = tangente, Y = cima, Z = direita; yaw extra opcional
   const frame = (s, d, yaw, yOff) => { const p = P(s, d); let tx = p[3], tz = p[4]; if (yaw) { const c = Math.cos(yaw), sn = Math.sin(yaw), a = tx * c - tz * sn, b = tx * sn + tz * c; tx = a; tz = b; } return m4basis(m4(), tx, 0, tz, 0, 1, 0, -tz, 0, tx, p[0], p[1] + (yOff || 0), p[2]); };
@@ -310,7 +310,7 @@ function propsBuild() {
     joinNext = false; flush();
   }
 
-  // ================= barreiras de pneus =================
+  // ================= Barreras de neumáticos =================
   {
     const tyProf = []; for (let k = 0; k < 5; k++) { const y = k * 0.2; tyProf.push([y + 0.008, 0.262], [y + 0.05, 0.31], [y + 0.15, 0.31], [y + 0.192, 0.262]); }
     tyProf.push([1.0, 0.262], [1.0, 0.17], [0.86, 0.165]);
@@ -374,7 +374,7 @@ function propsBuild() {
   };
   const wallEnd = (s, d, hWall, hf, dir) => {
     const i0 = mb.ni; mb.push(frame(s, d));
-    // pilar de concreto + rampa de arremate descendo até o chão + poste final do alambrado
+    // Pilar de hormigón + rampa de remate hasta el suelo + poste final de valla
     mb.mat(3); col(mb, 0.52, 0.51, 0.49); mb.box(0, (hWall - 0.38) / 2, 0, 0.48, hWall + 0.62, 0.48);
     const X = dir * 2.4, z = 0.14;
     const q4 = (p, nx, ny, nz) => { const ex = p[3] - p[0], ey = p[4] - p[1], ez = p[5] - p[2], fx = p[9] - p[0], fy = p[10] - p[1], fz = p[11] - p[2]; if ((ey * fz - ez * fy) * nx + (ez * fx - ex * fz) * ny + (ex * fy - ey * fx) * nz >= 0) mb.quad(...p); else mb.quad(p[0], p[1], p[2], p[9], p[10], p[11], p[6], p[7], p[8], p[3], p[4], p[5]); };
@@ -388,7 +388,7 @@ function propsBuild() {
   wallEnd(pit.bldS0 - 2, pit.wallD, 1.05, 3.3, -1); wallEnd(pit.s1 - 38, pit.wallD, 1.05, 3.3, 1); wallEnd(TRK.stand.s0 - 22, -(hw + 3.4), 1.0, 4.4, -1); wallEnd(TRK.stand.s1 + 22, -(hw + 3.4), 1.0, 4.4, 1);
 
   // ================= construções na reta (coordenadas locais: u = s relativo à linha, y, v = d) =================
-  // converte os vértices adicionados desde v0 de (u, y, v) para o mundo, seguindo a inclinação suave da reta
+  // Convierte vértices locales al mundo siguiendo la rasante de la recta
   const toStraight = (m, v0) => {
     const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u - 60; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
   };
@@ -400,7 +400,7 @@ function propsBuild() {
   const SKIN = [[0.55, 0.38, 0.28], [0.36, 0.23, 0.16], [0.66, 0.48, 0.37], [0.24, 0.15, 0.1]];
   const HAIR = [[0.03, 0.025, 0.02], [0.12, 0.07, 0.03], [0.3, 0.28, 0.26], [0.75, 0.1, 0.08], [0.85, 0.85, 0.82]];
   const pick = a => a[Math.floor(rng() * a.length) % a.length];
-  // Figura em cartão: pé em (x, y, z) no sistema atual do construtor mp; a família 'crowd' gira o cartão para a câmera.
+  // Figura en cartelera orientada a cámara
   // O vértice leva o centro em pos e o canto em nrm (x = lateral em m, y = altura/2 em m), escritos crus (sem normalizar).
   const figure = (x, y, z, reg, hgt, shirt, ao) => {
     const r = REG[reg], hwid = hgt * (r[2] - r[0]) * 2048 / ((r[3] - r[1]) * 1024) * 0.5, flip = rng() < 0.5, ua = flip ? r[2] : r[0], ub = flip ? r[0] : r[2], k = 0.82 + rng() * 0.3;
@@ -414,7 +414,7 @@ function propsBuild() {
     [0.33, 0.2, 0.1], [0.13, 0.13, 0.15], [0.28, 0.3, 0.34], [0.36, 0.33, 0.27], [0.09, 0.12, 0.2], [0.45, 0.09, 0.07], [0.4, 0.33, 0.08], [0.16, 0.1, 0.07], [0.5, 0.5, 0.48]];
   // sentada: (u, y do assento, v do encosto); a pista fica em +v
   const sitter = (u, y, v, ao) => figure(u + (rng() - 0.5) * 0.26, y - 0.1 - rng() * 0.05, v + 0.2 + (rng() - 0.5) * 0.16, 'p' + Math.floor(rng() * 16) % 16, 0.98 * (0.84 + rng() * 0.28), pick(CROWD), ao);
-  // em pé em (u, y do chão, v)
+  // En pie en (u, y del suelo, v)
   const stander = (u, y, v, shirt, ao) => figure(u, y - 0.02, v, 's' + Math.floor(rng() * 3) % 3, 1.72 * (0.88 + rng() * 0.2), shirt, ao);
 
   // ---- pórtico ----
@@ -498,18 +498,18 @@ function propsBuild() {
         mb.quad(x1, hG - 0.05, vF - 0.1, x0, hG - 0.05, vF - 0.1, x0, hG - 0.4, vF - 1.25, x1, hG - 0.4, vF - 1.25);
         if (closed) { mb.mat(13); col(mb, 0.62, 0.64, 0.66); mb.quad(x1, 0, vF + 0.12, x0, 0, vF + 0.12, x0, hG, vF + 0.12, x1, hG, vF + 0.12); }
         else {
-          // bancada, armário de ferramentas e pilha de pneus ao fundo
+          // Banco de trabajo, carros de herramientas y neumáticos apilados al fondo
           mb.mat(2, 102, 76); col(mb, 0.5, 0.06, 0.05, 0.7); Bx(mb, x0 + 0.3, x0 + 1.5, 0, 1.0, vF + dp - 1.0, vF + dp - 0.3);
           col(mb, 0.25, 0.26, 0.28, 0.7); Bx(mb, x1 - 2.6, x1 - 0.3, 0.85, 0.92, vF + dp - 1.1, vF + dp - 0.3); Bx(mb, x1 - 2.5, x1 - 2.4, 0, 0.85, vF + dp - 1.0, vF + dp - 0.4); Bx(mb, x1 - 0.5, x1 - 0.4, 0, 0.85, vF + dp - 1.0, vF + dp - 0.4);
           mb.mat(4); col(mb, 0.02, 0.02, 0.02, 0.7); for (let q = 0; q < 2; q++) mb.cyl(x0 + 2.4 + q * 0.7, 0, vF + dp - 0.7, 0.32, 0.84, 0.32, 10, false, true);
-          // equipe: 2 a 3 pessoas na boca da garagem, pneus empilhados do lado de fora, carrinho de ferramentas
+          // Mecánicos de boxes y neumáticos de competición
           const nP = 2 + (rng() < 0.5 ? 1 : 0); const tm = [tc[0] * 0.55 + 0.1, tc[1] * 0.55 + 0.1, tc[2] * 0.55 + 0.1]; for (let q = 0; q < nP; q++) stander(x0 + 0.9 + rng() * (x1 - x0 - 1.8), 0.02, vF - 0.9 + rng() * 2.6, tm, 0.85);
           mb.mat(4); col(mb, 0.02, 0.02, 0.02, 0.9); mb.cyl(x1 - 0.55, 0, vF - 0.55, 0.3, 0.26 * (2 + Math.floor(rng() * 3)), 0.3, 10, false, true);
           mb.mat(2, 110, 60); col(mb, tc[0], tc[1], tc[2], 0.85); Bx(mb, x0 + 0.5, x0 + 1.25, 0.12, 0.95, vF - 0.9, vF - 0.4);
         }
       }
       const a = u0 + b0 * bw, c = u0 + b1 * bw;
-      // laje/marquise e parapeito de vidro
+      // Voladizo y barandilla de cristal de boxes
       mb.mat(3); col(mb, 0.55, 0.55, 0.53); Bx(mb, a, c, hS, hS + 0.3, vF - 1.6, vB);
       mb.mat(5); col(mb, 1, 1, 1); mb.quad(c, hS + 0.3, vF - 1.55, a, hS + 0.3, vF - 1.55, a, hS + 1.35, vF - 1.55, c, hS + 1.35, vF - 1.55, 0, 0, c - a, 1.05);
       mb.mat(2, 76, 204); col(mb, 0.6, 0.62, 0.64); Bx(mb, a, c, hS + 1.35, hS + 1.41, vF - 1.6, vF - 1.5);
@@ -581,7 +581,7 @@ function propsBuild() {
         mb.mat(3); col(mb, 0.5, 0.5, 0.48, ao);
         mb.quad(a, y, v, c, y, v, c, y + rise, v, a, y + rise, v);                    // espelho (voltado para a pista: +v)
         mb.quad(a, y + rise, v, c, y + rise, v, c, y + rise, v - run, a, y + rise, v - run);   // piso
-        // assentos: encosto + assento, padrão de cores por fileira/setor
+        // Asientos de gradas con patrón de color por sector
         const pc = seatCols[(Math.floor(r / 4) + sec) % 3];
         md.mat(8); col(md, pc[0], pc[1], pc[2], ao);
         md.quad(a, y + rise + 0.4, v - 0.5, c, y + rise + 0.4, v - 0.5, c, y + rise + 0.4, v - 0.84, a, y + rise + 0.4, v - 0.84, 0, 0, c - a, 0.34);
@@ -663,7 +663,7 @@ function propsBuild() {
   const at = (m, s, d, yaw, fn, yOff) => { m.push(frame(s, d, yaw, yOff)); fn(m); m.pop(); };
   // lado de fora de cada curva grande
   const corners = TRK.corners.filter(c => Math.abs(c.ang) >= 60);
-  // câmeras de TV (do circuito ativo, ou geradas automaticamente nas curvas): [s, lado, afastamento além da barreira, altura]
+  // Cámaras de TV fijas del circuito [s, lado, distancia, altura]
   const TVC = (TRK.spec && TRK.spec.tvTowers) ? TRK.spec.tvTowers : corners.map(c => [(c.s0 + c.s1) * 0.5, c.k > 0 ? -1 : 1, 6, 5.5]);
   // há câmera de TV deste lado cuja tomada passa por s? (a câmera filma de ~110 m antes dela até ~60 m depois)
   const camSees = (s, side) => TVC.some(c => { if (c[1] !== side) return false; let q = c[0] - s; q -= Math.round(q / TRK.L) * TRK.L; return q > -70 && q < 120; });
@@ -735,7 +735,7 @@ function propsBuild() {
         for (const x of [-1.2, 1.2]) for (const z of [-1.0, 1.0]) Bx(m, x - 0.05, x + 0.05, 0.5, 2.6, z - 0.05, z + 0.05);
         Bx(m, -1.2, 1.2, 2.5, 2.6, -side * 0.94, -side * 1.03); Bx(m, -0.03, 0.03, 1.46, 2.5, -side * 0.95, -side * 1.01);
         Bx(m, -0.45, -0.41, 0.5, 2.15, side * 0.94, side * 1.03); Bx(m, 0.41, 0.45, 0.5, 2.15, side * 0.94, side * 1.03);
-        // vidro da janela (lado da pista) e interior escuro: balcão e banco
+        // Cristal de cabina de comisario e interior
         m.mat(5); col(m, 1, 1, 1); if (side < 0) m.quad(-1.13, 1.46, 0.985, 1.13, 1.46, 0.985, 1.13, 2.5, 0.985, -1.13, 2.5, 0.985, 0, 0, 2.26, 1.04); else m.quad(1.13, 1.46, -0.985, -1.13, 1.46, -0.985, -1.13, 2.5, -0.985, 1.13, 2.5, -0.985, 0, 0, 2.26, 1.04);
         m.mat(2, 180, 0); col(m, 0.1, 0.1, 0.11, 0.6); Bx(m, -1.1, 1.1, 1.36, 1.42, -side * 0.5, -side * 0.93); Bx(m, 0.3, 0.75, 0.5, 1.0, -0.3, 0.15);
         m.mat(2, 100, 0); col(m, 0.7, 0.05, 0.04); m.cyl(-0.95, 0.5, side * 0.7, 0.07, 1.0, 0.07, 8, false, true);   // extintor
@@ -754,9 +754,9 @@ function propsBuild() {
       const q0 = mp.ni; mp.push(frame(s, d)); stander(1.95, 0.0, -side * 0.2, [0.85, 0.36, 0.04], 0.9); if (rng() < 0.6) stander(-2.0, 0.0, -side * 0.6, [0.85, 0.36, 0.04], 0.9); mp.pop(); SP.add(mp, q0, 1, 300);
     }
   }
-  // ---- torres de câmera de TV (andaime) + lista de câmeras sugeridas ----
+  // ---- Torres de cámaras de TV ----
   {
-    // câmera 0: em cima da viga do pórtico de largada (vê o carro chegar pela reta e sair, sem pilar na frente)
+    // Cámara 0: sobre el semáforo del pórtico de salida
     { const p = P(0, -1.2); WORLD.tvCams.push({ x: p[0], y: p[1] + 9.0, z: p[2], s: 0, side: 0 }); }
     for (const [s, side, off, h, kind] of TVC) {
       const i = sI(s), d = side * ((side < 0 ? TRK.barL[i] : TRK.barR[i]) + off), p = P(s, d);

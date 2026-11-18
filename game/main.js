@@ -1,6 +1,6 @@
 'use strict';
 // ---- 90_main.js
-// Inicialização, laço principal e API de captura.
+// Inicialización, bucle principal y API de captura.
 const msgEl = document.getElementById('msg');
 const setMsg = t => {
   if (!msgEl) return;
@@ -13,14 +13,14 @@ const setMsg = t => {
     msgEl.textContent = t;
   }
 };
-// chão de teste (asfalto com poças) para os modos de visualização isolada: ?scene=test, ?scene=car ...
+// Suelo de pruebas (asfalto) para modos de visualización aislada: ?scene=test, ?scene=car
 function buildTestGround() {
   const fam = R.families.test || mkFamily('test', { src: 'mat_test' });
   const set = new MeshSet(fam); R.drawables.push(set);
   const mb = new MeshBuilder(); mb.mat(4).color(0.2, 0.2, 0.2); mb.quad(-300, 0, 300, 300, 0, 300, 300, 0, -300, -300, 0, -300);
   set.add(mb.upload(), 0, 7); return set;
 }
-// mundo provisório (campo de alturas colorido por zona) para testar vegetação/adereços isolados: usado quando não há cenário real
+// Mundo provisional para pruebas aisladas
 function buildPlaceholderWorld() {
   const fam = R.families.test || mkFamily('test', { src: 'mat_test' });
   const set = new MeshSet(fam); R.drawables.push(set);
@@ -51,7 +51,7 @@ function buildTestScene() {
 }
 async function main() {
   try {
-    // Seleciona o coche e o circuito ativos (?car=<id>&track=<id>, última escolha salva ou primeiros registrados)
+    // Selecciona el coche y circuito activos (?car=<id>&track=<id>, última selección o predeterminados)
     const saved = GAME.ui ? loadSelection() : {};
     const activeCar = CARS.select(Q.get('car') || saved.car);
     const activeTrack = TRACKS.select(Q.get('track') || saved.track);
@@ -60,13 +60,13 @@ async function main() {
     setMsg(initialLoadingText);
     await gpuInit();
     await new Promise(r => setTimeout(r));
-    trackBuild(activeTrack); heightFieldBuild(); worldMapBuild(); aiBuild();   // aiBuild define TRK.line (trajetória) antes dos construtores de cena
+    trackBuild(activeTrack); heightFieldBuild(); worldMapBuild(); aiBuild();   // aiBuild define TRK.line (trazada ideal) antes de los constructores de escena
     rendererInit();
     await skyInit();
     await new Promise(r => setTimeout(r));
     if (GAME.mode === 'test') buildTestScene();
     if (GAME.mode === 'placeholder') { buildPlaceholderWorld(); GAME.init = () => { const p = trackPos(40, 0, new Float64Array(5)); setCamera(p[0] - 12, p[1] + 3, p[2] + 4, p[0] + 30, p[1] + 1, p[2], 0.9); R.cube.pos.set([p[0], p[1] + 1.2, p[2]]); }; }
-    // Constrói o coche ativo antes dos demais sistemas de cena
+    // Construye el coche activo antes del resto de la escena
     if (activeCar && typeof activeCar.build === 'function') {
       activeCar.build();
       if (GAME.mode === 'car') {
@@ -82,7 +82,7 @@ async function main() {
     renderStaticShadow();
     if (GAME.init) GAME.init();
     else { setCamera(6, 2.2, 7, 0, 0.6, 0, 0.9); R.cube.pos.set([0, 1.2, 0]); }
-    // aquece o cubemap de ambiente e calcula a luz ambiente (SH) a partir dele; duas rodadas para incluir o rebote
+    // Inicializa el cubemap ambiental y calcula armónicos esféricos solares y de entorno
     for (let k = 0; k < 2; k++) { for (let i = 0; i < 6; i++) renderFrame(); await computeSH(); }
     if (GAME.prewarm) {
       const worst = await GAME.prewarm(); await computeSH();
@@ -101,8 +101,8 @@ async function main() {
 }
 let _lastT = 0;
 function rafLoop(t) {
-  if (GAME.minFrameMs > 0 && _lastT && t - _lastT < GAME.minFrameMs) { requestAnimationFrame(rafLoop); return; }   // cadência de 60 Hz em monitor mais rápido
-  if (GAME.ui && uiFrame()) { _lastT = 0; requestAnimationFrame(rafLoop); return; }   // menu aberto: o jogo e o som ficam parados e nada é renderizado
+  if (GAME.minFrameMs > 0 && _lastT && t - _lastT < GAME.minFrameMs) { requestAnimationFrame(rafLoop); return; }   // Bloqueo a 60 Hz en monitores de alta frecuencia
+  if (GAME.ui && uiFrame()) { _lastT = 0; requestAnimationFrame(rafLoop); return; }   // Menú abierto: la simulación y sonido pausan
   let dt = _lastT ? (t - _lastT) / 1000 : 1 / 60; RT[3] = dt * 1000; if (dt > 0.05) dt = 0.05; _lastT = t;
   if (PERF.rec) perfFrameTimes(t);
   RT[2] = dt;
@@ -112,44 +112,44 @@ function rafLoop(t) {
   if (PERF.rec) perfJsTime();
   requestAnimationFrame(rafLoop);
 }
-// --- API de captura (usada pelos scripts em trabalho/) ---
+// --- API de captura y verificación ---
 let _cap2d = null;
 window.__cap = {
   ready: () => GAME.ready, error: () => GAME.error || G.lastErr || null,
   cam(ex, ey, ez, tx, ty, tz, fov) { if (typeof GS !== 'undefined') { GS.freeCam = true; GS.cut = true; } setCamera(ex, ey, ez, tx, ty, tz, fov); },
-  // avança n quadros com passo fixo e renderiza cada um
+  // Avanza n frames con dt fijo y renderiza cada uno
   frames(n, dt) {
     dt = dt || 1 / 60; RT[2] = dt;
     for (let i = 0; i < n; i++) {
-      if (GAME.ui && uiFrame()) continue;   // com ?ui=1&cap=1 (testes): o mesmo laço do jogo, a passo fixo — menu aberto não simula
+      if (GAME.ui && uiFrame()) continue;   // Bucle de pruebas con paso fijo
       RT[3] = dt * 1000; if (GAME.tick) GAME.tick(true); else { RT[1] = dt; RT[0] += dt; } if (!this.noRender) renderFrame();
       if (GAME.ui) uiAfter();
     }
     if (this.noRender) return;
-    // copia o quadro para um canvas 2D na mesma tarefa (o conteúdo do canvas WebGPU some depois de apresentado)
+    // Copia el frame a canvas 2D para captura
     if (!_cap2d) { _cap2d = document.createElement('canvas'); _cap2d.width = G.W; _cap2d.height = G.H; }
     _cap2d.getContext('2d').drawImage(G.canvas, 0, 0);
   },
   shot(type, q) { return _cap2d.toDataURL(type || 'image/png', q); },
-  // aplica a pose i e deixa o quadro pronto para shot()
+  // Aplica la pose i y prepara el frame
   pose(i) { poseApply(i); if (!_cap2d) { _cap2d = document.createElement('canvas'); _cap2d.width = G.W; _cap2d.height = G.H; } _cap2d.getContext('2d').drawImage(G.canvas, 0, 0); return POSES[i].nome; },
   poses() { return POSES.map(p => p.nome); },
-  // medição só de intervalo entre quadros (sem consultas de tempo de GPU): usada para comparar com/sem 'timestamp-query'
+  // Medición de intervalos entre frames
   rafLog(n) { const a = new Float32Array(n); let i = 0, last = 0; const f = t => { if (last) a[i++] = t - last; last = t; if (i < n) requestAnimationFrame(f); else window.__rafLog = Array.from(a); }; requestAnimationFrame(f); },
   perfStart() { perfStart(); }, perfReport() { return perfReport(); }, restart() { gameRestart(); },
-  // vista de cada câmera de TV para o ponto da pista 35 m antes dela (verificação de linha de visada)
+  // Vista de cámaras de TV hacia la pista
   tvView(i) { const o = i * 4, p = trackPos(GS.tvData[o] - 30, 0, new Float64Array(5)); GS.freeCam = true; GS.frozen = true; GS.cut = true; setCamera(GS.tvData[o + 1], GS.tvData[o + 2], GS.tvData[o + 3], p[0], p[1] + 0.8, p[2], 0.5); return GS.tvN; },
   cadencia() { return { piorVistaMs: GAME.gpuWorstMs, minFrameMs: GAME.minFrameMs, hz: GAME.minFrameMs > 0 ? 60 : 'monitor' }; },
-  // estado do jogo para os testes
-  // --- som: grava os 16 controles a cada quadro de 1/60 s e sintetiza a trilha fora do tempo real, da mesma simulação
+  // Estado del juego para pruebas
+  // Audio: procesa controles de simulación a 60 Hz
   somGravar(n) { SND.rec = new Int32Array(n * 16); SND.recN = 0; },
   somVolta(n) { this.somGravar(n); GS.frozen = false; GS.freeCam = false; GS.replayOn = true; gameRestart(); RT[2] = 1 / 60; for (let i = 0; i < n; i++) GAME.tick(true); return SND.recN; },
   somRender(mix, mudoDe, pausaDe) { return sndOffline(mix === undefined ? 63 : mix, mudoDe === undefined ? -1 : mudoDe, pausaDe === undefined ? -1 : pausaDe); },
   somPcm(i0, n) { const u = new Uint8Array(SND.pcm.buffer, i0 * 2, Math.min(n, SND.pcm.length - i0) * 2); let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); },
   somCtl() { return Array.from(SND.rec.subarray(0, SND.recN * 16)); },
-  // nível de pico do som em tempo real (só para os testes: liga um analisador na saída do sintetizador)
+  // Nivel pico de audio en tiempo real
   somNivel() { if (!SND.node) return null; if (!SND.an) { SND.an = SND.ctx.createAnalyser(); SND.an.fftSize = 2048; SND.node.connect(SND.an); SND.anBuf = new Float32Array(2048); } SND.an.getFloatTimeDomainData(SND.anBuf); let p = 0; for (const v of SND.anBuf) p = Math.max(p, Math.abs(v)); return p; },
-  // estado da interface para os testes
+  // Estado de la interfaz para pruebas
   ui() { return { ligada: GAME.ui, estado: GAME.ui ? Object.keys(ST)[UI.st] : null, menu: GAME.ui && UI.el.style.display !== 'none', painel: HUD.vis, stats: HUD.stats, mudo: SND.mute, som: SND.ctx ? SND.ctx.state : 'nenhum', somOk: SND.ok, somVia: SND.P ? 'AudioWorklet' : SND.node ? 'ScriptProcessor' : null, tempoAudio: SND.ctx ? SND.ctx.currentTime : 0, pose: UI.pose, bench: UI.bench, pad: UI.padN, replay: GS.replayOn, gpuTempo: G.hasTS, perfOn: PERF.on, gpuVivo: PERF.live[0] }; },
   state() { const V = VEH; return { rpm: V.rpm, thr: V.ctl[0], brk: V.ctl[1], keys: GS.keys, volta: LAP[3] === 1 ? V.time - LAP[0] : 0, ultima: LAP[1], melhor: LAP[2], voltas: V.laps, tempo: V.time, camPos: Array.from(R.cam.pos), camFwd: Array.from(R.cam.fwd), x: V.x, z: V.z, y: V.y, yaw: V.yaw, speed: Math.hypot(V.vx, V.vy), vx: V.vx, steer: V.steer, s: V.s, d: V.d, gear: V.gear, cam: GS.cam, lapS: V.lapS, off: V.offCount, hits: V.hits, tick: GS.tick60, zone: V.zone, brake: objParams(carObj().slotBody)[0], slip: Array.from(V.slip), particles: FX.pAlive, roll: V.roll, pitch: V.pitch, spin: V.spin[0] }; },
   dbg(name, scale, alpha) { setDebugView(name, scale, alpha); },

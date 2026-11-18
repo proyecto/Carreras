@@ -1,19 +1,19 @@
 'use strict';
 // ---- 10_track.js
-// Circuito original: traçado, elevação, zonas e altura do terreno (somente CPU; sem GPU).
-// Convenções: X leste, Z sul, Y para cima. Sentido horário. s = distância ao longo do eixo (m), d = afastamento lateral (m, + à direita).
+// Circuito: trazado, elevación, zonas y altura del terreno (CPU puro, sin GPU).
+// Convenciones: X este, Z sur, Y arriba. Sentido horario. s = distancia longitudinal (m), d = desviación lateral (m, + derecha).
 const TRK = {
   spec: null,
   N: 0, L: 0, ds: 1,
   x: null, z: null, y: null, tx: null, tz: null, k: null, bank: null, slope: null,
-  hw: 5.5,                 // meia largura do asfalto
-  kerbL: null, kerbR: null,   // 0..1 presença de zebra (lado esquerdo / direito)
-  gravL: null, gravR: null,   // profundidade da caixa de brita a partir da borda (0 = sem)
-  barL: null, barR: null,     // distância do eixo até a barreira (guard-rail / muro) em cada lado
-  tyreL: null, tyreR: null,   // 0/1 barreira de pneus à frente da barreira
+  hw: 5.5,                 // semiancho del asfalto
+  kerbL: null, kerbR: null,   // 0..1 presencia de pianos (lado izquierdo / derecho)
+  gravL: null, gravR: null,   // profundidad de la escapatoria de grava desde el borde (0 = sin grava)
+  barL: null, barR: null,     // distancia del eje a la barrera (guardarraíl / muro) en cada lado
+  tyreL: null, tyreR: null,   // 0/1 barrera de neumáticos delante del muro
   segs: [], corners: [],
   grid: null, gridX0: 0, gridZ0: 0, gridW: 0, gridH: 0, gridCell: 24,
-  // pit lane e construções (em coordenadas s,d relativas à reta principal; s negativo = antes da linha)
+  // Pit lane y edificaciones (coordenadas s,d respecto a recta principal)
   pit: { s0: -100, s1: 190, wallD: 7.6, laneD0: 8.6, laneD1: 17.0, bldS0: -62, bldS1: 78, bldD0: 17.6, bldD1: 31, padD1: 52 },
   stand: { s0: -75, s1: 75, d0: -15.5, d1: -36 },
   startS: -14, startD: -1.6,
@@ -31,9 +31,9 @@ function trackBuild(spec) {
   TRK.stand = Object.assign({ s0: -75, s1: 75, d0: -15.5, d1: -36 }, spec.stand || {});
   TRK.startS = spec.startS ?? -14;
   TRK.startD = spec.startD ?? -1.6;
-  // Segmentos: ['S', comprimento, elev] ou ['A', raio, ângulo° (+ direita), elev, nome]. Lw e Ln resolvidos para fechar o laço.
+  // Segmentos: ['S', longitud, elev] o ['A', radio, ángulo° (+ derecha), elev, nombre]. Lw y Ln ajustados para cerrar bucle.
   const def = spec.segments;
-  // resolve Lw, Ln: posição final é linear neles
+  // Resuelve Lw, Ln para cierre de bucle
   const walk = (Lw, Ln, emit) => {
     let x = -60, z = 0, th = 0, s = 0;
     for (const sg of def) {
@@ -60,7 +60,7 @@ function trackBuild(spec) {
     const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = -60 - p0[0], ez = 0 - p0[1], det = a * d - b * c;
     if (Math.abs(det) > 1e-6) { Lw = (ex * d - b * ez) / det; Ln = (a * ez - c * ex) / det; }
   }
-  // amostragem bruta a cada 0.5 m
+  // Muestreo preliminar cada 0.5 m
   const raw = []; const elevKeys = [];
   const total = walk(Lw, Ln, (sg, s0, L, x, z, th, k) => {
     TRK.segs.push({ type: sg[0], s0, s1: s0 + L, k, name: sg[4] || '', R: sg[0] === 'A' ? sg[1] : 0, ang: sg[0] === 'A' ? sg[2] : 0 });
@@ -73,14 +73,14 @@ function trackBuild(spec) {
     }
   })[2];
   TRK.Lw = Lw; TRK.Ln = Ln;
-  // suaviza (gaussiana periódica) para criar transições de curvatura
+  // Suavizado (gaussiana periódica) para transiciones de curvatura
   const M = raw.length, sm = new Array(M), SG = 14, KS = 42;
   for (let i = 0; i < M; i++) {
     let sx = 0, sz = 0, sw = 0;
     for (let j = -KS; j <= KS; j++) { const w = Math.exp(-0.5 * j * j / (SG * SG)), p = raw[(i + j + M * 4) % M]; sx += p[0] * w; sz += p[1] * w; sw += w; }
     sm[i] = [sx / sw, sz / sw];
   }
-  // reamostra em comprimento de arco uniforme (~1 m)
+  // Remuestreo en longitud de arco uniforme (~1 m)
   const cum = new Float64Array(M + 1);
   for (let i = 0; i < M; i++) { const p = sm[i], q = sm[(i + 1) % M]; cum[i + 1] = cum[i] + Math.hypot(q[0] - p[0], q[1] - p[1]); }
   const L = cum[M], N = Math.round(L), ds = L / N;
@@ -94,13 +94,13 @@ function trackBuild(spec) {
     const f = (t - cum[j]) / (cum[j + 1] - cum[j]), p = sm[j], q = sm[(j + 1) % M];
     X[i] = p[0] + (q[0] - p[0]) * f; Z[i] = p[1] + (q[1] - p[1]) * f;
   }
-  const scl = L / total; // comprimento suavizado difere pouco do nominal: reescala as posições s dos segmentos
+  const scl = L / total; // Reescalado de posiciones longitudinales s
   for (const sg of TRK.segs) { sg.s0 *= scl; sg.s1 *= scl; }
   for (let i = 0; i < N; i++) {
     const a = (i - 1 + N) % N, b = (i + 1) % N; let tx = X[b] - X[a], tz = Z[b] - Z[a]; const l = Math.hypot(tx, tz); TX[i] = tx / l; TZ[i] = tz / l;
   }
   for (let i = 0; i < N; i++) { const a = (i - 1 + N) % N, b = (i + 1) % N; K[i] = (TX[a] * TZ[b] - TZ[a] * TX[b]) / (2 * ds); }
-  // elevação: interpola chaves (fim de cada segmento) com cosseno e suaviza
+  // Elevación: interpolación de cotas por tramo y suavizado
   const ey = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     const s = i * ds / scl; let q = 0; while (q < elevKeys.length - 1 && elevKeys[q][0] < s) q++;
@@ -112,7 +112,7 @@ function trackBuild(spec) {
   const kb = F(); gs(K, kb, 6);
   const bankScale = spec.bankScale ?? 1.7, maxBank = spec.maxBank ?? 0.062;
   for (let i = 0; i < N; i++) { BK[i] = clamp(kb[i] * bankScale, -maxBank, maxBank); TRK.slope[i] = (Y[(i + 1) % N] - Y[(i - 1 + N) % N]) / (2 * ds); }
-  // zebras, brita e barreiras a partir dos segmentos em arco
+  // Pianos, grava y barreras calculadas por tramo
   const mark = (arr, s0, s1, val, ramp) => {
     const i0 = Math.floor(s0 / ds), i1 = Math.ceil(s1 / ds);
     for (let i = i0; i <= i1; i++) { const q = ((i % N) + N) % N; const e = ramp ? Math.min(1, (i - i0 + 1) / ramp, (i1 - i + 1) / ramp) : 1; arr[q] = Math.max(arr[q], val * (e * e * (3 - 2 * e))); }
@@ -131,21 +131,21 @@ function trackBuild(spec) {
     }
     TRK.corners.push(sg);
   }
-  // barreiras: padrão a 8.5 m da borda; atrás da brita; limitadas no lado interno de curvas fechadas
+  // Barreras: estándar a 8.5 m del borde; tras la grava; limitadas en lado interior
   for (let i = 0; i < N; i++) {
     const R = 1 / Math.max(1e-4, Math.abs(kb[i]));
     let l = hw + 8.5 + TRK.gravL[i] * 0.86, r = hw + 8.5 + TRK.gravR[i] * 0.86;
     if (kb[i] > 0) r = Math.min(r, Math.max(hw + 3.2, R * 0.55)); else l = Math.min(l, Math.max(hw + 3.2, R * 0.55));
     TRK.barL[i] = l; TRK.barR[i] = r;
   }
-  // reta principal: muro dos boxes à direita, alambrado da arquibancada à esquerda
+  // Recta principal: muro de boxes a la derecha, valla de gradas a la izquierda
   const sI = s => (((Math.round(s / ds)) % N) + N) % N;
   for (let s = TRK.pit.s0 - 40; s <= TRK.pit.s1 + 40; s++) {
     const i = sI(s), e = Math.min(1, (s - (TRK.pit.s0 - 40)) / 40, (TRK.pit.s1 + 40 - s) / 40);
     TRK.barR[i] = lerp(TRK.barR[i], TRK.pit.wallD, e); TRK.barL[i] = lerp(TRK.barL[i], hw + 3.4, e);
   }
   const tmp = F(); gs(TRK.barL, tmp, 5); TRK.barL.set(tmp); gs(TRK.barR, tmp, 5); TRK.barR.set(tmp);
-  // folga: a barreira não pode invadir a faixa de outro trecho do circuito (fica no máximo a meio caminho)
+  // Holgura: la barrera no puede invadir tramos adyacentes del circuito
   for (let side = -1; side <= 1; side += 2) {
     const bar = side < 0 ? TRK.barL : TRK.barR;
     for (let i = 0; i < N; i++) {
@@ -165,13 +165,13 @@ function trackBuild(spec) {
     const grav = side < 0 ? TRK.gravL : TRK.gravR;
     for (let i = 0; i < N; i++) { grav[i] = Math.min(grav[i], Math.max(0, bar[i] - hw - 5.2)); if (grav[i] < 3) grav[i] = 0; }
   }
-  // grade espacial de amostras para busca do ponto mais próximo
+  // Rejilla espacial de muestras para acelerar búsqueda por proximidad
   let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
   for (let i = 0; i < N; i++) { x0 = Math.min(x0, X[i]); x1 = Math.max(x1, X[i]); z0 = Math.min(z0, Z[i]); z1 = Math.max(z1, Z[i]); }
   TRK.bx0 = x0; TRK.bx1 = x1; TRK.bz0 = z0; TRK.bz1 = z1; TRK.cx = (x0 + x1) / 2; TRK.cz = (z0 + z1) / 2;
   const cell = TRK.gridCell, pad = 240; TRK.gridX0 = x0 - pad; TRK.gridZ0 = z0 - pad;
   TRK.gridW = Math.ceil((x1 - x0 + 2 * pad) / cell); TRK.gridH = Math.ceil((z1 - z0 + 2 * pad) / cell);
-  // para cada célula, guarda o índice da amostra mais próxima do centro da célula (semente da busca local)
+  // Semilla de búsqueda local por celda espacial
   TRK.grid = new Int32Array(TRK.gridW * TRK.gridH); TRK.gridDist = new Float32Array(TRK.gridW * TRK.gridH); TRK.cellList = new Array(TRK.gridW * TRK.gridH);
   const tmpL = [];
   for (let gz = 0; gz < TRK.gridH; gz++) for (let gx = 0; gx < TRK.gridW; gx++) {
@@ -180,23 +180,23 @@ function trackBuild(spec) {
     const c = gz * TRK.gridW + gx; TRK.grid[c] = best; TRK.gridDist[c] = Math.sqrt(bd); TRK.cellList[c] = tmpL.length ? Int32Array.from(tmpL) : null;
   }
 }
-// distância aproximada (limite inferior) do ponto ao eixo da pista; barato. Retorna 1e9 fora da grade.
+// Distancia aproximada del punto al eje de la pista
 function trackFarDist(x, z) {
   const gx = Math.floor((x - TRK.gridX0) / TRK.gridCell), gz = Math.floor((z - TRK.gridZ0) / TRK.gridCell);
   if (gx < 0 || gz < 0 || gx >= TRK.gridW || gz >= TRK.gridH) return 1e9;
   return TRK.gridDist[gz * TRK.gridW + gx] - TRK.gridCell * 0.7072;
 }
 
-// Localiza (s, d) do ponto (x,z). hint = índice de amostra próximo (ou -1 para busca global). out = [s, d, índice, fração]
-// (uso na geração; no laço do jogo use trackLocateQ, que não recebe números por argumento)
+// Localiza (s, d) del punto (x,z). hint = índice cercano (-1 para global). out = [s, d, idx, frac]
+// Uso durante generación procedural; trackLocateQ sin boxing para simulación
 const _loc = new Float64Array(4), _lq = new Float64Array(12);
 function trackLocate(x, z, hint, out) { _lq[0] = x; _lq[1] = z; trackLocateQ(hint, _lq); out[0] = _lq[2]; out[1] = _lq[3]; out[2] = _lq[4]; out[3] = _lq[5]; return out; }
-// Registrador q: entrada q[0]=x, q[1]=z; saída q[2]=s, q[3]=d, q[4]=índice, q[5]=fração
+// Registro q: entrada q[0]=x, q[1]=z; salida q[2]=s, q[3]=d, q[4]=índice, q[5]=fracción
 function trackLocateQ(hint, q) {
   const x = q[0], z = q[1];
   const N = TRK.N, X = TRK.x, Z = TRK.z; let best = 0, bd = 1e18;
   if (hint < 0) {
-    // busca global: usa a lista de candidatos da célula; fora da grade (ou longe), varre tudo
+    // Búsqueda espacial optimizada con fallback a barrido global
     const gx = Math.floor((x - TRK.gridX0) / TRK.gridCell), gz = Math.floor((z - TRK.gridZ0) / TRK.gridCell);
     const lst = (gx >= 0 && gz >= 0 && gx < TRK.gridW && gz < TRK.gridH) ? TRK.cellList[gz * TRK.gridW + gx] : null;
     if (lst) { for (let k = 0; k < lst.length; k++) { const i = lst[k], dx = X[i] - x, dz = Z[i] - z, d2 = dx * dx + dz * dz; if (d2 < bd) { bd = d2; best = i; } } }
@@ -204,7 +204,7 @@ function trackLocateQ(hint, q) {
   } else {
     for (let k = -24; k <= 24; k++) { const i = (hint + k + N * 2) % N, dx = X[i] - x, dz = Z[i] - z, d2 = dx * dx + dz * dz; if (d2 < bd) { bd = d2; best = i; } }
   }
-  // projeta no segmento vizinho
+  // Proyección en segmento vecino
   const tx = TRK.tx[best], tz = TRK.tz[best]; const along = (x - X[best]) * tx + (z - Z[best]) * tz;
   let i0 = best, f = along / TRK.ds;
   if (f < 0) { i0 = (best - 1 + N) % N; f += 1; }
@@ -213,9 +213,9 @@ function trackLocateQ(hint, q) {
   const ttx = TRK.tx[i0] + (TRK.tx[i1] - TRK.tx[i0]) * f, ttz = TRK.tz[i0] + (TRK.tz[i1] - TRK.tz[i0]) * f;
   q[2] = (i0 + f) * TRK.ds; q[3] = (x - px) * (-ttz) + (z - pz) * ttx; q[4] = i0; q[5] = f;
 }
-// interpola um array por amostra
+// Interpola un array por muestra
 function trkAt(arr, i0, f) { const i1 = (i0 + 1) % TRK.N; return arr[i0] + (arr[i1] - arr[i0]) * f; }
-// posição no mundo de (s,d) → out[0..2] (x,y,z) ; out[3..4] tangente
+// Posición en el mundo de (s,d) → out[0..2] (x,y,z); out[3..4] tangente
 function trackPos(s, d, out) {
   const N = TRK.N; let u = s / TRK.ds; u = ((u % N) + N) % N; const i0 = Math.floor(u), f = u - i0, i1 = (i0 + 1) % N;
   const tx = lerp(TRK.tx[i0], TRK.tx[i1], f), tz = lerp(TRK.tz[i0], TRK.tz[i1], f), l = Math.sqrt(tx * tx + tz * tz);
@@ -223,15 +223,15 @@ function trackPos(s, d, out) {
   out[0] = x - tz / l * d; out[2] = z + tx / l * d; out[1] = trackSurfY(i0, f, d); out[3] = tx / l; out[4] = tz / l;
   return out;
 }
-// perfil da zebra: rampa com dentes; x = distância além da borda (0..KERB_W)
+// Perfil de piano: rampa dentada; x = distancia más allá del borde
 function kerbProfile(x) { return x <= 0 || x >= KERB_W ? 0 : 0.012 + 0.045 * Math.sin(Math.min(1, x / (KERB_W * 0.82)) * PI * 0.5) * (x > KERB_W * 0.82 ? (KERB_W - x) / (KERB_W * 0.18) : 1); }
-// altura da superfície da faixa (asfalto + zebra + acostamento) em (amostra, lateral)
+// Cota de superficie (asfalto + piano + arcén) en (muestra, lateral)
 function trackSurfY(i0, f, d) {
   const y = trkAt(TRK.y, i0, f), b = trkAt(TRK.bank, i0, f), lim = TRK.hw + APRON;
   return y - clamp(d, -lim, lim) * b;
 }
-// ---------- terreno ----------
-// relevo natural (sem a pista): usa a função do circuito ativo (TRK.spec.naturalH) ou um relevo genérico suave
+// ---------- Terreno ----------
+// Relieve natural (sin la pista): usa la función del circuito activo o relieve base
 function naturalH(x, z) {
   if (TRK.spec && typeof TRK.spec.naturalH === 'function') return TRK.spec.naturalH(x, z, TRK.cx, TRK.cz);
   const dx = x - TRK.cx, dz = z - TRK.cz, r = Math.hypot(dx, dz);
@@ -329,7 +329,7 @@ function forestAt(x, z) {
     if (d < 0 && sr > TRK.stand.s0 - 25 && sr < TRK.stand.s1 + 25) clear = -TRK.stand.d1 + 14;
     m = smooth(clear, clear + 16, ad);
   }
-  // clareira em volta das torres de câmera de TV (a folhagem não pode tapar a lente)
+  // Claro alrededor de las torres de cámara de TV (el follaje no debe tapar la lente)
   if (typeof WORLD !== 'undefined' && WORLD.tvCams) for (let i = 0; i < WORLD.tvCams.length; i++) { const c = WORLD.tvCams[i], dx = x - c.x, dz = z - c.z, d2 = dx * dx + dz * dz; if (d2 < 15 * 15) return 0; }
   // clareiras naturais de baixa frequência (mais abertas dentro do circuito)
   const n = fbm(x * 0.0085 + 11.3, z * 0.0085 - 5.2, 3);

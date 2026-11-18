@@ -1,6 +1,6 @@
 'use strict';
 // ---- 44_fx.js
-// Efeitos: marcas de pneu (decalque em anel de quads) e fumaça/poeira (partículas em CPU, instanciadas). Tudo pré-alocado.
+// Efectos: marcas de neumáticos (calcomanías en quads) y humo/polvo (partículas instanciadas). Todo preasignado.
 const SK_N = 4096, PT_N = 900;
 const FX = {
   sk: new Float32Array(SK_N * 6 * 5), skHead: 0, skLo: 1e9, skHi: -1, skBuf: null, skPipe: null,
@@ -28,9 +28,9 @@ function fxInit() {
   R.transparents.push({ draw(pass) { if (!FX.pFam.pipe || !FX.pAlive) return; if (!FX.pBG) FX.pBG = fwdBindGroup(FX.pFam); pass.setPipeline(FX.pFam.pipe); pass.setBindGroup(3, FX.pBG); pass.setVertexBuffer(0, FX.pBuf); pass.draw(6, FX.pAlive); } });
 }
 function fxReset() { FX.sk.fill(0); FX.skLo = 0; FX.skHi = SK_N * 30; FX.skHead = 0; FX.active.fill(0); FX.p.fill(0); FX.pAlive = 0; FX.pNext = 0; FX.seed[0] = 7; }
-// inteiro pseudoaleatório 0..65535 (inteiros pequenos não vão para a heap)
+// Entero pseudoaleatorio 0..65535
 function fxRnd() { const s = FX.seed; let x = s[0]; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; s[0] = x; return (s[0] >>> 8) & 0xffff; }
-// por passo de física: estende as marcas e emite partículas nas rodas que derrapam
+// Por paso de física: extiende marcas y emite partículas en ruedas que derrapan
 function fxStep() {
   const V = VEH, L = FX.last;
   for (let i = 0; i < 4; i++) {
@@ -56,7 +56,7 @@ function fxStep() {
         }
       }
     } else FX.active[i] = 0;
-    // partículas
+    // Partículas
     const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
     const rate = hard ? (sl > 0.62 ? (sl - 0.62) * 1.0 * Math.min(1, speed * 0.1) : 0) : Math.min(1, speed / 14) * 0.3;
     for (let rep = 0; rep < 2; rep++) if (rate > 0 && fxRnd() < rate * (rep ? 0.6 : 1) * 65536) {
@@ -68,7 +68,7 @@ function fxStep() {
     }
   }
 }
-// por quadro: integra as partículas e envia os buffers alterados
+// Por frame: integra física de partículas y sube búferes modificados
 function fxFrame() {
   const dt = RT[1];
   if (FX.skHi > FX.skLo) { G.dev.queue.writeBuffer(FX.skBuf, FX.skLo * 4, FX.sk, FX.skLo, FX.skHi - FX.skLo); FX.skLo = 1e9; FX.skHi = -1; }

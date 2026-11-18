@@ -1,12 +1,12 @@
 'use strict';
 // ---- 40_vehicle.js
-// Física do veículo (sem biblioteca): modelo plano de 4 rodas com transferência de carga, elipse de atrito,
-// tração dianteira, câmbio automático, freio de mão, relevo/inclinação da pista e colisão com barreiras.
-// Passo fixo de 1/120 s. Nenhuma alocação durante a simulação.
+// Física de vehículos: modelo de 4 ruedas con transferencia de carga, elipse de rozamiento,
+// tracción delantera/trasera/total, transmisión automática/secuencial, freno de mano, peralte y colisiones.
+// Paso fijo a 120 Hz (1/120 s). Cero asignaciones de memoria durante simulación.
 const PHYS_DT = 1 / 120;
 const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512;
-// Entrada analógica do controle: VIN[0] acelerador 0..1, VIN[1] freio 0..1 (valem quando as teclas trazem K_PAD), VIN[2] direção -1..1 (K_PADS).
-// As teclas gravadas da volta roteirizada nunca trazem esses bits: a via digital fica exatamente como era.
+// Entradas analógicas del mando: VIN[0] acelerador 0..1, VIN[1] freno 0..1, VIN[2] dirección -1..1.
+// Registro digital de entradas idéntico para teclado y vueltas guiadas.
 const VIN = new Float64Array(3);
 const VP = {
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
@@ -18,24 +18,24 @@ const VP = {
   shiftUpRpm: 6250, shiftDownRpm: 5350, revLimitRpm: 6500, maxRpm: 6700, idleRpm: 900,
 };
 const VEH = {
-  x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // posição do CG no plano, direção, velocidades no corpo (frente, direita), guinada
+  x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // Posición del CG en el plano, orientación, velocidades locales (longitudinal, lateral) y guiñada
   steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
-  ax: 0, ay: 0,                                              // acelerações filtradas (corpo)
+  ax: 0, ay: 0,                                              // Aceleraciones filtradas en chasis
   roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
-  y: 0, gPitch: 0, gRoll: 0,                                 // altura e inclinação do chão sob o carro (filtradas)
+  y: 0, gPitch: 0, gRoll: 0,                                 // Altura e inclinación del suelo bajo el coche (filtradas)
   spin: new Float32Array(4), omega: new Float32Array(4), susp: new Float32Array(4),
-  slip: new Float32Array(4),                                 // intensidade de derrapagem por roda 0..1 (fumaça/marcas)
+  slip: new Float32Array(4),                                 // Intensidad de derrape por rueda 0..1 (humo y marcas de neumático)
   wx: new Float32Array(4), wy: new Float32Array(4), wz: new Float32Array(4), wzone: new Uint8Array(4), whint: new Int32Array(4).fill(-1),
   fz: new Float32Array(4), hint: -1, s: 0, d: 0, zone: 0, lapS: 0, lastS: 0, laps: 0, maxOff: 0, offCount: 0, hits: 0, time: 0, steps: 0,
-  ctl: new Float32Array(2),                                  // saída para o som: acelerador e freio efetivos do último passo
-  // estado anterior (para interpolar a renderização)
+  ctl: new Float32Array(2),                                  // Salida de audio: acelerador y freno efectivos del último paso
+  // Estado anterior para interpolación de render
   px: 0, pz: 0, pyaw: 0, py: 0, proll: 0, ppitch: 0, pheave: 0, pgPitch: 0, pgRoll: 0, psteer: 0, pspin: new Float32Array(4), psusp: new Float32Array(4),
 };
 const _vl = new Float64Array(4), _vp = new Float64Array(5);
-// posições locais das rodas (x frente, z direita): FL, FR, RL, RR
+// Posiciones locales de las ruedas (x avance, z anchura): FL, FR, RL, RR
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
 
-// Aplica os parâmetros físicos do coche ativo (CARS.active.physics) em VP, WLX e WLZ.
+// Aplica parámetros físicos del coche activo (CARS.active.physics) en VP, WLX y WLZ.
 function applyCarPhysics(car) {
   if (!car || !car.physics) return;
   VP.clA = 0.0;
@@ -45,13 +45,13 @@ function applyCarPhysics(car) {
   WLZ[0] = -VP.tw / 2; WLZ[1] = VP.tw / 2; WLZ[2] = -VP.tw / 2; WLZ[3] = VP.tw / 2;
 }
 
-function engineTorque(rpm) { // curva de torque (N·m) a partir de VP
+function engineTorque(rpm) { // Curva de par motor (N·m) a partir de VP
   const P = VP, x = rpm / 1000;
   const t = P.torqueBase + P.torquePeak * Math.sin(clamp((x - P.torquePeakStart) / P.torquePeakSpan, 0, 1) * PI) - Math.max(0, x - P.torqueDropRpm) * P.torqueDrop;
   return Math.max(0, t);
 }
-// consulta do chão sem números por argumento/retorno: entrada _gq[0]=x, _gq[1]=z; saída _gq[8]=altura; devolve a zona (inteiro).
-// wi = índice da roda (dica de busca em VEH.whint) ou -1 para o CG.
+// Consulta de cota de suelo sin boxing: entrada _gq[0]=x, _gq[1]=z; salida _gq[8]=altura; devuelve tipo de zona.
+// wi = índice de rueda (-1 para el centro de gravedad)
 const _gq = new Float64Array(12);
 function groundQ(wi) {
   const q = _gq, V = VEH;
@@ -70,7 +70,7 @@ function groundQ(wi) {
   }
   q[8] = y; return zone;
 }
-// versão de conveniência (geração/testes)
+// Versión de conveniencia para pruebas y utilidades
 function groundAt(x, z, wi) { _gq[0] = x; _gq[1] = z; _vl[3] = groundQ(wi); return _gq[8]; }
 const ZMU = [1.0, 0.96, 0.76, 0.60, 0.50, 0.95, 0.90], ZDRAG = [0, 0.005, 0.025, 0.12, 0.08, 0, 0];
 
@@ -88,7 +88,7 @@ function vehicleSavePrev() {
   const V = VEH; V.px = V.x; V.pz = V.z; V.pyaw = V.yaw; V.py = V.y; V.proll = V.roll; V.ppitch = V.pitch; V.pheave = V.heave; V.pgPitch = V.gPitch; V.pgRoll = V.gRoll; V.psteer = V.steer;
   V.pspin.set(V.spin); V.psusp.set(V.susp);
 }
-// amostra o chão nas 4 rodas; atualiza altura/inclinação do corpo (filtradas com fator k)
+// Muestrea cota de suelo en las 4 ruedas; actualiza balanceo y cabeceo del chasis
 function vehicleGround(k) {
   const V = VEH, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   for (let i = 0; i < 4; i++) {
@@ -130,9 +130,9 @@ function vehicleStep(keys) {
   const sTgt = sInProg * sMax;
   const sRate = ((keys & K_PADS) ? 2.8 + 6.0 * sMax : sIn !== 0 && Math.sign(sTgt - V.steer) === Math.sign(sIn) ? 2.2 + 3.0 * sMax : 3.8 + 2.0 * sMax) * dt;
   V.steer += Math.min(sRate, Math.max(-sRate, sTgt - V.steer));
-  // --- marcha, motor, ré
+  // --- Transmisión, régimen de motor y marcha atrás
   let reverse = false, throttle = thr, brake = brk;
-  if (V.gear === 0) { // ré engatada
+  if (V.gear === 0) { // Marcha atrás engranada
     reverse = true; throttle = brk; brake = thr;
     if (thr && V.vx > -0.5) { V.gear = 1; reverse = false; throttle = thr; brake = brk; }
   } else if (brk && !thr && V.vx < 0.6) { V.gear = 0; reverse = true; throttle = brk; brake = 0; }
@@ -145,21 +145,21 @@ function vehicleStep(keys) {
     else if (V.gear > 1 && Math.abs(wheelSpd * P.gears[V.gear - 2] * P.final) * 9.5493 < P.shiftDownRpm) V.gear--;
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
-  const rpmE = Math.min(P.maxRpm, Math.max(P.idleRpm, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
+  const rpmE = Math.min(P.maxRpm, Math.max(P.idleRpm, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // Deslizamiento de embrague en salida desde parado
   V.rpm += (rpmE - V.rpm) * 0.25;
   const ex = rpmE / 1000, ek = (ex - P.torquePeakStart) / P.torquePeakSpan, eT = P.torqueBase + P.torquePeak * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > P.torqueDropRpm ? (ex - P.torqueDropRpm) * P.torqueDrop : 0);   // = engineTorque(rpmE), embutido
-  let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // torque total nas rodas dianteiras
+  let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // Par total transmitido a los ejes
   if (rpm > P.revLimitRpm) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
   // Sistema de control de tracción (TCS) activo para teclado / competición: modula el exceso de par al límite de agarre
   const maxDriveGrip = (P.driveF === 1.0 ? (V.fz[0] + V.fz[1]) : P.driveF === 0.0 ? (V.fz[2] + V.fz[3]) : (V.fz[0] + V.fz[1] + V.fz[2] + V.fz[3])) * P.mu * 1.08;
   const maxTdrive = maxDriveGrip * P.R;
   if (Tdrive > maxTdrive) Tdrive = maxTdrive;
-  Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // freio-motor
-  // --- carga vertical por roda (peso estático + transferência longitudinal/lateral + downforce aerodinâmico)
+  Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // Freno motor
+  // --- Carga vertical por rueda (peso estático + transferencia longitudinal/lateral + carga aerodinámica)
   const W = P.m * g, dFx = P.m * V.ax * P.h / P.L, dFy = P.m * V.ay * P.h / P.tw;
   const cosg = Math.cos(V.gPitch);
-  // Downforce aerodinâmico: F_down = 0.5 * rho * clA * v^2 (repartido entre os eixos dianteiro e traseiro)
+  // Downforce aerodinámico: F_down = 0.5 * rho * clA * v^2 (repartido entre ejes delantero y trasero)
   const aeroDown = 0.5 * 1.2 * (P.clA || 0) * V.vx * V.vx;
   const aSplit = P.aeroSplitF !== undefined ? P.aeroSplitF : 0.40;
   const dFzAeroF = aeroDown * aSplit * 0.5;
@@ -168,15 +168,15 @@ function vehicleStep(keys) {
   V.fz[1] = Math.max(60, (W * P.b / P.L * cosg - dFx) * 0.5 - dFy * 0.56 + dFzAeroF);
   V.fz[2] = Math.max(60, (W * P.a / P.L * cosg + dFx) * 0.5 + dFy * 0.44 + dFzAeroR);
   V.fz[3] = Math.max(60, (W * P.a / P.L * cosg + dFx) * 0.5 - dFy * 0.44 + dFzAeroR);
-  // --- forças dos pneus
+  // --- Fuerzas de neumáticos (curvas de fricción Pacejka)
   let Fx = 0, Fy = 0, Mz = 0; const cs = Math.cos(V.steer), sn = Math.sin(V.steer);
   const lw0 = Math.min(1, Math.max(0, (speed - 0.4) / 1.8));
   const lowW = (lw0 * lw0 * (3 - 2 * lw0));
   for (let i = 0; i < 4; i++) {
     const front = i < 2, zone = V.wzone[i], mu = P.mu * ZMU[zone], cap = mu * V.fz[i];
-    // velocidade do ponto de contato no referencial do corpo
+    // Velocidad del parche de contacto en coordenadas del chasis
     const vxw = V.vx - V.r * WLZ[i], vyw = V.vy + V.r * WLX[i];
-    // no referencial da roda
+    // En coordenadas de la rueda
     const vl = front ? vxw * cs + vyw * sn : vxw, vt = front ? -vxw * sn + vyw * cs : vyw;
     // longitudinal: demanda de tração/freio limitada pelo atrito
     let fxd = 0, locked = false, spinning = false;
@@ -226,14 +226,14 @@ function vehicleStep(keys) {
   V.ax += (axb - V.ax) * 0.18; V.ay += (ayb - V.ay) * 0.18;
   const c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   V.x += (V.vx * c - V.vy * s) * dt; V.z += (V.vx * s + V.vy * c) * dt; V.yaw += V.r * dt;
-  // chão e colisão
+  // Contacto con suelo y colisión con barreras
   vehicleGround(0.35);
   vehicleCollide();
-  // movimento da carroceria sobre a suspensão: rolagem nas curvas, mergulho na freada, agachamento na arrancada
+  // Cinemática de la carrocería sobre la suspensión: balanceo lateral, hundimiento en frenada y cabeceo
   const kR = 78, cR = 9.5; const rollT = Math.min(0.062, Math.max(-0.062, V.ay * 0.0058)), pitchT = Math.min(0.03, Math.max(-0.03, -V.ax * (V.ax < 0 ? 0.0034 : 0.003)));
   V.rollV += ((rollT - V.roll) * kR - V.rollV * cR) * dt; V.roll += V.rollV * dt;
   V.pitchV += ((pitchT - V.pitch) * kR * 1.15 - V.pitchV * cR) * dt; V.pitch += V.pitchV * dt;
-  // vibração nas zebras / fora da pista
+  // Vibración en pianos y fuera de pista
   let rough = 0; for (let i = 0; i < 4; i++) rough += V.wzone[i] === ZONE.KERB ? 0.5 : (V.wzone[i] === ZONE.GRAVEL || V.wzone[i] === ZONE.ROUGH || V.wzone[i] === ZONE.GRASS) ? 1 : 0;
   const hT = rough > 0 ? Math.sin(V.time * 61) * 0.004 * rough * Math.min(1, Math.max(0, speed / 8)) : 0;
   V.heaveV += ((hT - V.heave) * 220 - V.heaveV * 14) * dt; V.heave += V.heaveV * dt;

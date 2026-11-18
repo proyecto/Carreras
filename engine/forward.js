@@ -1,6 +1,6 @@
 'use strict';
 // ---- 23_forward.js
-// Famílias diretas (passe de transparentes sobre o HDR, profundidade só leitura): vidro, partículas.
+// Familias directas (pase de transparentes sobre HDR, profundidad solo lectura): cristal, partículas.
 // def: { src (define VIn, vert(), shade()), blend, defs, buffers, cull, topology }
 function mkFwdFamily(name, def) {
   const fam = { name, def, pipe: null };
@@ -17,12 +17,12 @@ function mkFwdFamily(name, def) {
   }).then(p => { fam.pipe = p; }));
   return fam;
 }
-// bind group de iluminação (grupo 3) compartilhado pelas famílias diretas
+// Bind group de iluminación (grupo 3) compartido por las familias directas
 function fwdBindGroup(fam) {
   const V = R.view;
   return G.dev.createBindGroup({ layout: fam.bgls[3], entries: [{ binding: 0, resource: V.env }, { binding: 1, resource: V.shadow }, { binding: 2, resource: V.shadowS }, { binding: 3, resource: R.sCmp }, { binding: 4, resource: V.depth }] });
 }
-// Conjunto de vidros: cada malha é desenhada duas vezes (multiplica, depois soma).
+// Conjunto de cristales: cada malla se dibuja dos veces (multiplica fondo, luego suma reflejos).
 class GlassSet {
   constructor() {
     this.mul = mkFwdFamily('glassMul', { src: 'glass', defs: { GLASS_MUL: '' }, blend: { color: { srcFactor: 'dst', dstFactor: 'zero' }, alpha: { srcFactor: 'zero', dstFactor: 'one' } } });

@@ -44,8 +44,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
 
   let tx = textureSample(tAtlas, sLin, uv);
 
-  if (id == 24u) {
-    // Cubiertas transparentes de policarbonato de ópticas delanteras y traseras (deja ver reflectores 3D)
+  if (id == 24u || id == 25u) {
+    // Cubiertas transparentes de policarbonato de ópticas y cristales en malla de carrocería (evita velo blanco plano)
     discard;
   } else if (id == 26u) {
     // Carrocería Manthey Racing Grello (#91 DTM/N24) con laca brillante y color saturado
@@ -55,8 +55,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
     s.rough = 0.16;
     s.coat = 0.85;
     s.ao = smoothstep(0.05, 0.45, p.y) * 0.35 + 0.65;
-  } else if (id == 52u || id == 67u || id == 59u || id == 34u || id == 57u) {
-    // Cockpit GT3: fibra de carbono mate, jaula antivuelco FIA y tapicería oscura
+  } else if (id == 52u || id == 67u || id == 59u || id == 34u || id == 57u || id == 35u || id == 48u || id == 56u || id == 58u || id == 60u || id == 61u || id == 62u || id == 63u || id == 64u || id == 65u || id == 71u || id == 72u || id == 73u || id == 74u || id == 75u || id == 76u || id == 77u || id == 78u || id == 79u || id == 80u || id == 81u || id == 82u || id == 83u || id == 84u || id == 85u || id == 86u || id == 87u || id == 88u || id == 89u) {
+    // Cockpit GT3: habitáculo interior, fibra de carbono mate, baquet de carreras, jaula antivuelco FIA y mampara
     s.albedo = vec3f(0.045, 0.045, 0.05);
     s.metal = 0.10;
     s.rough = 0.70;
@@ -73,17 +73,23 @@ fn surf(in: V2F, ff: bool) -> Surface {
     s.metal = 0.50;
     s.rough = 0.20;
     s.coat = 0.80;
-  } else if (id == 20u || id == 32u) {
-    // Faros Porsche LED Matrix (reflectores cromados, óptica y lentes 3D)
-    s.albedo = tx.rgb;
-    s.metal = 0.85;
-    s.rough = 0.14;
-    s.coat = 0.60;
-    s.emissive = 0.0;
+  } else if (id == 20u) {
+    // Proyectores LED Matrix Porsche (lentes y óptica oscura)
+    s.albedo = vec3f(0.08, 0.08, 0.095);
+    s.metal = 0.90;
+    s.rough = 0.12;
+    s.coat = 0.90;
+    s.emissive = 0.15;
+  } else if (id == 32u) {
+    // Reflectores cromados y bisel frontal de los faros
+    s.albedo = vec3f(0.85, 0.86, 0.88);
+    s.metal = 0.95;
+    s.rough = 0.08;
+    s.coat = 0.90;
   } else if (id == 18u) {
     // DRL diurnos 4 puntos LED Porsche
-    s.albedo = tx.rgb;
-    s.emissive = 0.35;
+    s.albedo = vec3f(0.95, 0.97, 1.0);
+    s.emissive = 0.75;
     s.rough = 0.10;
   } else if (id == 17u || id == 19u || id == 27u) {
     // Franja de luz LED trasera continua Porsche
@@ -95,7 +101,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     s.albedo = tx.rgb;
     s.metal = 0.15;
     s.rough = 0.35;
-  } else if (id == 30u || id == 50u || id == 53u || id == 68u || id == 69u) {
+  } else if (id == 30u || id == 50u || id == 53u || id == 68u) {
     // Fibra de carbono vista (techo, branquias capó, alerón trasero)
     s.albedo = vec3f(0.045, 0.045, 0.05);
     s.metal = 0.08;
@@ -115,7 +121,7 @@ function loadAtlas() {
   const W = 2048, H = 2048;
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 7 });
   const initData = new Uint8Array(W * H * 4);
-  initData.fill(220);
+  initData.fill(40);
   G.dev.queue.writeTexture({ texture: tex }, initData, { bytesPerRow: W * 4 }, [W, H]);
 
   if (typeof Image !== 'undefined') {
@@ -202,6 +208,7 @@ const CAR = {
 
     const ngV = gV.length / 9;
     for (let i = 0; i < ngV; i++) {
+      gl.mat(gV[i*9 + 8] == 18 ? 1 : 0);
       gl.v(gV[i*9], gV[i*9+1], gV[i*9+2], gV[i*9+3], gV[i*9+4], gV[i*9+5], gV[i*9+6], gV[i*9+7]);
     }
     for (let i = 0; i < gI.length; i += 3) gl.tri(gI[i], gI[i+1], gI[i+2]);

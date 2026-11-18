@@ -1,0 +1,21 @@
+{
+  "name": "carreras",
+  "version": "2.0.0",
+  "description": "Simulador de carreras WebGPU de alto rendimiento, cero dependencias de runtime.",
+  "main": "index.html",
+  "scripts": {
+    "test": "node tests/run_all.js",
+    "test:cars": "node tests/test_cars.js",
+    "test:tracks": "node tests/test_tracks.js",
+    "test:physics": "node tests/test_physics.js"
+  },
+  "keywords": [
+    "webgpu",
+    "racing-simulator",
+    "physics",
+    "pacejka",
+    "zero-allocation"
+  ],
+  "author": "Google Deepmind / Antigravity",
+  "license": "MIT"
+}

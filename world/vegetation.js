@@ -1,9 +1,9 @@
 'use strict';
 // ---- 33_veg_a_atlas.js
-// Vegetação — atlas de folhagem gerado por código (caminhos em canvas 2D), com mips que preservam a cobertura do alfa.
+// Vegetación — atlas de follaje procedural generado por canvas 2D con mipmaps de cobertura alfa.
 // 8 ladrilhos (4x2): 0 ramo de folhas largas | 1 ramo denso de folhas pequenas | 2 folha de palmeira | 3 fronde de samambaia
 //                            4 folha palmada grande  | 5 tufo de capim               | 6 ramo ralo         | 7 folhas grandes brilhantes (arbusto)
-const VEG_TS = 1024, VEG_TW = 4, VEG_TH = 2;   // ladrilhos de 1024² (o desenho é feito em coordenadas de 512 e escalado)
+const VEG_TS = 1024, VEG_TW = 4, VEG_TH = 2;   // Baldosas de 1024x1024 (diseño vectorial sobre canvas 2D)
 function vegAtlasBuild() {
   const TS = VEG_TS, W = TS * VEG_TW, H = TS * VEG_TH;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -11,13 +11,13 @@ function vegAtlasBuild() {
   const rnd = mkRng(90210);
   const rr = (a, b) => a + (b - a) * rnd();
   const hsl = (h, s, l, a) => `hsla(${h.toFixed(1)},${s.toFixed(1)}%,${l.toFixed(1)}%,${a === undefined ? 1 : a})`;
-  // folha simples ao longo de +x: comprimento len, meia largura wid
+  // Hoja individual a lo largo de +x: longitud len, semiancho wid
   const leaf = (x, y, ang, len, wid, hue, sat, lig, tipk) => {
     g.save(); g.translate(x, y); g.rotate(ang);
     const k = tipk || 0.72;
     g.fillStyle = hsl(hue, sat, lig);
     g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(len * 0.25, -wid * 1.15, len * k, -wid * 0.9, len, 0); g.bezierCurveTo(len * k, wid * 0.9, len * 0.25, wid * 1.15, 0, 0); g.fill();
-    // metade mais clara (lado iluminado) e nervuras
+    // Semiplano iluminado y nervadura central
     g.fillStyle = hsl(hue + 6, sat + 4, lig + 7, 0.55);
     g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(len * 0.25, -wid * 1.15, len * k, -wid * 0.9, len, 0); g.closePath(); g.fill();
     g.strokeStyle = hsl(hue + 12, sat - 6, lig + 16, 0.75); g.lineWidth = Math.max(1, wid * 0.09);
@@ -73,7 +73,7 @@ function vegAtlasBuild() {
       const L = (60 + 170 * Math.sin(Math.min(1, t * 1.25) * PI * 0.62)) * rr(0.85, 1.1) * (1 - t * t * 0.55);
       for (let s = -1; s <= 1; s += 2) {
         const a = -PI / 2 + s * (1.25 - t * 0.55) + rr(-0.08, 0.08);
-        g.strokeStyle = hsl(88 + rr(-5, 5), 40 + rr(-4, 4), 25 + rr(-2, 3)); g.lineWidth = rr(8.5, 11.5) * (1 - t * 0.35); g.lineCap = 'round';   // folíolos largos: a fronde lê como lâmina, não como hachura
+        g.strokeStyle = hsl(88 + rr(-5, 5), 40 + rr(-4, 4), 25 + rr(-2, 3)); g.lineWidth = rr(8.5, 11.5) * (1 - t * 0.35); g.lineCap = 'round';   // Folíolos anchos: fronda como lámina continua
         const ex = x + Math.cos(a) * L, ey = y + Math.sin(a) * L + L * 0.22;
         g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * L * 0.55, y + Math.sin(a) * L * 0.55 - 6, ex, ey); g.stroke();
         g.strokeStyle = hsl(96, 34, 34, 0.22); g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * L * 0.55, y + Math.sin(a) * L * 0.55 - 6, ex, ey); g.stroke();
@@ -129,7 +129,7 @@ function vegAtlasBuild() {
       g.fillStyle = hsl(46 + rr(-6, 6), 38, 34 + rr(-4, 6)); for (let q = 0; q < 7; q++) { g.beginPath(); g.ellipse(e[0] + rr(-3, 3), e[1] + q * 5 - 4, 2.2, 5.5, rr(-0.5, 0.5), 0, TAU); g.fill(); }
     }
   });
-  // 6: massa mais rala de folhas estreitas e pendentes (mais céu passando)
+  // 6: masa más dispersa de hojas estrechas y colgantes
   tile(6, () => cluster({ depth: 2, step: 15, stemW: 1.3, branchP: 0.5, leafL: 25, leafW: 0.19, perNode: 3, leafP: 0.66, hue: 88, sat: 27, lig: 25, tipk: 0.58, droop: 1 }, 5, 2.3, 330, 450));
   // 7: folhas grandes brilhantes em leque (arbusto)
   tile(7, () => {
@@ -193,7 +193,7 @@ function vegAtlasBuild() {
 }
 
 // ---- 33_veg_b_trees.js
-// Vegetação — geração procedural das malhas (árvores, palmeira, arbusto, samambaia, capim).
+// Vegetación — generación procedural de mallas (árvores, palmeira, arbusto, samambaia, capim).
 // Formato do vértice (VLAYOUT): normal.w = peso de balanço do galho | mat = (id: 0 casca / 1 folha, fase, tipo de casca, peso de tremor) | cor.a = AO
 const VEG_NT = 6, VEG_NA = 9;   // arquétipos com impostor (árvores + arbusto grande) / total (com sub-bosque)
 // Camada de folhas individuais (só de perto): um quad por folha, forma e nervuras analíticas no shader (nítidas em qualquer escala).
@@ -294,10 +294,10 @@ function vegGenTree(P, seed) {
       const sp = P.spread || 0.9;
       let dir = _vn([d[0] * 0.8 + rr(-sp, sp), d[1] * 0.8 + rr(-sp * 0.5, sp), d[2] * 0.8 + rr(-sp, sp)]);
       let side = _vn(_vx(dir, _vn([rr(-0.8, 0.8), rr(0.2, 1), rr(-0.8, 0.8)])));
-      const L = sz * rr(0.75, 1.25), o = (P.scat || sz * 0.35) * (0.4 + 0.6 * rnd()); const cj = rr(0.93, 1.07); C.tint = [BT[0] * cj, BT[1] * cj, BT[2] * rr(0.94, 1.04)];   // tom do galho inteiro (massas), não folha a folha
+      const L = sz * rr(0.75, 1.25), o = (P.scat || sz * 0.35) * (0.4 + 0.6 * rnd()); const cj = rr(0.93, 1.07); C.tint = [BT[0] * cj, BT[1] * cj, BT[2] * rr(0.94, 1.04)];   // Tono de la rama completa (masas), no hoja por hoja
       const cb = [b[0] - dir[0] * L * 0.15 + rr(-o, o), b[1] - dir[1] * L * 0.15 + rr(-o, o) * 0.6, b[2] - dir[2] * L * 0.15 + rr(-o, o)];
       vegCard(mb, cb, dir, side, L, L * P.aspect, P.tiles[Math.floor(rnd() * P.tiles.length)], C, w, rnd, q % 3 === 0 ? P.droop : 0, q % 3 === 0 ? 2 : 1);
-      // folhas individuais em volta do cartão (mais para a ponta e para fora da copa); as do miolo escuro não são geradas
+      // Hojas individuales alrededor del plano; las del núcleo interior oscuro se omiten
       const cn = _vn(_vx(side, dir)), nL = P.leafN || 0, Wd = L * P.aspect;
       for (let e = 0; e < nL; e++) {
         const t = rq(0.12, 1.08), lt = rq(-0.56, 0.56), no = rq(-0.22, 0.22) * L;
@@ -479,7 +479,7 @@ function vegPlace() {
     push(x, y, z, lerp(0.68, 1.38, r4 * r4 * (3 - 2 * r4)) * (1 + far * 0.3), r5 * TAU, rnd(), arch);
   }
   // arbustos grandes e mudas (arquétipo 5, com impostor): enchem o sub-bosque, a borda da mata e as encostas/clareiras,
-  // para os morros vistos da pista (e pelas lentes longas das câmeras de TV) não ficarem como um gramado liso
+  // Colinas con relieve y vegetación variada para evitar aspecto plano
   const gb = 3.3, nb = Math.floor(2 * half / gb);
   for (let gz = 0; gz < nb; gz++) for (let gx = 0; gx < nb; gx++) {
     const x = V.x0 + (gx + rnd()) * gb, z = V.z0 + (gz + rnd()) * gb, r1 = rnd(), r2 = rnd(), r3 = rnd();
@@ -494,7 +494,7 @@ function vegPlace() {
       if ((d > 0 && sr > TRK.pit.s0 - 30 && sr < TRK.pit.s1 + 30 && ad < TRK.pit.padD1 + 8) || (d < 0 && sr > TRK.stand.s0 - 25 && sr < TRK.stand.s1 + 25 && ad < -TRK.stand.d1 + 12)) continue;
     }
     const f = forestAt(x, z), pn = vnoise(x * 0.045 + 9.1, z * 0.045 + 4.4);
-    // encostas e clareiras abertas: moitas e mudas em manchas (o morro visto pela lente longa não fica um gramado liso)
+    // Laderas y claros abiertos: matorrales y arbustos en manchas variadas
     p = 0.46 * smooth(0.18, 0.62, pn) * (1 - smooth(0.05, 0.3, f)) + 0.5 * smooth(0.02, 0.3, f) * (1 - 0.3 * smooth(0.5, 1, f)) + 0.16 * f;
     if (r1 > p * (1 - 0.5 * smooth(450, 780, dc))) continue;
     if (dc < 700 && nearTV(x, z, 16, 2.6)) continue;
@@ -715,10 +715,10 @@ const GRASS = {
     { cell: 0.38, bs: 48, B: 10, K: 0, q: [9, 16, 64, 82], w: 0.36, prev: 1 },
     // anel de touceiras grandes e esparsas: encostas distantes
     { cell: 0.6, bs: 48, B: 14, K: 0, q: [58, 80, 225, 268], w: 0.8, prev: 2 },
-    // anel só das lentes longas (câmeras de TV): touceiras além do anel anterior, para a encosta do fundo do plano não ficar lisa
+    // Anillo para teleobjetivos: matas más allá del anillo previo para fondo detallado
     { cell: 0.9, bs: 64, B: 14, K: 0, q: [215, 262, 480, 545], w: 1.1, prev: 3, tele: 1 },
     // lâminas largas e esparsas (17/m², um triângulo cada) além do anel 1: o gramado junto à pista tem relevo até ~70 m,
-    // sem fronteira entre "tapete com lâminas" e textura lisa (fica no fim da lista para não mudar o índice dos anéis de tufos)
+    // Transición suave entre manto denso y textura plana
     { cell: 0.24, bs: 40, B: 16, K: 1, q: [23, 30, 58, 74], w: 0.03, prev: 1 },
   ],
   u: new Float32Array(6 * 64), dyn: new Uint32Array(1), blades: 0, cx: new Float64Array(6), cz: new Float64Array(6),
@@ -736,7 +736,7 @@ function grassBuild() {
     draw(pass, ctx) {
       if (ctx.kind !== KIND.GBUF || !V.onGrass) return; const pipe = GRASS.fam.pipe[0]; if (!pipe) return;
       const camx = R.cam.pos[0], camy = R.cam.pos[1], camz = R.cam.pos[2], u = GRASS.u; GRASS.blades = 0;
-      // fora da área dos mapas não há grama
+      // Fuera del área de mapas no hay hierba
       if (camx < WM.x0 - 80 || camz < WM.z0 - 80 || camx > WM.x0 + WM.sx + 80 || camz > WM.z0 + WM.sz + 80) return;
       // zoom da lente (1 = câmera de perseguição) e ponto de interesse
       let zfac = Math.tan(R.cam.fovy * 0.5) * 2; if (zfac > 1.3) zfac = 1.3;
@@ -747,7 +747,7 @@ function grassBuild() {
       let zf = (0.62 - zfac) * 5; zf = zf < 0 ? 0 : zf > 1 ? 1 : zf; const nr = GRASS.rings.length;
       for (let r = 0; r < GRASS.rings.length; r++) {
         const g = GRASS.rings[r], bsz = g.cell * g.bs, o = r * 64, half = bsz * g.B * 0.5;
-        // centro: câmera (adiantado na direção do olhar: atrás da câmera não se vê grama) → carro, conforme a distância câmera–carro
+        // Centro: cámara (orientado hacia el campo de visión) -> coche
         const ccx = camx + fx * half * 0.35 * (1 - wf) + ddx * wf, ccz = camz + fz * half * 0.35 * (1 - wf) + ddz * wf;
         const obx = Math.floor(ccx / bsz) - g.B / 2, obz = Math.floor(ccz / bsz) - g.B / 2; GRASS.cx[r] = (obx + g.B / 2) * bsz; GRASS.cz[r] = (obz + g.B / 2) * bsz;
         u[o] = g.cell; u[o + 1] = g.bs; u[o + 2] = g.B; u[o + 3] = g.K; u[o + 4] = g.q[0]; u[o + 5] = g.q[1]; u[o + 6] = g.q[2]; u[o + 7] = g.q[3];
@@ -768,10 +768,10 @@ function grassBuild() {
             let vis = false;
             if (bx < B) {
               const x = (ox + bx + 0.5) * bsz, z = (oz + bz + 0.5) * bsz, dx = x - camx, dz = z - camz, d = Math.sqrt(dx * dx + dz * dz);
-              // bloco além do alcance (em distância efetiva), ou todo dentro da cobertura do anel anterior: não desenha
+              // Bloque fuera de alcance o cubierto por anillo previo: no se dibuja
               let ok = (d - rad) * zfac < qout;
               if (ok && pv >= 0 && (d + rad) * zfac < qin) { const ex = x - pcx, ez = z - pcz, ax = ex < 0 ? -ex : ex, az = ez < 0 ? -ez : ez; if ((ax > az ? ax : az) + bsz * 0.5 < ph) ok = false; }
-              // blocos fora da área dos mapas do mundo não têm grama (e hfAtQ cairia no cálculo lento do terreno)
+              // Bloques fuera del mapa no tienen hierba
               if (ok && x > HF.x0 + 2 && z > HF.z0 + 2 && x < HF.x0 + HF.w - 3 && z < HF.z0 + HF.h - 3) vis = (SQ[0] = x, SQ[1] = (_gq[0] = x, _gq[1] = z, hfAtQ(_gq), _gq[6]) + 0.3, SQ[2] = z, SQ[3] = rad, sphereQ(ctx.planes, ctx.nPlanes));
             }
             if (vis && run < 0) run = bx;

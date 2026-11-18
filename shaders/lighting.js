@@ -1,5 +1,5 @@
 'use strict';
-WGSL["atmos"] = `// Atmosfera (espalhamento simples Rayleigh + Mie + ozônio) e nuvens volumétricas, avaliadas na geração do céu.
+WGSL["atmos"] = `// Atmósfera (dispersión Rayleigh + Mie + ozono) y nubes volumétricas para horneado del cielo.
 const RP = 6360e3; const RA = 6440e3;
 const BR = vec3f(5.8e-6, 13.6e-6, 33.1e-6); const HR = 8000.0;
 const BM = 26e-6; const HM = 1300.0; const GM = 0.78;
@@ -15,14 +15,14 @@ fn optDepth(o: vec3f, d: vec3f, n: i32) -> vec3f {
 fn transm(od: vec3f) -> vec3f { return exp(-(BR * od.x + vec3f(BM * 1.11) * od.y + BO * od.z)); }
 fn phR(c: f32) -> f32 { return 3.0 / (16.0 * PI) * (1.0 + c * c); }
 fn phM(c: f32, g: f32) -> f32 { let g2 = g * g; return (1.0 - g2) / (4.0 * PI * pow(1.0 + g2 - 2.0 * g * c, 1.5)); }
-// radiância do céu na direção d (observador a 'alt' m), até a distância tmax (ou infinito). Retorna rgb + transmitância média.
+// Radiancia del cielo en dirección d (observador a 'alt' m), hasta tmax. Devuelve rgb + transmitancia media.
 fn atmosphere(d: vec3f, sun: vec3f, alt: f32, tmax: f32) -> vec4f {
   let o = vec3f(0.0, RP + alt, 0.0);
   var t1 = raySphere(o, d, RA).y; let tg = raySphere(o, d, RP - 400.0); if (tg.x > 0.0) { t1 = min(t1, tg.x); }
   t1 = min(t1, tmax);
   const N = 28; var sumR = vec3f(0.0); var sumM = vec3f(0.0); var od = vec3f(0.0); var tp = 0.0;
   for (var i = 0; i < N; i++) {
-    // amostras mais densas perto do observador
+    // Muestras más densas cerca del observador
     let f1 = f32(i + 1) / f32(N); let tn = t1 * f1 * f1; let dt = tn - tp; let p = o + d * (tp + dt * 0.5); tp = tn;
     let h = length(p) - RP; let dn = dens(h); od += dn * dt;
     let ods = optDepth(p, sun, 6); let shadow = step(raySphere(p, sun, RP - 2000.0).x, 0.0) + step(1e19, raySphere(p, sun, RP - 2000.0).x);
@@ -30,15 +30,15 @@ fn atmosphere(d: vec3f, sun: vec3f, alt: f32, tmax: f32) -> vec4f {
     sumR += tr * dn.x * dt; sumM += tr * dn.y * dt;
   }
   let c = dot(d, sun);
-  // termo isotrópico extra ≈ espalhamento múltiplo
+  // Término isotrópico adicional ≈ dispersión múltiple
   let ms = (BR * sumR + vec3f(BM) * sumM) * 0.035;
   let col = SUN_I * (BR * sumR * phR(c) + vec3f(BM) * sumM * (phM(c, GM) * 0.85 + phM(c, 0.2) * 0.15) + ms);
   let tt = transm(od);
   return vec4f(col, (tt.x + tt.y + tt.z) / 3.0);
 }
 `;
-WGSL["skybake"] = `// Gera o céu estático de fim de tarde (atmosfera + cúmulos volumétricos + cirros) numa textura
-// u = azimute, v = elevação (não linear, mais resolução perto do horizonte). Alfa = transmitância das nuvens.
+WGSL["skybake"] = `// Genera el cielo estático al atardecer (atmósfera + cúmulos volumétricos + cirros) en una textura
+// u = azimut, v = elevación (no lineal, mayor resolución en el horizonte). Alfa = transmitancia de nubes.
 #include fsq
 #include util
 #include atmos
@@ -57,7 +57,7 @@ fn coverage(p: vec3f) -> f32 {
   let a = textureSampleLevel(tN2, sRep, q / 61000.0, 0.0).r;
   let b = textureSampleLevel(tN2, sRep, vec2f(q.x * 0.8 - q.y * 0.6, q.x * 0.6 + q.y * 0.8) / 23000.0 + 0.37, 0.0).g;
   var c = a * 0.62 + b * 0.38;
-  // abre o céu em volta do sol e um pouco acima do circuito
+  // Despeja el cielo alrededor del sol y sobre el circuito
   let dp = normalize(p + vec3f(0.0, 200.0, 0.0)); let cs = dot(dp, U.sun.xyz);
   c -= 0.14 * smoothstep(0.93, 0.998, cs);
   c -= 0.05 * smoothstep(8000.0, 1500.0, length(p.xz));
@@ -67,10 +67,10 @@ fn cloudDens(p: vec3f, h: f32, fine: bool) -> f32 {
   let hn = (h - CB) / (CT - CB);
   if (hn <= 0.0 || hn >= 1.0) { return 0.0; }
   let cov = coverage(p);
-  let thr = 1.0 - U.p.x;                      // limiar de cobertura
+  let thr = 1.0 - U.p.x;                      // Umbral de cobertura
   let cv = sat((cov - thr) / 0.16);
   if (cv <= 0.0) { return 0.0; }
-  // perfil vertical: base plana, topo mais alto onde a cobertura é maior
+  // Perfil vertical: base plana, cúspide más alta donde la cobertura es mayor
   let top = mix(0.35, 1.0, cv);
   let prof = sat(hn / 0.07) * sat((top - hn) / (top * 0.55));
   let base = textureSampleLevel(tN3, sRep, p / vec3f(6100.0, 4700.0, 6100.0) + vec3f(0.13, 0.0, 0.71), 0.0);
@@ -78,7 +78,7 @@ fn cloudDens(p: vec3f, h: f32, fine: bool) -> f32 {
   d = sat(d * 1.9);
   if (d <= 0.0) { return 0.0; }
   if (fine) {
-    // erosão em duas escalas, com a posição torcida por ruído (bordas desfiadas em vez de bolhas lisas)
+    // Erosión en dos escalas con dominio perturbado por ruido
     let wq = p + (base.gba - 0.5) * 520.0;
     let det = textureSampleLevel(tN3, sRep, wq / 1250.0 + vec3f(0.3, 0.6, 0.1), 0.0);
     let det2 = textureSampleLevel(tN3, sRep, wq / 410.0 + vec3f(0.7, 0.2, 0.5), 0.0);
@@ -96,7 +96,7 @@ fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
   var col = full.rgb; var Tc = 1.0;
   if (d.y > 0.004) {
     let o = vec3f(0.0, RP + alt, 0.0);
-    // cirros altos (camada 2D a 9,5 km)
+    // Cirros altos (capa 2D a 9.5 km)
     let tci = raySphere(o, d, RP + 9500.0).y; let pc = d * tci;
     let ci1 = textureSampleLevel(tN2, sRep, vec2f(pc.x * 0.92 + pc.z * 0.39, (-pc.x * 0.39 + pc.z * 0.92) * 2.1) / 70000.0, 0.0).r;
     let ci2 = textureSampleLevel(tN2, sRep, pc.xz / 210000.0 + 0.5, 0.0).g;
@@ -105,7 +105,7 @@ fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
     let cph = phM(dot(d, sun), 0.6) * 2.2 + 0.11;
     let nearC = atmosphere(d, sun, alt, tci);
     col = mix(col, nearC.rgb + nearC.a * (sunHi * cph + vec3f(0.10, 0.14, 0.22)), ci);
-    // cúmulos
+    // Cúmulos volumétricos
     let t0 = raySphere(o, d, RP + CB).y; let t1 = min(raySphere(o, d, RP + CT).y, 90000.0);
     if (t1 > t0) {
       const NS = 96; let dt = (t1 - t0) / f32(NS);
@@ -113,7 +113,7 @@ fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
       var S = vec3f(0.0); var tw = 0.0; var ww = 0.0;
       let cs = dot(d, sun);
       let ph = mix(phM(cs, 0.82), phM(cs, -0.25), 0.3) ;
-      // cor do sol na altitude das nuvens (uma vez por pixel)
+      // Color del sol a la altitud de las nubes
       let pm = d * mix(t0, t1, 0.4);
       let sunC = SUN_I * transm(optDepth(pm + vec3f(0.0, RP, 0.0), sun, 8));
       for (var i = 0; i < NS; i++) {
@@ -121,11 +121,11 @@ fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
         let t = t0 + (f32(i) + jit) * dt; let p = d * t; let h = altOf(p);
         let dn = cloudDens(p, h, true);
         if (dn > 0.0) {
-          // profundidade óptica em direção ao sol
+          // Profundidad óptica hacia el sol
           var od = 0.0; var ls = 70.0; var lp = p;
           for (var k = 0; k < 6; k++) { lp += sun * ls; od += cloudDens(lp, altOf(lp), false) * ls; ls *= 1.7; }
           let sig = dn * 0.02; let hn = (h - CB) / (CT - CB);
-          // espalhamento múltiplo aproximado (oitavas)
+          // Dispersión múltiple aproximada (octavas)
           let e = od * 0.02;
           let lsun = sunC * (exp(-e) * ph + 0.5 * exp(-e * 0.3) * mix(ph, 0.08, 0.55) + 0.28 * exp(-e * 0.09) * 0.08);
           let powder = 1.0 - exp(-e * 2.0 - sig * 60.0);
@@ -144,7 +144,7 @@ fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
   return vec4f(col, Tc);
 }
 `;
-WGSL["skyfn"] = `// Consulta ao céu pré-gerado + disco solar. Requer tSky, sSky, F.
+WGSL["skyfn"] = `// Consulta al cielo precalculado + disco solar.
 fn skyUV(d: vec3f) -> vec2f {
   let el = asin(clamp(d.y, -1.0, 1.0)); let az = atan2(d.z, d.x);
   let t = pow(sat((el - SKY_EL0) / SKY_ELR), 1.0 / 1.5);
@@ -152,17 +152,17 @@ fn skyUV(d: vec3f) -> vec2f {
 }
 fn skyColor(d: vec3f) -> vec3f {
   let uv = skyUV(d);
-  // gradientes explícitos: evita a costura do atan2 em u = ±0.5
+  // Gradientes explícitos para evitar costuras de atan2 en u = ±0.5
   let s = textureSampleLevel(tSky, sSky, uv, 0.0);
   var c = s.rgb;
   let cs = dot(d, F.sunDir.xyz);
-  // disco solar com escurecimento de borda + halo
+  // Disco solar con oscurecimiento hacia el limbo + halo
   let disc = smoothstep(0.99987, 0.99993, cs);
   c += F.sunCol.rgb * (disc * 420.0 + pow(sat(cs), 900.0) * 6.0 + pow(sat(cs), 90.0) * 0.5) * s.a;
   return c;
 }
 `;
-WGSL["cubesky"] = `// Céu no cubemap de ambiente (sem o disco solar: o brilho especular do sol vem da luz direta).
+WGSL["cubesky"] = `// Cielo en cubemap de entorno (sin disco solar directo).
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -177,12 +177,12 @@ struct CP { inv: mat4x4f }
   let d = normalize(w.xyz / w.w - w0.xyz / w0.w);
   let uv = skyUV(d);
   var c = textureSampleLevel(tSky, sSky, uv, 0.0).rgb;
-  // abaixo do horizonte: cor média do chão (o terreno real é desenhado por cima)
+  // Bajo el horizonte: color medio del terreno
   c = mix(c, vec3f(0.035, 0.05, 0.02) * F.sunCol.rgb * 0.6 + vec3f(0.01, 0.014, 0.02), smoothstep(0.0, -0.05, d.y));
   return vec4f(c, 1.0);
 }
 `;
-WGSL["cube_light"] = `// Iluminação direta simplificada para o cubemap de ambiente (sombra só do mapa estático).
+WGSL["cube_light"] = `// Iluminación directa simplificada para el cubemap ambiental.
 @group(1) @binding(1) var tShadowS: texture_depth_2d;
 @group(1) @binding(2) var sCmp: sampler_comparison;
 fn cubeLit(s: Surface, wp: vec3f) -> vec3f {
@@ -194,12 +194,12 @@ fn cubeLit(s: Surface, wp: vec3f) -> vec3f {
   let sh0 = F.sh[0].rgb + F.sh[1].rgb * s.normal.y;
   var col = dif * (F.sunCol.rgb * (nl * sh + s.sss * 0.25 * sh) / 3.14159 + max(sh0, vec3f(0.0)) * s.ao) + s.albedo * s.emissive * s.emissive * 16.0;
   col += mix(vec3f(0.04), s.albedo, s.metal) * max(sh0, vec3f(0.0)) * 0.6 * (1.0 - s.rough);
-  // névoa de distância simples
+  // Niebla atmosférica simplificada
   let d = distance(wp, P.camPos.xyz); let T = exp(-d * F.fog.x * 0.55);
   return mix(max(F.sh[0].rgb + F.sh[1].rgb * 0.25, vec3f(0.0)) * 0.35 + F.fogCol.rgb, col, T);
 }
 `;
-WGSL["envblur"] = `// Pré-filtra os mips do cubemap de ambiente: cada nível borra o anterior com amostras em disco (sem costuras entre faces).
+WGSL["envblur"] = `// Prefiltrado de mipmaps para el cubemap ambiental (sin costuras entre caras).
 #include fsq
 struct EB { ax: vec4f, ay: vec4f, az: vec4f, p: vec4f }
 @group(0) @binding(0) var<uniform> U: EB; // @dyn
@@ -220,24 +220,24 @@ struct EB { ax: vec4f, ay: vec4f, az: vec4f, p: vec4f }
   return vec4f(acc.rgb / acc.a, 1.0);
 }
 `;
-WGSL["brdf"] = `// BRDF de microfacetas (GGX) e aproximações de IBL.
+WGSL["brdf"] = `// BRDF de microfacetas (GGX) y aproximaciones IBL.
 fn dGGX(nh: f32, a: f32) -> f32 { let a2 = a * a; let d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d + 1e-7); }
 fn vSmith(nv: f32, nl: f32, a: f32) -> f32 { let a2 = a * a; let gv = nl * sqrt(nv * nv * (1.0 - a2) + a2); let gl = nv * sqrt(nl * nl * (1.0 - a2) + a2); return 0.5 / (gv + gl + 1e-5); }
 fn fSchlick(f0: vec3f, vh: f32) -> vec3f { let f = pow(1.0 - vh, 5.0); return f0 + (vec3f(1.0) - f0) * f; }
 fn fSchlick1(f0: f32, vh: f32) -> f32 { return f0 + (1.0 - f0) * pow(1.0 - vh, 5.0); }
-// BRDF de ambiente pré-integrada (aprox. analítica de Karis)
+// BRDF ambiental preintegrada (aproximación analítica de Karis)
 fn envBRDF(f0: vec3f, rough: f32, nv: f32) -> vec3f {
   let c0 = vec4f(-1.0, -0.0275, -0.572, 0.022); let c1 = vec4f(1.0, 0.0425, 1.04, -0.04);
   let r = rough * c0 + c1; let a004 = min(r.x * r.x, exp2(-9.28 * nv)) * r.x + r.y;
   let ab = vec2f(-1.04, 1.04) * a004 + r.zw;
   return f0 * ab.x + vec3f(ab.y);
 }
-// irradiância por harmônicos esféricos (L2), coeficientes já convoluídos com o cosseno
+// Irradiancia por armónicos esféricos (L2), coeficientes convolucionados con coseno
 fn shIrr(n: vec3f) -> vec3f {
   return max(vec3f(0.0), F.sh[0].rgb + F.sh[1].rgb * n.y + F.sh[2].rgb * n.z + F.sh[3].rgb * n.x
     + F.sh[4].rgb * (n.x * n.y) + F.sh[5].rgb * (n.y * n.z) + F.sh[6].rgb * (3.0 * n.z * n.z - 1.0) + F.sh[7].rgb * (n.x * n.z) + F.sh[8].rgb * (n.x * n.x - n.y * n.y));
 }
-// nível de mip do cubemap de ambiente para uma rugosidade
+// Nivel de mipmap del cubemap para una rugosidad dada
 fn envMip(rough: f32) -> f32 { let a = rough * rough; return clamp(log2(max(1.0, a * 1.2 * ENV_MIP_K)), 0.0, ENV_MIPS); }
 `;
 WGSL["shadow"] = `// Amostragem de sombras: 3 cascatas dinâmicas + mapa estático do mundo. Requer tShadow, tShadowS, sCmp e F.
@@ -345,7 +345,7 @@ fn sunVis1(wp: vec3f) -> f32 {
     }
     ao = sat(1.0 - occ * (2.0 * 0.11 / f32(NS)) * 4.6);
   }
-  // névoa: fração iluminada ao longo do raio
+  // Niebla atmosférica: fração iluminada ao longo do raio
   let wpp = F.invViewProjJ * vec4f(fp.x * F.screen.z * 2.0 - 1.0, 1.0 - fp.y * F.screen.w * 2.0, max(d, 1e-5), 1.0);
   let wp = wpp.xyz / wpp.w; let cam = F.camPos.xyz; let dv = wp - cam; let dist = length(dv); let dir = dv / dist;
   let tMax = min(dist, VOL_DIST); const NV = 20; var wsum = 1e-6; var vsum = 0.0; var T = 1.0; var tp = 0.0;
@@ -359,7 +359,7 @@ fn sunVis1(wp: vec3f) -> f32 {
   return vec4f(ao, vsum / wsum, min(zl, 30000.0), 1.0);
 }
 `;
-WGSL["bilat"] = `// Borrão separável sensível à profundidade para (ao, vol); b = z linear passa direto.
+WGSL["bilat"] = `// Desenfoque bilateral sensible a la profundidad para AO y volumen.
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
@@ -374,7 +374,7 @@ WGSL["bilat"] = `// Borrão separável sensível à profundidade para (ao, vol);
   return vec4f(acc / ws, c.b, 1.0);
 }
 `;
-WGSL["light"] = `// Passe de iluminação diferida: sol + sombras + ambiente (SH + cubemap) + reflexo em espaço de tela + céu + névoa.
+WGSL["light"] = `// Pase de iluminación diferida: sol + sombras + ambiente (SH + cubemap) + reflejos en espacio de pantalla (SSR) + cielo + niebla.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -397,22 +397,22 @@ WGSL["light"] = `// Passe de iluminação diferida: sol + sombras + ambiente (SH
 #include skyfn
 
 fn worldAt(uv: vec2f, d: f32) -> vec3f { let p = F.invViewProjJ * vec4f(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, d, 1.0); return p.xyz / p.w; }
-// oclusão analítica do carro sobre o chão: caixa arredondada da carroceria + contato de cada pneu.
-// Escurece a luz ambiente debaixo e em volta do carro (e um pouco a direta, junto aos pneus).
+// Oclusión analítica del coche sobre el suelo: carrocería + huella de contacto de neumáticos.
+// Atenúa luz ambiental y directa bajo el vehículo.
 fn carAO(wp: vec3f, n: vec3f) -> f32 {
   let lp = (F.carInv * vec4f(wp, 1.0)).xyz;
   let ln = (F.carInv * vec4f(n, 0.0)).xyz;
   if (ln.y < 0.3 || lp.y > 0.2 || lp.y < -0.6 || abs(lp.x) > 4.5 || abs(lp.z) > 3.5) { return 1.0; }
   let q = vec2f(abs(lp.x - 0.07) - 1.72, abs(lp.z) - 0.72);
-  let dOut = length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0);   // distância assinada ao retângulo
-  let h = max(0.26 - lp.y, 0.03);                                     // altura do assoalho sobre o ponto (com piso: sem divisão por ~0)
+  let dOut = length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0);   // Distancia con signo al rectángulo
+  let h = max(0.26 - lp.y, 0.03);                                     // Altura del suelo del coche sobre el punto
   let occ = sat(1.0 - (dOut + 0.03) / (h * 3.0 + 0.3));
-  // pneus: mancha curta e forte em volta de cada área de contato
+  // Neumáticos: oclusión de contacto
   let dw = length(vec2f((abs(lp.x) - 1.181) * 0.8, abs(lp.z) - 0.66));
   let wo = sat(1.0 - dw / 0.5);
   return 1.0 - max(occ * occ * 0.94, wo * wo * 0.9) * sat(1.5 - h * 1.2);
 }
-// amostra o alvo de meia resolução (ao, vol, z linear) com pesos de profundidade (sem vazar em silhuetas)
+// Muestreo a media resolución con ponderación por profundidad
 fn halfSample(uv: vec2f, z: f32) -> vec2f {
   let hs = F.screen.xy * 0.5; let p = uv * hs - 0.5; let b = floor(p); let f = p - b;
   var acc = vec2f(0.0); var wsum = 0.0;
@@ -426,7 +426,7 @@ fn halfSample(uv: vec2f, z: f32) -> vec2f {
   return acc / wsum;
 }
 #ifdef SSR
-// reflexo em espaço de tela para superfícies molhadas: marcha no mundo, testa contra a profundidade, lê o quadro anterior
+// Reflejos en espacio de pantalla (SSR) para asfalto mojado
 fn ssr(wp: vec3f, R: vec3f, px: vec2f, dist: f32) -> vec4f {
   let noise = ign(px, F.misc.y + 3.0);
   var stepLen = 0.03 + dist * 0.008; var t = stepLen * (0.4 + noise); var tPrev = 0.0;
@@ -439,7 +439,7 @@ fn ssr(wp: vec3f, R: vec3f, px: vec2f, dist: f32) -> vec4f {
     let zs = F.camFwd.w / max(textureLoad(gD, vec2i(uv * F.screen.xy), 0), 1e-6);
     if (c.w > zs + 0.03) {
       if (c.w < zs + 0.6 + stepLen * 2.5) {
-        // refino por bisseção
+        // Refinamiento por bisección
         var a = tPrev; var b = t;
         for (var k = 0; k < 5; k++) {
           let m = (a + b) * 0.5; let q = wp + R * m; let cq = F.viewProjJ * vec4f(q, 1.0); let uq = cq.xy / cq.w * vec2f(0.5, -0.5) + 0.5;
@@ -469,7 +469,7 @@ struct LOut { @location(0) col: vec4f }
   var o: LOut;
   if (d <= 0.0) {
     var c = skyColor(-V);
-    // raios de luz na névoa também sobre o céu
+    // Rayos crepusculares en niebla
     let hs = textureSampleLevel(tHalf, sClamp, in.uv, 0.0);
     let Tn = exp(-fogOD(F.camPos.xyz, -V, VOL_DIST));
     c = c * mix(1.0, Tn, 0.0) - fogSunCol(-V) * (1.0 - Tn) * (1.0 - hs.g) * 0.85;
@@ -488,37 +488,36 @@ struct LOut { @location(0) col: vec4f }
   let f0 = mix(vec3f(0.04), albedo, metal); let diffC = albedo * (1.0 - metal);
   let al = rough * rough;
   var col = vec3f(0.0);
-  // direto
+  // Iluminación directa
   let nlc = sat(nl);
   var spec = fSchlick(f0, vh) * (dGGX(nh, al) * vSmith(nv, nlc, al));
-  // superfícies ásperas não metálicas (asfalto, tinta fosca da zebra, grama): o lóbulo largo do GGX sob sol rasante lavava a cor
-  // em bege/rosa; atenua o especular direto delas (com as cavidades do material)
+  // Superficies rugosas no metálicas: atenuación de lóbulo especular rasante
   spec *= mix(1.0, 0.3 * a.a, smoothstep(0.78, 0.92, rough) * (1.0 - metal));
   var dif = diffC / PI;
   var coatAtt = 1.0;
   if (coat > 0.0) {
     let fc = fSchlick1(0.045, vh) * coat; coatAtt = 1.0 - fc;
-    let ac = 0.0028;   // verniz liso
+    let ac = 0.0028;   // Barniz liso (Clearcoat)
     col += sun * nlc * fc * min(dGGX(nh, ac) * vSmith(nv, nlc, ac), 90.0);
   }
   col += sun * nlc * (dif + spec) * coatAtt;
   if (sss > 0.0) {
-    // folhagem: luz que atravessa a folha + envolvimento
+    // Follaje: dispersión subsuperficial y transmisión
     let back = sat(dot(-N, L)) * 0.6 + sat(dot(V, -L)) * sat(-nl + 0.3) * 0.5;
     col += sun * diffC * sss * (back * 0.75 + sat(nl * 0.5 + 0.5) * 0.12) / PI * 2.0;
   }
-  // ambiente
+  // Iluminación ambiental
   var hv = halfSample(in.uv, dist * dot(-V, F.camFwd.xyz)); hv.g = mix(1.0, hv.g, 0.7);
   let aoS = hv.r;
   let ao = min(a.a, aoS) * cao;
-  // luz do céu nas sombras: um pouco dessaturada e reforçada (rebote difuso do cenário que o SH não capta)
-  var irr = shIrr(N); irr = mix(vec3f(lum(irr)), irr, 0.15) * 1.75 * pow(F.sunCol.rgb / lum(F.sunCol.rgb), vec3f(0.42));   // quase neutra e levemente quente: a sombra não fica azul-marinho depois do balanço de branco
+  // Luz ambiental en sombras: balanceada para evitar tonos azules excesivos
+  var irr = shIrr(N); irr = mix(vec3f(lum(irr)), irr, 0.15) * 1.75 * pow(F.sunCol.rgb / lum(F.sunCol.rgb), vec3f(0.42));
   col += diffC * irr * ao * coatAtt;
   let R = reflect(-V, N);
   let specOcc = sat(pow(nv + ao, exp2(-16.0 * rough - 1.0)) - 1.0 + ao);
-  // horizonte: reflexo abaixo do chão perde energia
+  // Horizonte: atenuación de reflejos bajo el plano de tierra
   var env = textureSampleLevel(tEnv, sClamp, R, envMip(rough)).rgb;
-  env = mix(env, vec3f(lum(env)), sat(rough * 1.2 - 0.25) * 0.7);   // superfícies ásperas não devolvem o azul saturado do céu
+  env = mix(env, vec3f(lum(env)), sat(rough * 1.2 - 0.25) * 0.7);   // Superficies rugosas atenúan saturación de reflejo
   var envC = textureSampleLevel(tEnv, sClamp, R, 0.9).rgb;
 #ifdef SSR
   if (wet > 0.03 && dist < 160.0) {
@@ -527,12 +526,12 @@ struct LOut { @location(0) col: vec4f }
   }
 #endif
   col += env * envBRDF(f0, rough, nv) * specOcc * coatAtt * mix(1.0, cao, 0.7);
-  // verniz: reflexo do ambiente levemente borrado (verniz real tem casca de laranja)
-  // (reflexo um pouco dessaturado e Fresnel limitado em ângulo rasante: zebras não viram faixas rosa na lataria nem o capô vira espelho)
+  // Barniz (Clearcoat): reflejo con rugosidad superficial realista
+  // Reflejo atenuado y Fresnel limitado en ángulos rasantes para evitar artefactos en carrocería
   if (coat > 0.0) { envC = mix(vec3f(lum(envC)), envC, 0.6); col += envC * min(fSchlick1(0.08, nv), 0.26) * coat * mix(specOcc, 1.0, 0.5) * 1.4; }
-  // emissivo
+  // Emisivo
   col += albedo * (m.z * m.z) * 16.0;
-  // névoa
+  // Niebla y dispersión atmosférica
   let dir = -V; let od = fogOD(F.camPos.xyz, dir, dist); let T = exp(-od);
   let nearD = min(dist, VOL_DIST); let Tn = exp(-fogOD(F.camPos.xyz, dir, nearD));
   let sunIn = fogSunCol(dir) * max(0.0, (1.0 - T) - (1.0 - Tn) * (1.0 - hv.g));

@@ -21,7 +21,7 @@ function loadSelection() {
 function saveSelection(carId, trackId) {
   try {
     localStorage.setItem(SEL_KEY, JSON.stringify({ car: carId, track: trackId }));
-  } catch (e) { /* armazenamento local indisponível */ }
+  } catch (e) { /* almacenamiento local no disponible */ }
 }
 
 const CARS = {
@@ -72,3 +72,8 @@ const TRACKS = {
     return this.active;
   },
 };
+
+if (typeof window !== 'undefined') {
+  window.CARS = CARS;
+  window.TRACKS = TRACKS;
+}

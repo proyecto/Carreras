@@ -4,7 +4,7 @@ WGSL["blit"] = `#include fsq
 @group(0) @binding(1) var s: sampler;
 @fragment fn fs(in: FsV) -> @location(0) vec4f { return textureSampleLevel(t, s, in.uv, 0.0); }
 `;
-WGSL["bloom"] = `// Bloom: cadeia de redução (13 amostras, média de Karis no primeiro nível) e ampliação em tenda 3x3 (aditiva).
+WGSL["bloom"] = `// Bloom: cadena de reducción progresiva (13 muestras, promedio Karis en primer nivel) y carpa 3x3 aditiva.
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @group(0) @binding(1) var s: sampler;
@@ -32,7 +32,7 @@ fn kw(c: vec3f) -> f32 { return 1.0 / (1.0 + max(c.r, max(c.g, c.b))); }
 #endif
 }
 `;
-WGSL["expo"] = `// Exposição automática: luminância média (log) do menor nível do bloom, suavizada no tempo.
+WGSL["expo"] = `// Exposición automática: luminancia media logarítmica suavizada temporalmente.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -43,7 +43,7 @@ WGSL["expo"] = `// Exposição automática: luminância média (log) do menor n�
   var acc = 0.0; var ws = 0.0;
   for (var y = 0; y < 6; y++) { for (var x = 0; x < 10; x++) {
     let uv = (vec2f(f32(x), f32(y)) + 0.5) / vec2f(10.0, 6.0);
-    let w = 1.0 - 0.6 * length(uv - vec2f(0.5, 0.55));     // peso maior no centro
+    let w = 1.0 - 0.6 * length(uv - vec2f(0.5, 0.55));     // Mayor peso ponderado en el centro
     acc += log(max(lum(textureSampleLevel(tSmall, s, uv, 0.0).rgb), 1e-4)) * w; ws += w;
   } }
   let cur = exp(acc / ws); let prev = textureLoad(tPrev, vec2i(0), 0).r;
@@ -51,7 +51,7 @@ WGSL["expo"] = `// Exposição automática: luminância média (log) do menor n�
   return vec4f(mix(prev, cur, a), 0.0, 0.0, 1.0);
 }
 `;
-WGSL["final"] = `// Saída: bloom, exposição, mapeamento de tons, nitidez leve, vinheta, grão e pontilhado contra faixas.
+WGSL["final"] = `// Salida final: bloom, exposición, mapeo tonal AgX, nitidez, viñeteado, grano cinematográfico y dithering.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -60,7 +60,7 @@ WGSL["final"] = `// Saída: bloom, exposição, mapeamento de tons, nitidez leve
 @group(0) @binding(3) var tExp: texture_2d<f32>;
 @group(0) @binding(4) var s: sampler;
 @group(0) @binding(5) var gD: texture_depth_2d;
-// AgX (aproximação polinomial) com visual "punchy"
+// AgX (aproximación polinómica) con contraste optimizado
 fn agxContrast(x: vec3f) -> vec3f {
   let x2 = x * x; let x4 = x2 * x2;
   return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232;
@@ -72,21 +72,21 @@ fn agx(c: vec3f) -> vec3f {
   v = clamp(log2(max(v, vec3f(1e-10))), vec3f(-12.47393), vec3f(4.026069));
   v = (v + 12.47393) / (4.026069 + 12.47393);
   v = agxContrast(v);
-  // visual: mais contraste e saturação
+  // Contraste y saturación cinematográfica
   let l = dot(v, vec3f(0.2126, 0.7152, 0.0722));
   v = pow(max(v, vec3f(0.0)), vec3f(1.12));
   v = mix(vec3f(dot(v, vec3f(0.2126, 0.7152, 0.0722))), v, 1.32);
   v = mi * v;
-  return sat3(v);   // já em codificação de exibição (≈ sRGB 2.2)
+  return sat3(v);   // Codificación sRGB 2.2
 }
 fn tone(c: vec3f) -> vec3f { return agx(c); }
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
   let p = vec2i(in.pos.xy); let dim = vec2i(F.screen.xy) - 1;
-  // exposição automática parcial: compensa ~50% da variação de luminância (cenas escuras continuam um pouco mais escuras)
+  // Exposición automática adaptativa
   let lavg = clamp(textureLoad(tExp, vec2i(0), 0).r, 0.02, 3.0);
   let ex = F.misc.z * 0.094 * pow(0.16 / lavg, 0.5) / 0.16;
   var c = textureLoad(tCol, p, 0).rgb;
-  // nitidez (em espaço de tons) com os 4 vizinhos
+  // Enfoque adaptativo con 4 vecinos
   let n = textureLoad(tCol, clamp(p + vec2i(0, -1), vec2i(0), dim), 0).rgb + textureLoad(tCol, clamp(p + vec2i(0, 1), vec2i(0), dim), 0).rgb
         + textureLoad(tCol, clamp(p + vec2i(-1, 0), vec2i(0), dim), 0).rgb + textureLoad(tCol, clamp(p + vec2i(1, 0), vec2i(0), dim), 0).rgb;
   let bl = textureSampleLevel(tBloom, s, in.uv, 0.0).rgb * (1.0 / 6.0);
@@ -94,7 +94,7 @@ fn tone(c: vec3f) -> vec3f { return agx(c); }
   let sharp = clamp((lc - ln) * 0.8, -0.3 * lc, 0.4 * lc);
   c = c * (1.0 + sharp / max(lc, 1e-4));
   c = mix(c, bl, 0.055);
-  // brilho de lente do sol: halo + raios finos, proporcional à fração do disco solar visível (não encoberta por geometria)
+  // Lens flare solar: halo y destellos proporcionales a visibilidad del disco solar
   if (F.sunScr.z > 0.5 && F.sunScr.x > -0.3 && F.sunScr.x < 1.3 && F.sunScr.y > -0.3 && F.sunScr.y < 1.3) {
     var vis = 0.0;
     for (var i = 0; i < 6; i++) {
@@ -110,21 +110,21 @@ fn tone(c: vec3f) -> vec3f { return agx(c); }
       c += F.sunCol.rgb * (halo + rays + streak) * vis * 0.32;
     }
   }
-  // vinheta
+  // Viñeteado óptico
   let q = (in.uv - 0.5) * vec2f(F.post.z / 1.7778, 1.0); let vg = 1.0 - smoothstep(0.35, 1.25, length(q) * 1.45) * 0.42;
-  // balanço de branco: neutraliza parte do tom alaranjado do sol baixo (o resto fica como clima de fim de tarde)
+  // Balance de blancos
   let sc = F.sunCol.rgb / lum(F.sunCol.rgb);
   c *= pow(sc, vec3f(-0.5));
   c *= ex * vg;
   var o = tone(c);
-  // grão fino + pontilhado triangular
+  // Grano sutil y dithering triangular
   let h = hash22(in.pos.xy + vec2f(F.misc.y * 37.0, F.misc.y * 17.0));
   let tri = (h.x + h.y - 1.0);
   o += vec3f(tri) * (1.2 / 255.0) + (h.x - 0.5) * 0.012 * (1.0 - o) * o * 4.0 * 0.5;
   return vec4f(o, 1.0);
 }
 `;
-WGSL["taa"] = `// Anti-aliasing temporal: reprojeção com velocidade dilatada, recorte por variância em YCoCg, histórico bicúbico.
+WGSL["taa"] = `// Antialiasing temporal (TAA): reproyección con velocidad dilatada, recorte de varianza en YCoCg e historial bicúbico.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -138,7 +138,7 @@ fn fromY(c: vec3f) -> vec3f { return vec3f(c.x + c.y - c.z, c.x + c.z, c.x - c.y
 fn tm(c: vec3f) -> vec3f { return c / (1.0 + max(c.r, max(c.g, c.b))); }
 fn itm(c: vec3f) -> vec3f { return c / max(1e-4, 1.0 - max(c.r, max(c.g, c.b))); }
 fn histCR(uv: vec2f) -> vec3f {
-  // Catmull-Rom com 5 amostras bilineares
+  // Catmull-Rom con 5 muestras bilineales
   let sz = F.screen.xy; let p = uv * sz; let c = floor(p - 0.5) + 0.5; let f = p - c;
   let w0 = f * (-0.5 + f * (1.0 - 0.5 * f)); let w1 = 1.0 + f * f * (-2.5 + 1.5 * f); let w2 = f * (0.5 + f * (2.0 - 1.5 * f)); let w3 = f * f * (-0.5 + 0.5 * f);
   let w12 = w1 + w2; let o12 = w2 / w12;
@@ -154,24 +154,24 @@ fn histCR(uv: vec2f) -> vec3f {
 struct TOut { @location(0) col: vec4f, @location(1) vel: vec4f }
 @fragment fn fs(in: FsV) -> TOut {
   let p = vec2i(in.pos.xy); let dim = vec2i(F.screen.xy) - 1;
-  // velocidade do pixel mais próximo da câmera na vizinhança 3x3 (dilata as bordas dos objetos em movimento)
+  // Velocidad dilatada del píxel más cercano en vecindad 3x3
   var best = p; var bd = -1.0;
   for (var y = -1; y <= 1; y++) { for (var x = -1; x <= 1; x++) { let q = clamp(p + vec2i(x, y), vec2i(0), dim); let d = textureLoad(gD, q, 0); if (d > bd) { bd = d; best = q; } } }
   var vel = textureLoad(tVel, best, 0).xy;
   if (bd <= 0.0) {
-    // céu: só a rotação da câmera
+    // Cielo: solo rotación de cámara
     let w = F.invViewProjJ * vec4f(in.uv.x * 2.0 - 1.0, 1.0 - in.uv.y * 2.0, 1e-6, 1.0);
     let dir = normalize(w.xyz / w.w - F.camPos.xyz);
     let pc = F.prevViewProj * vec4f(dir, 0.0); let cc = F.viewProj * vec4f(dir, 0.0);
     vel = (cc.xy / cc.w - pc.xy / pc.w) * vec2f(0.5, -0.5);
   }
-  // vizinhança 3x3 em YCoCg (espaço comprimido)
+  // Vecindad 3x3 en espacio YCoCg
   var m1 = vec3f(0.0); var m2 = vec3f(0.0); var cmin = vec3f(1e9); var cmax = vec3f(-1e9);
   var cur = vec3f(0.0); var wsum = 0.0; var curF = vec3f(0.0);
   for (var y = -1; y <= 1; y++) { for (var x = -1; x <= 1; x++) {
     let q = clamp(p + vec2i(x, y), vec2i(0), dim); let c = toY(tm(textureLoad(tCur, q, 0).rgb));
     m1 += c; m2 += c * c; cmin = min(cmin, c); cmax = max(cmax, c);
-    // filtro de reconstrução (Blackman-Harris aprox.) centrado na posição sem jitter
+    // Filtro de reconstrucción centrado sin jitter
     let dd = vec2f(f32(x), f32(y)) - F.jitter.xy * vec2f(0.5, -0.5) * F.screen.xy;
     let w = exp(-2.29 * dot(dd, dd)); curF += c * w; wsum += w;
     if (x == 0 && y == 0) { cur = c; }
@@ -180,16 +180,16 @@ struct TOut { @location(0) col: vec4f, @location(1) vel: vec4f }
   let mu = m1 / 9.0; let sg = sqrt(max(m2 / 9.0 - mu * mu, vec3f(0.0)));
   let huv = in.uv - vel;
   var o: TOut; o.vel = vec4f(vel, 0.0, 0.0);
-  if (F.misc.w > 0.5) { o.vel = vec4f(0.0); o.col = vec4f(itm(fromY(curF)), 1.0); return o; }   // corte de câmera: sem histórico e sem borrão
+  if (F.misc.w > 0.5) { o.vel = vec4f(0.0); o.col = vec4f(itm(fromY(curF)), 1.0); return o; }   // Corte de cámara: reinicio de historial sin ghosting
   if (huv.x < 0.0 || huv.y < 0.0 || huv.x > 1.0 || huv.y > 1.0) { o.col = vec4f(itm(fromY(curF)), 1.0); return o; }
   var h = toY(histCR(huv));
-  // recorte por variância (caixa mu ± g*sigma), limitado ao min/max da vizinhança
+  // Recorte de varianza (caja mu ± g*sigma)
   let vpx = length(vel * F.screen.xy);
   let g = mix(1.25, 0.9, sat(vpx / 20.0));
   let lo = max(mu - sg * g, cmin); let hi = min(mu + sg * g, cmax);
   let cc = (lo + hi) * 0.5; let ee = (hi - lo) * 0.5 + 1e-5; let dv = h - cc; let t = abs(dv) / ee; let mt = max(t.x, max(t.y, t.z));
   if (mt > 1.0) { h = cc + dv / mt; }
-  // peso do quadro atual: maior com movimento rápido; anti-cintilação por contraste de luminância
+  // Ponderación temporal adaptativa
   var alpha = mix(0.07, 0.22, sat(vpx / 40.0));
   let lc = curF.x; let lh = h.x; let diff = abs(lc - lh) / max(lc, max(lh, 0.05)); alpha *= mix(1.0, 0.55, sat(diff * diff * 4.0) * (1.0 - sat(vpx / 6.0)));
   let r = mix(h, curF, alpha);
@@ -197,7 +197,7 @@ struct TOut { @location(0) col: vec4f, @location(1) vel: vec4f }
   return o;
 }
 `;
-WGSL["mbtile"] = `// Desfoque de movimento, etapa 1: velocidade de maior módulo por bloco (TILE px) ou máximo 3x3 entre blocos (NEIGH).
+WGSL["mbtile"] = `// Motion blur etapa 1: velocidad máxima por tile (TILE px) y vecindad 3x3 (NEIGH).
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
@@ -210,8 +210,8 @@ WGSL["mbtile"] = `// Desfoque de movimento, etapa 1: velocidade de maior módulo
   return vec4f(best, 0.0, 0.0);
 }
 `;
-WGSL["mblur"] = `// Desfoque de movimento por pixel (reconstrução à McGuire): espalha ao longo da velocidade dominante do bloco,
-// pesando cada amostra por profundidade e pela própria velocidade — o carro fica nítido, o cenário corre.
+WGSL["mblur"] = `// Motion blur por píxel (reconstrucción McGuire): desenfoque a lo largo del vector dominante,
+// ponderando muestras por profundidad y velocidad relativa (coche nítido, entorno desenfocado).
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -224,10 +224,10 @@ fn linZ(d: f32) -> f32 { return F.camFwd.w / max(d, 1e-6); }
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
   let p = vec2i(in.pos.xy); let sz = F.screen.xy; let dim = vec2i(sz) - 1;
   let c0 = textureLoad(tCol, p, 0).rgb;
-  let k = F.post.x * 0.5;                              // fração do obturador (em px por px de velocidade)
+  let k = F.post.x * 0.5;                              // Fracción de obturación
   let maxLen = 26.0 * sz.y / 1440.0;
   let noise = ign(in.pos.xy, F.misc.y);
-  // bloco com tremor para esconder a grade
+  // Dithering para ocultar cuadrícula
   let tdim = vec2f(textureDimensions(tTile));
   let tuv = (in.pos.xy + (vec2f(noise, fract(noise * 7.31)) - 0.5) * f32(TILE) * 0.8) / (tdim * f32(TILE));
   var vmax = textureSampleLevel(tTile, sClamp, tuv, 0.0).xy * sz * k;
@@ -239,23 +239,23 @@ fn linZ(d: f32) -> f32 { return F.camFwd.w / max(d, 1e-6); }
   let zc = linZ(textureLoad(gD, p, 0));
   const NS = 24;
   var acc = c0 * 1.0; var ws = 1.0;
-  // peso do centro: menor quando ele mesmo se move
+  // Ponderación del centro
   let wc = 1.0 / max(lc, 0.75); acc = c0 * wc; ws = wc;
   for (var i = 0; i < NS; i++) {
     let t = mix(-1.0, 1.0, (f32(i) + noise) / f32(NS));
     let off = vmax * t; let q = in.pos.xy + off; let qi = clamp(vec2i(q), vec2i(0), dim);
     let zs = linZ(textureLoad(gD, qi, 0)); let ls = min(length(textureLoad(tVel, qi, 0).xy * sz * k), maxLen);
     let dl = length(off);
-    // amostra à frente borra sobre o centro se ela se move o bastante; amostra atrás aparece se o centro se move
+    // Dispersión direccional según velocidad
     let fg = sat(1.0 - (zs - zc) / (0.05 * zc + 0.02)); let bg = sat(1.0 - (zc - zs) / (0.05 * zc + 0.02));
     let w = fg * sat(1.0 - dl / max(ls, 0.01)) + bg * sat(1.0 - dl / max(lc, 0.01)) + sat(1.0 - dl / max(ls, 0.01) + 0.05) * sat(1.0 - dl / max(lc, 0.01) + 0.05) * 2.0;
-    let wk = w * (1.0 - 0.75 * abs(t));   // núcleo em tenda: rastro contínuo, sem a imagem dupla de um núcleo em caixa
+    let wk = w * (1.0 - 0.75 * abs(t));   // Núcleo de carpa para estela continua
     acc += textureSampleLevel(tCol, sClamp, q / sz, 0.0).rgb * wk; ws += wk;
   }
   return vec4f(acc / ws, 1.0);
 }
 `;
-WGSL["dbg"] = `// Visualização de depuração de uma textura qualquer.
+WGSL["dbg"] = `// Visualización de depuración para texturas internas.
 #include fsq
 struct DU { p: vec4f }
 @group(0) @binding(0) var t: texture_2d<f32>;

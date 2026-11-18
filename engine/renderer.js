@@ -1,12 +1,12 @@
 'use strict';
 // ---- 20_renderer.js
-// Núcleo do renderizador diferido: recursos, uniformes de quadro, famílias de material e o grafo de passes.
+// Núcleo del renderizador diferido (Deferred): recursos, uniforms de frame, familias de materiales y grafo de passes.
 const SHADOW_RES = 2048, SHADOW_S_RES = 4096, ENV_RES = 512, ENV_MIPS = 7, SKY_W = 4096, SKY_H = 1024, VOL_DIST = 220;
 const SKY_EL0 = -0.14, SKY_ELR = PI / 2 + 0.14;
 const SH_DEFS = { SHADOW_RES: SHADOW_RES + '.0', ENV_MIPS: ENV_MIPS + '.0', ENV_MIP_K: (ENV_RES * 2 / (PI * 1.5)).toFixed(2), VOL_DIST: VOL_DIST + '.0', SKY_EL0: SKY_EL0.toFixed(5), SKY_ELR: SKY_ELR.toFixed(5) };
 const KIND = { GBUF: 0, SHADOW: 1, CUBE: 2 };
 
-// ---- struct Frame: lista de campos gera o WGSL e os deslocamentos ----
+// ---- struct Frame: lista de campos que genera WGSL y offsets de memoria ----
 const FRAME_FIELDS = [
   ['viewProj', 'm'], ['viewProjJ', 'm'], ['prevViewProj', 'm'], ['invViewProjJ', 'm'], ['view', 'm'], ['invView', 'm'], ['projJ', 'm'], ['invProjJ', 'm'],
   ['shadowVP', 'm4'], ['carInv', 'm'], ['carMat', 'm'],
@@ -26,7 +26,7 @@ const FR = { o: {}, data: null, size: 0 };
 const frSet4 = (n, a, b, c, d) => { const o = FR.o[n], f = FR.data; f[o] = a; f[o + 1] = b; f[o + 2] = c; f[o + 3] = d; };
 const frMat = (n, m, idx) => FR.data.set(m, FR.o[n] + (idx || 0) * 16);
 
-// ---- reflexão de bind groups a partir do WGSL (layouts explícitos; bindings não usados não quebram) ----
+// ---- Reflexión de bind groups a partir de WGSL (layouts explícitos; bindings no usados no rompen compatibilidad) ----
 const _bglCache = {};
 function reflectBGLs(code) {
   const groups = [];
@@ -47,7 +47,7 @@ function reflectBGLs(code) {
   for (let g = 0; g < groups.length; g++) { const en = groups[g] || []; en.sort((a, b) => a.binding - b.binding); const key = JSON.stringify(en); out.push(_bglCache[key] || (_bglCache[key] = G.dev.createBindGroupLayout({ entries: en }))); }
   return out;
 }
-// pipeline de tela cheia com layout refletido
+// Pipeline de pantalla completa con layout reflejado
 function mkPost(name, defs, targets, extra) {
   defs = Object.assign({}, SH_DEFS, defs || {});
   const code = wgslPP(name, defs), mod = mkShader(name, defs), bgls = reflectBGLs(code);
@@ -69,13 +69,13 @@ const R = {
   sun: new Float32Array([-0.83, 0.26, -0.5]), sunCol: new Float32Array([1, 0.7, 0.4]),
   casc: { vp: [m4(), m4(), m4(), m4()], splits: [12, 40, 130], texel: new Float32Array(4), view: m4(), tmp: m4(), focusOn: false, focus: new Float32Array(3) },
   cube: { pos: new Float32Array(3), cur: new Float32Array(3), face: 0, vp: m4(), view: m4(), proj: m4() },
-  wind: new Float32Array([0.8, 0.6, 1.0]),   // direção (x,z) e força do vento; F.wind.w = tempo, F.misc.x = dt
+  wind: new Float32Array([0.8, 0.6, 1.0]),   // Dirección (x,z) y fuerza del viento; F.wind.w = tiempo, F.misc.x = dt
   fog: new Float32Array([0.0008, 1 / 55, 0, 0.05]), fogCol: new Float32Array([0, 0, 0, 1.0]),
   exposure: 1, debug: 0, noJitter: false, timing: null, pending: [],
 };
 
-// Slots de uniforme de objeto (256 bytes cada: model, prevModel, 4 vec4 de parâmetros). Slot 0 = identidade.
-// As vistas são criadas uma vez por slot: objModel/objPrev/objParams não alocam.
+// Slots de uniform de objeto (256 bytes cada uno: model, prevModel, 4 vec4 de parámetros). Slot 0 = identidad.
+// Las vistas se crean una sola vez por slot: objModel/objPrev/objParams no generan asignaciones de memoria.
 const _objViews = [];
 function _objMk(i) { _objViews[i] = [R.objData.subarray(i * 64, i * 64 + 16), R.objData.subarray(i * 64 + 16, i * 64 + 32), R.objData.subarray(i * 64 + 32, i * 64 + 48)]; m4ident(_objViews[i][0]); m4ident(_objViews[i][1]); }
 _objMk(0);
@@ -84,7 +84,7 @@ const objModel = i => _objViews[i][0];
 const objPrev = i => _objViews[i][1];
 const objParams = i => _objViews[i][2];
 
-// ---- famílias de material ----
+// ---- Familias de materiales ----
 // def: { src: nome do wgsl (define VIn, vert(), surf() e opcionalmente surfAlpha()), buffers: [layouts de vértice], alpha, cull, defs, noCube, noShadow, topology }
 function mkFamily(name, def) {
   const fam = { name, def, pipe: [null, null, null], bgl3: null };
@@ -112,14 +112,14 @@ function mkFamily(name, def) {
     } else {
       d.fragment = { module: mod, entryPoint: 'fs', targets: [{ format: 'rgba16float' }] };
       d.depthStencil = { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' };
-      d.primitive.frontFace = 'cw';   // faces do cubo são renderizadas espelhadas em Y
+      d.primitive.frontFace = 'cw';   // Caras del cubemap renderizadas invertidas en Y
     }
     R.pending.push(G.dev.createRenderPipelineAsync(d).then(p => { fam.pipe[k] = p; }));
   }
   R.families[name] = fam; return fam;
 }
-// Conjunto de malhas estáticas/dinâmicas de uma família com vértice padrão. item: {mesh, slot, flags}
-// flags: 1 = principal, 2 = sombra, 4 = cubo. maxDist: distância máxima (sombra/cubo usam 0.6x)
+// Conjunto de mallas estáticas/dinámicas de una familia con vértice estándar. item: {mesh, slot, flags}
+// flags: 1 = principal, 2 = sombra, 4 = cubo. maxDist: distancia máxima (sombra/cubo usan 0.6x)
 class MeshSet {
   constructor(fam) { this.fam = fam; this.items = []; }
   add(mesh, slot, flags, maxDist) {
@@ -133,7 +133,7 @@ class MeshSet {
       const it = this.items[i]; if (!(it.flags & bit) || !it.on) continue;
       const m = R.objData, o = it.slot * 64;
       const x = m[o] * it.cx + m[o + 4] * it.cy + m[o + 8] * it.cz + m[o + 12], y = m[o + 1] * it.cx + m[o + 5] * it.cy + m[o + 9] * it.cz + m[o + 13], z = m[o + 2] * it.cx + m[o + 6] * it.cy + m[o + 10] * it.cz + m[o + 14];
-      const pl = ctx.planes, np = ctx.nPlanes, rr = it.r; let vis = true;   // teste esfera × planos embutido (sem números em argumentos)
+      const pl = ctx.planes, np = ctx.nPlanes, rr = it.r; let vis = true;   // Test esfera × planos integrado (sin paso de números por argumento)
       for (let k = 0; k < np; k++) if (pl[k * 4] * x + pl[k * 4 + 1] * y + pl[k * 4 + 2] * z + pl[k * 4 + 3] < -rr) { vis = false; break; }
       if (!vis) continue;
       const dx = x - ctx.cx, dy = y - ctx.cy, dz = z - ctx.cz, md = it.maxDist + it.r; if (dx * dx + dy * dy + dz * dz > md * md) continue;
@@ -152,7 +152,7 @@ function rendererInit() {
   R.sCmp = dev.createSampler({ compare: 'less-equal', minFilter: 'linear', magFilter: 'linear' });
   R.sNear = dev.createSampler({});
   R.frameBuf = mkBuf(FR.size, BU.U); R.objBuf = mkBuf(64 * 256, BU.U); R.passBuf = mkBuf(16 * 256, BU.U);
-  // alvos
+  // Render targets
   const T = R.tex = {};
   T.gA = mkTex(W, H, 'rgba8unorm-srgb'); T.gB = mkTex(W, H, 'rgba16float'); T.gC = mkTex(W, H, 'rgba8unorm'); T.gV = mkTex(W, H, 'rg16float'); T.depth = mkTex(W, H, 'depth32float');
   T.hdr = mkTex(W, H, 'rgba16float'); T.hist = [mkTex(W, H, 'rgba16float'), mkTex(W, H, 'rgba16float')]; T.vel = mkTex(W, H, 'rg16float');
@@ -172,7 +172,7 @@ function rendererInit() {
   V.env = T.env.createView({ dimension: 'cube' }); V.noise3 = T.noise3.createView({ dimension: '3d' });
   V.envFace = []; for (let f = 0; f < 6; f++) { V.envFace[f] = []; for (let m = 0; m <= ENV_MIPS; m++) V.envFace[f][m] = T.env.createView({ dimension: '2d', baseArrayLayer: f, arrayLayerCount: 1, baseMipLevel: m, mipLevelCount: 1 }); }
   V.envMip = []; for (let m = 0; m <= ENV_MIPS; m++) V.envMip[m] = T.env.createView({ dimension: 'cube', baseMipLevel: m, mipLevelCount: 1 });
-  // bind groups globais das famílias (layouts explícitos equivalentes aos refletidos)
+  // Bind groups globales de familias (layouts explícitos equivalentes a los reflejados)
   const famCode = wgslPP('__probe', SH_DEFS), bg = reflectBGLs(famCode);
   R.bgl0 = bg[0]; R.bgl1 = bg[1]; R.bgl2 = bg[2];
   R.globBG = dev.createBindGroup({ layout: bg[0], entries: [{ binding: 0, resource: { buffer: R.frameBuf } }, { binding: 1, resource: R.sLin }, { binding: 2, resource: R.sClamp }, { binding: 3, resource: V.noise }, { binding: 4, resource: V.noise3 }, { binding: 5, resource: WM.height.createView() }, { binding: 6, resource: WM.zone.createView() }] });
@@ -180,7 +180,7 @@ function rendererInit() {
   R.objBG = dev.createBindGroup({ layout: bg[2], entries: [{ binding: 0, resource: { buffer: R.objBuf, size: 192 } }] });
   const cubeCode = wgslPP('__probe', Object.assign({ PASS_CUBE: '' }, SH_DEFS)), cbg = reflectBGLs(cubeCode);
   R.passBGCube = dev.createBindGroup({ layout: cbg[1], entries: [{ binding: 0, resource: { buffer: R.passBuf, size: 96 } }, { binding: 1, resource: V.shadowS }, { binding: 2, resource: R.sCmp }] });
-  // descritores de passe
+  // Descriptores de render pass
   const D = R.pd = {};
   D.gbuf = mkPassDesc(4, 'clear', true, 'gbuf'); D.gbuf.colorAttachments[0].view = V.gA; D.gbuf.colorAttachments[1].view = V.gB; D.gbuf.colorAttachments[2].view = V.gC; D.gbuf.colorAttachments[3].view = V.gV; D.gbuf.depthStencilAttachment.view = V.depth;
   D.shadow = [0, 1, 2].map(i => { const d = mkPassDesc(0, 'clear1', true, 'shadow' + i); d.depthStencilAttachment.view = V.shadowL[i]; return d; });
@@ -194,15 +194,15 @@ function rendererInit() {
 }
 WGSL.__probe = '#include common\n#include gbuf\n#include mesh_vert\n#ifdef PASS_CUBE\n#include cube_light\n#endif\n';
 
-// ---- câmera e uniformes do quadro ----
-// CAMQ: registrador da câmera [olho xyz, alvo xyz, fov vertical, rolagem]. setCameraQ() lê dele (sem números por argumento).
+// ---- Cámara y uniforms de frame ----
+// CAMQ: registro de cámara [ojo xyz, objetivo xyz, fov vertical, alabeo]. setCameraQ() lee de él (cero boxing).
 const CAMQ = new Float64Array(8), _lk = new Float64Array(9);
 function setCamera(ex, ey, ez, tx, ty, tz, fovy, roll) { CAMQ[0] = ex; CAMQ[1] = ey; CAMQ[2] = ez; CAMQ[3] = tx; CAMQ[4] = ty; CAMQ[5] = tz; CAMQ[6] = fovy; CAMQ[7] = roll || 0; setCameraQ(); }
 function setCameraQ() {
   const c = R.cam, q = CAMQ, v = _lk, roll = q[7];
   let fx = q[3] - q[0], fy = q[4] - q[1], fz = q[5] - q[2]; const l = 1 / Math.sqrt(fx * fx + fy * fy + fz * fz); fx *= l; fy *= l; fz *= l;
   v[0] = q[0]; v[1] = q[1]; v[2] = q[2]; v[3] = q[3]; v[4] = q[4]; v[5] = q[5]; v[6] = 0; v[7] = 1; v[8] = 0;
-  if (roll !== 0) { // inclina o "para cima" em torno do eixo de visada
+  if (roll !== 0) { // Inclina el vector "up" alrededor del eje de visión
     let rx = -fz, rz = fx; const rl = 1 / Math.sqrt(rx * rx + rz * rz); rx *= rl; rz *= rl;
     const cr = Math.cos(roll), sr = Math.sin(roll); v[6] = rx * sr; v[7] = cr; v[8] = rz * sr;
   }
@@ -214,7 +214,7 @@ const FO = FR.o;
 function frameUniforms() {
   const c = R.cam, W = G.W, H = G.H, f = FR.data, o = FO;
   c.prevVp.set(c.vp);
-  // projeção com Z invertido e far infinito
+  // Proyección con Reverse-Z y far infinito
   const p = c.proj, fl = 1 / Math.tan(c.fovy / 2); p.fill(0); p[0] = fl * H / W; p[5] = fl; p[11] = -1; p[14] = c.near;
   m4mul(c.vp, p, c.view);
   if (c.first) { c.prevVp.set(c.vp); c.first = false; }
@@ -237,13 +237,13 @@ function frameUniforms() {
   k = o.fogCol; f[k] = R.fogCol[0]; f[k + 1] = R.fogCol[1]; f[k + 2] = R.fogCol[2]; f[k + 3] = R.fogCol[3];
   k = o.wind; f[k] = R.wind[0]; f[k + 1] = R.wind[1]; f[k + 2] = R.wind[2]; f[k + 3] = RT[0];
   k = o.wm; f[k] = WM.x0; f[k + 1] = WM.z0; f[k + 2] = WM.sx; f[k + 3] = WM.sz;
-  // posição do sol na tela (uv) para o brilho de lente; z = 1 se está à frente da câmera
+  // Posición del sol en pantalla (UV) para lens flare; z = 1 si está frente a la cámara
   { const m = c.vp, sx = R.sun[0], sy = R.sun[1], sz = R.sun[2], cw = m[3] * sx + m[7] * sy + m[11] * sz;
     k = o.sunScr; if (cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0; }
   const dtc = RT[1] > 1e-4 ? RT[1] : 1e-4;
   k = o.post; f[k] = (1 / 120) / dtc; f[k + 1] = Math.tan(c.fovy / 2); f[k + 2] = W / H; f[k + 3] = 0;
 }
-// ---- cascatas de sombra (estáveis: esfera envolvente + encaixe em texel) ----
+// ---- Cascadas de sombra (estables: esfera envolvente + alineación con texels) ----
 const _cs = new Float32Array(3), _sv = new Float64Array(9);
 function lightView(o) { const v = _sv; v[0] = R.sun[0]; v[1] = R.sun[1]; v[2] = R.sun[2]; v[3] = 0; v[4] = 0; v[5] = 0; v[6] = 0; v[7] = 1; v[8] = 0; m4lookAtV(o, v); }
 function orthoInto(o, l, r, b, t, n, f) { o.fill(0); o[0] = 2 / (r - l); o[5] = 2 / (t - b); o[10] = 1 / (n - f); o[12] = (l + r) / (l - r); o[13] = (t + b) / (b - t); o[14] = n / (n - f); o[15] = 1; }
@@ -251,22 +251,22 @@ function cascadeSetup(i) {
   const c = R.cam, cs = R.casc, n = i === 0 ? c.near : cs.splits[i - 1], fa = cs.splits[i];
   if (cs.focusOn) { cascadeFocus(i); return; }
   const th = Math.tan(c.fovy / 2), tw = th * G.W / G.H;
-  // esfera envolvente do tronco [n, fa]
+  // Esfera envolvente del frustum [near, far]
   const k2 = 1 + th * th + tw * tw; let cd = 0.5 * (fa + n) * k2; let rad;
   if (cd > fa) { cd = fa; rad = fa * Math.sqrt(th * th + tw * tw); } else { const a = fa - cd, b = fa * Math.sqrt(th * th + tw * tw); rad = Math.sqrt(a * a + b * b); }
   rad = ((rad * 16 + 0.999999) | 0) / 16;
   const px = c.pos[0] + c.fwd[0] * cd, py = c.pos[1] + c.fwd[1] * cd, pz = c.pos[2] + c.fwd[2] * cd;
   lightView(cs.view);
-  // centro em espaço de luz, encaixado na grade de texels
+  // Centro en espacio de luz, alineado con cuadrícula de texels
   const m = cs.view; let lx = m[0] * px + m[4] * py + m[8] * pz + m[12], ly = m[1] * px + m[5] * py + m[9] * pz + m[13]; const lz = m[2] * px + m[6] * py + m[10] * pz + m[14];
   const tex = 2 * rad / SHADOW_RES; const qx = lx / tex, qy = ly / tex; lx = (qx >= 0 ? (qx + 0.5) | 0 : -((0.5 - qx) | 0)) * tex; ly = (qy >= 0 ? (qy + 0.5) | 0 : -((0.5 - qy) | 0)) * tex;
-  const o = cs.tmp, l = lx - rad, r = lx + rad, b = ly - rad, t = ly + rad, nn = -lz - 105, ff = -lz + rad + 30;   // lançadores até 105 m na direção do sol (árvore de 28 m com sol a 17° projeta ~90 m)
+  const o = cs.tmp, l = lx - rad, r = lx + rad, b = ly - rad, t = ly + rad, nn = -lz - 105, ff = -lz + rad + 30;   // Emisores de sombra hasta 105 m en dirección al sol (árbol de 28 m con sol a 17° proyecta ~90 m)
   o.fill(0); o[0] = 2 / (r - l); o[5] = 2 / (t - b); o[10] = 1 / (nn - ff); o[12] = (l + r) / (l - r); o[13] = (t + b) / (b - t); o[14] = nn / (nn - ff); o[15] = 1;
   m4mul(cs.vp[i], o, cs.view); cs.texel[i] = tex;
   FR.data.set(cs.vp[i], FO.shadowVP + i * 16);
 }
-// Modo foco (câmera de TV com lente longa): as cascatas viram esferas concêntricas em volta do alvo (o carro), para a sombra
-// ter resolução onde a lente está olhando, a qualquer distância da câmera.
+// Modo foco (cámara de TV con teleobjetivo): las cascadas se convierten en esferas concéntricas alrededor
+// del objetivo (el coche), concentrando la resolución donde apunta la lente.
 const FOCUS_R = [9, 30, 105];
 function cascadeFocus(i) {
   const cs = R.casc, rad = FOCUS_R[i], px = cs.focus[0], py = cs.focus[1], pz = cs.focus[2];
@@ -293,20 +293,20 @@ function drawRange(pass, ctx, slot, bg1, i0, i1) {
   pass.setBindGroup(0, R.globBG); R.dyn1[0] = slot * 256; pass.setBindGroup(1, bg1, R.dyn1, 0, 1); R.dyn2[0] = 0; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
   const d = R.drawables; for (let i = i0; i < i1; i++) d[i].draw(pass, ctx);
 }
-// faces do cubemap: direções (alvo, cima) na convenção WebGPU/D3D
+// Caras del cubemap: direcciones (objetivo, arriba) según convención WebGPU/D3D
 const CUBE_DIRS = new Float32Array([1, 0, 0, 0, -1, 0, -1, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0, -1, 0]);
 function cubeSetup(f) {
   const c = R.cube, d = CUBE_DIRS, v = _sv, x = c.cur[0], y = c.cur[1], z = c.cur[2], o = f * 6;
   v[0] = x; v[1] = y; v[2] = z; v[3] = x + d[o]; v[4] = y + d[o + 1]; v[5] = z + d[o + 2]; v[6] = d[o + 3]; v[7] = d[o + 4]; v[8] = d[o + 5];
   m4lookAtV(c.view, v);
-  // perspectiva 90°, near 0.3, far 4000, espelhada em Y
+  // Perspectiva 90°, near 0.3, far 4000, invertida en Y
   const p = c.proj, n = 0.3, fa = 4000; p.fill(0); p[0] = 1; p[5] = -1; p[10] = fa / (n - fa); p[11] = -1; p[14] = n * fa / (n - fa);
   m4mul(c.vp, p, c.view);
 }
 
-// ---- quadro ----
-// Os únicos objetos criados por quadro são os que a API WebGPU obriga a criar (codificador, passes, buffer de comandos,
-// textura/vista do canvas); ficam isolados nestas quatro funções para a medição de alocação poder separá-los.
+// ---- Render loop por frame ----
+// Los únicos objetos creados por frame son los exigidos por WebGPU (command encoder, passes,
+// command buffer y textura/vista del canvas); aislados para garantizar cero asignaciones en el resto.
 function apiEncoder() { return G.dev.createCommandEncoder(); }
 function apiPass(enc, desc) { return enc.beginRenderPass(desc); }
 function apiFinish(enc) { return enc.finish(); }
@@ -317,8 +317,8 @@ function renderFrame() {
   for (let i = 0; i < 3; i++) cascadeSetup(i);
   setPass(0, c.vpJ, c.pos);
   for (let i = 0; i < 3; i++) setPass(1 + i, R.casc.vp[i], c.pos);
-  // uma face do cubemap de ambiente por quadro (ciclo completo a cada 6 quadros)
-  // duas faces do cubemap de ambiente por quadro, cada uma na posição atual do carro (ciclo completo a cada 3 quadros)
+  // Una cara del cubemap de entorno por frame (ciclo completo cada 6 frames)
+  // Dos caras del cubemap de entorno por frame en la posición actual del coche (ciclo cada 3 frames)
   const face = (R.frameIdx * 2) % 6; R.cube.cur.set(R.cube.pos);
   for (let k = 0; k < 2; k++) { cubeSetup(face + k); setPass(5 + face + k, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, (11 + k) * 64); }
   dev.queue.writeBuffer(R.frameBuf, 0, FR.data);
@@ -326,12 +326,12 @@ function renderFrame() {
   dev.queue.writeBuffer(R.objBuf, 0, R.objData, 0, R.objCount * 64);
   for (let i = 0; i < R.preFrame.length; i++) R.preFrame[i]();
   const enc = apiEncoder();
-  // sombras
+  // Pase de sombras cascada
   for (let i = 0; i < 3; i++) {
     const p = apiPass(enc, D.shadow[i]);
     drawAll(p, ctxFrom(KIND.SHADOW, R.casc.vp[i], 6, c.pos, i), 1 + i, R.passBG); p.end();
   }
-  // faces do cubemap de ambiente
+  // Caras del cubemap de entorno
   for (let k = 0; k < 2; k++) {
     const f = face + k; cubeSetup(f);
     const p = apiPass(enc, D.cube[f]);
@@ -339,7 +339,7 @@ function renderFrame() {
     drawAll(p, ctxFrom(KIND.CUBE, R.cube.vp, 6, R.cube.cur, 0), 5 + f, R.passBGCube); p.end();
     envMips(enc, f);
   }
-  // G-buffer
+  // Pase G-buffer
   {
     const p = apiPass(enc, D.gbuf);
     drawAll(p, ctxFrom(KIND.GBUF, c.vpJ, 5, c.pos, 0), 0, R.passBG); p.end();
@@ -351,7 +351,7 @@ function renderFrame() {
   R.frameIdx++;
 }
 R.preFrame = [];
-// renderiza o mapa de sombras estático do mundo (uma vez, depois que todas as malhas estáticas existem)
+// Renderiza el mapa de sombras estático del mundo (una sola vez tras generar mallas estáticas)
 function renderStaticShadow() {
   const ctr = new Float32Array([TRK.cx, 0, TRK.cz]);
   staticShadowSetup(); setPass(4, R.casc.vp[3], ctr);

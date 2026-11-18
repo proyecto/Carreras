@@ -1,8 +1,8 @@
 'use strict';
 // ---- 50_i18n.js
-// Sistema de internacionalización del juego (inglés por defecto, español y portugués).
+// Sistema de internacionalización del juego (español e inglés).
 const I18N = {
-  lang: 'en', // Inglés por defecto
+  lang: 'es', // Español por defecto
 
   locales: {
     en: {
@@ -235,121 +235,7 @@ const I18N = {
       },
     },
 
-    pt: {
-      lang_name: 'Português',
-      loading: 'carregando…',
-      hint: 'W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · C câmera · R volta à pista',
-      legend_car: 'Carro',
-      legend_track: 'Circuito',
-      legend_lang: 'Idioma',
-      badge_current: 'Atual',
-      badge_best: 'Melhor ',
-      btn_start: 'Começar',
-      btn_continue: 'Continuar',
-      btn_resume_driving: 'Voltar a dirigir',
-      btn_apply_race: 'Aplicar e correr',
-      btn_bench: 'Benchmark',
-      btn_repeat_bench: 'Repetir benchmark',
-      tag_bench: 'Benchmark: volta roteirizada de 60 s · Esc cancela',
-      tag_replay: 'Volta roteirizada · R assume o volante · Esc menu',
-      tag_pose: 'Pose {n} · {name} · 1 a {total} trocam · Esc volta a dirigir',
-      hud_timer_labels: ['VOLTA', 'ÚLTIMA', 'MELHOR'],
-      hud_stats_labels: ['QPS', 'QUADRO', 'GPU'],
-      bench_calculating: '<h2>Benchmark · calculando…</h2>',
-      bench_title: '<h2>Benchmark · volta roteirizada de 60 s · {w}×{h}</h2>',
-      bench_avg: 'média (ms)',
-      bench_p99: 'percentil 99 (ms)',
-      bench_max: 'máximo (ms)',
-      bench_frame_time: 'Tempo de quadro',
-      bench_gpu_time: 'Tempo de GPU',
-      bench_unavailable: 'indisponível neste navegador',
-      bench_summary: '{over} de {total} quadros passaram de 16,7 ms de intervalo{gpuOver} · {fps} quadros por segundo',
-      bench_gpu_over: ' · {n} passaram de 16,7 ms de GPU',
-
-      // Controles
-      controls_summary: 'Controles e atalhos',
-      controls_keyboard: 'Teclado',
-      controls_gamepad: 'Controle',
-      controls_tools: 'Ferramentas',
-      ctrl_w: 'acelera',
-      ctrl_s: 'freia e dá ré',
-      ctrl_ad: 'faz curvas',
-      ctrl_space: 'freio de mão',
-      ctrl_c: 'troca a câmera',
-      ctrl_v: 'olha para trás',
-      ctrl_r: 'devolve o carro à pista',
-      ctrl_esc: 'pausa e abre este menu',
-      gp_rt: 'Gatillo direito',
-      gp_lt: 'Gatillo esquerdo',
-      gp_stick: 'Analógico esquerdo',
-      gp_rb: 'RB (segurar)',
-      gp_start: 'abre este menu',
-      tool_m: 'liga e desliga o som',
-      tool_h: 'estatísticas de desempenho',
-      tool_b: 'benchmark (volta de 60 s)',
-      tool_f: 'assistir à volta roteirizada',
-      tool_poses: 'poses fixas',
-      tool_footer: 'Câmbio automático · a volta conta ao cruzar a linha de largada',
-
-      // Coches
-      cars: {
-        'porsche-911-1979': {
-          name: 'Porsche 911 / 935 Turbo',
-          subtitle: '1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD',
-          specs: '1025 kg · 750 CV · Aero Downforce · Motor traseiro · RWD',
-        },
-        'uno-mille-1996': {
-          name: 'Uno com escada',
-          subtitle: 'Fiat Uno Mille EP 1996',
-          specs: '900 kg · 5 marchas · FWD · Escada no teto',
-        },
-        'mclaren-x2-2018': {
-          name: 'McLaren Ultimate Vision GT',
-          subtitle: '2018 Conceito Vision Gran Turismo · 4.0L V8 Twin-Turbo Híbrido · AWD',
-          specs: '1000 kg · 1150 CV · Efeito Solo · Aero Ativa · AWD',
-        },
-        'bmw-m8-gte-2018': {
-          name: 'BMW M8 GTE',
-          subtitle: '2018 Protótipo Le Mans & IMSA · 4.0L V8 Twin-Turbo · RWD',
-          specs: '1220 kg · 600 CV · Aero Spec Le Mans · Xtrac 6 marchas sequencial · RWD',
-        },
-        'mercedes-amg-gt3-2020': {
-          name: 'Mercedes-AMG GT3 Evo',
-          subtitle: '2020 Spec GT3 · 6.2L V8 Aspirado · RWD',
-          specs: '1285 kg · 550 CV · Transaxle Hewland 6 marchas · RWD · Aero GT3 Evo',
-        },
-        'porsche-992-gt3-r-2024': {
-          name: 'Porsche 911 GT3 R (992)',
-          subtitle: '2024 Spec 24h Nürburgring & GT3 · 4.2L Flat-6 Boxer · RWD',
-          specs: '1250 kg · 565 CV · 9250 RPM · Aerodinâmica Swan-Neck · RWD',
-        },
-        'nissan-gtr-gt3-2018': {
-          name: 'Nissan GT-R Nismo GT3',
-          subtitle: '2018 Spec GT3 · 3.8L Twin-Turbo V6 VR38DETT · RWD',
-          specs: '1290 kg · 550 CV · Hewland 6 marchas seq · RWD · Aero Nismo',
-        },
       },
-
-      // Circuitos
-      tracks: {
-        'nurburgring-gp': {
-          name: 'Nürburgring GP',
-          subtitle: 'GP-Strecke',
-          specs: '5,15 km · 16 curvas · Largura FIA GT3 · Traçado oficial de Grande Prêmio',
-        },
-        'nurburgring-nordschleife': {
-          name: 'Nürburgring Nordschleife',
-          subtitle: 'Inferno Verde',
-          specs: '6,86 km · O Inferno Verde · Flugplatz, Fuchsröhre, Karussell e Döttinger Höhe',
-        },
-        'nurburgring-24h': {
-          name: 'Nürburgring 24 Horas',
-          subtitle: '24h Gesamstrecke',
-          specs: '8,55 km · Resistência 24 Horas · GP Paddock, Arena e todo o Inferno Verde',
-        },
-      },
-    },
-  },
 
   init() {
     let saved = null;
@@ -366,7 +252,7 @@ const I18N = {
     if (saved && I18N.locales[saved]) {
       I18N.lang = saved;
     } else {
-      I18N.lang = 'en'; // Por defecto siempre inglés
+      I18N.lang = 'es'; // Por defecto español
     }
     if (typeof document !== 'undefined' && document.documentElement) {
       document.documentElement.lang = I18N.lang;

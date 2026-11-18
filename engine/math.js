@@ -1,6 +1,6 @@
 'use strict';
 // ---- 00_math.js
-// Matemática sem alocação: tudo escreve em parâmetros de saída (Float32Array pré-alocados).
+// Matemáticas sin asignación de memoria: todo escribe en parámetros de salida (Float32Array preasignados).
 const PI = Math.PI, TAU = Math.PI * 2;
 const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -13,7 +13,7 @@ const wrapPi = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
 function m4() { const m = new Float32Array(16); m[0] = m[5] = m[10] = m[15] = 1; return m; }
 function m4ident(o) { o.fill(0); o[0] = o[5] = o[10] = o[15] = 1; return o; }
 function m4copy(o, a) { o.set(a); return o; }
-function m4mul(o, a, b) { // o = a*b (coluna-maior); o pode ser a ou b
+function m4mul(o, a, b) { // o = a*b (column-major); o puede ser a o b
   const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3], a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
     a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11], a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
   for (let i = 0; i < 4; i++) {
@@ -25,12 +25,12 @@ function m4mul(o, a, b) { // o = a*b (coluna-maior); o pode ser a ou b
   }
   return o;
 }
-// Projeção com Z invertido e plano distante no infinito (profundidade = near / distância).
+// Proyección con Reverse-Z y plano lejano en el infinito (profundidad = near / distancia).
 function m4persp(o, fovy, aspect, near) {
   const f = 1 / Math.tan(fovy / 2);
   o.fill(0); o[0] = f / aspect; o[5] = f; o[11] = -1; o[14] = near; return o;
 }
-// Projeção de cubemap/normal com far finito e z em [0,1]
+// Proyección de cubemap/normal con far finito y z en [0,1]
 function m4perspStd(o, fovy, aspect, near, far) {
   const f = 1 / Math.tan(fovy / 2);
   o.fill(0); o[0] = f / aspect; o[5] = f; o[10] = far / (near - far); o[11] = -1; o[14] = near * far / (near - far); return o;
@@ -46,7 +46,7 @@ function m4lookAt(o, ex, ey, ez, tx, ty, tz, ux, uy, uz) {
   o[0] = xx; o[1] = yx; o[2] = zx; o[3] = 0; o[4] = xy; o[5] = yy; o[6] = zy; o[7] = 0; o[8] = xz; o[9] = yz; o[10] = zz; o[11] = 0;
   o[12] = -(xx * ex + xy * ey + xz * ez); o[13] = -(yx * ex + yy * ey + yz * ez); o[14] = -(zx * ex + zy * ey + zz * ez); o[15] = 1; return o;
 }
-// variante sem argumentos numéricos (não gera números em caixa na chamada): v[0..2] olho, v[3..5] alvo, v[6..8] cima
+// Variante sin argumentos numéricos (evita boxing en llamada): v[0..2] ojo, v[3..5] objetivo, v[6..8] arriba
 function m4lookAtV(o, v) {
   const ex = v[0], ey = v[1], ez = v[2], ux = v[6], uy = v[7], uz = v[8];
   let zx = ex - v[3], zy = ey - v[4], zz = ez - v[5]; let l = 1 / Math.sqrt(zx * zx + zy * zy + zz * zz); zx *= l; zy *= l; zz *= l;
@@ -76,19 +76,19 @@ function m4scale(o, x, y, z) { m4ident(o); o[0] = x; o[5] = y; o[10] = z; return
 function m4rotX(o, a) { m4ident(o); const c = Math.cos(a), s = Math.sin(a); o[5] = c; o[6] = s; o[9] = -s; o[10] = c; return o; }
 function m4rotY(o, a) { m4ident(o); const c = Math.cos(a), s = Math.sin(a); o[0] = c; o[2] = -s; o[8] = s; o[10] = c; return o; }
 function m4rotZ(o, a) { m4ident(o); const c = Math.cos(a), s = Math.sin(a); o[0] = c; o[1] = s; o[4] = -s; o[5] = c; return o; }
-// matriz a partir de base ortonormal (colunas X,Y,Z) + posição
+// Matriz a partir de base ortonormal (columnas X,Y,Z) + posición
 function m4basis(o, xx, xy, xz, yx, yy, yz, zx, zy, zz, px, py, pz) {
   o[0] = xx; o[1] = xy; o[2] = xz; o[3] = 0; o[4] = yx; o[5] = yy; o[6] = yz; o[7] = 0; o[8] = zx; o[9] = zy; o[10] = zz; o[11] = 0;
   o[12] = px; o[13] = py; o[14] = pz; o[15] = 1; return o;
 }
-// transforma ponto; escreve em o[oi..oi+2]
+// Transforma punto; escribe en o[oi..oi+2]
 function m4point(o, oi, m, x, y, z) {
   o[oi] = m[0] * x + m[4] * y + m[8] * z + m[12]; o[oi + 1] = m[1] * x + m[5] * y + m[9] * z + m[13]; o[oi + 2] = m[2] * x + m[6] * y + m[10] * z + m[14];
 }
 function m4dir(o, oi, m, x, y, z) {
   o[oi] = m[0] * x + m[4] * y + m[8] * z; o[oi + 1] = m[1] * x + m[5] * y + m[9] * z; o[oi + 2] = m[2] * x + m[6] * y + m[10] * z;
 }
-// planos do frustum (6×4) a partir de viewProj; normalizados, apontando para dentro. Z invertido infinito: sem plano far.
+// Planos del frustum (6×4) a partir de viewProj; normalizados, apuntando hacia dentro. Reverse-Z infinito: sin plano far.
 function frustumPlanes(o, m, nPlanes) {
   for (let i = 0; i < nPlanes; i++) {
     let a, b, c, d;
@@ -96,12 +96,12 @@ function frustumPlanes(o, m, nPlanes) {
     else if (i === 1) { a = m[3] - m[0]; b = m[7] - m[4]; c = m[11] - m[8]; d = m[15] - m[12]; }
     else if (i === 2) { a = m[3] + m[1]; b = m[7] + m[5]; c = m[11] + m[9]; d = m[15] + m[13]; }
     else if (i === 3) { a = m[3] - m[1]; b = m[7] - m[5]; c = m[11] - m[9]; d = m[15] - m[13]; }
-    else if (i === 4) { a = m[3] - m[2]; b = m[7] - m[6]; c = m[11] - m[10]; d = m[15] - m[14]; }   // near (z invertido: z<=w)
+    else if (i === 4) { a = m[3] - m[2]; b = m[7] - m[6]; c = m[11] - m[10]; d = m[15] - m[14]; }   // near (reverse-Z: z<=w)
     else { a = m[2]; b = m[6]; c = m[10]; d = m[14]; }
     const l = 1 / Math.sqrt(a * a + b * b + c * c); o[i * 4] = a * l; o[i * 4 + 1] = b * l; o[i * 4 + 2] = c * l; o[i * 4 + 3] = d * l;
   }
 }
-// teste esfera × planos sem números por argumento: a esfera vem do registrador SQ = [x, y, z, raio]
+// Test esfera × planos sin números por argumento: la esfera proviene del registro SQ = [x, y, z, radio]
 const SQ = new Float64Array(4);
 function sphereQ(pl, n) {
   const x = SQ[0], y = SQ[1], z = SQ[2], r = SQ[3];
@@ -112,13 +112,13 @@ function sphereInFrustum(pl, n, x, y, z, r) {
   for (let i = 0; i < n; i++) if (pl[i * 4] * x + pl[i * 4 + 1] * y + pl[i * 4 + 2] * z + pl[i * 4 + 3] < -r) return false;
   return true;
 }
-// RNG determinístico
+// Generador de números aleatorios (RNG) determinista
 function mkRng(seed) {
   let s = seed >>> 0;
   return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 function hash2(x, y) { let h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
-// ruído de valor 2D suave + fbm (CPU, para geração)
+// Ruido de valor 2D suave + FBM (CPU, para generación procedural)
 function vnoise(x, y) {
   const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
   const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);

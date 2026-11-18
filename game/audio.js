@@ -1,44 +1,44 @@
 'use strict';
 // ---- 50_som.js
-// Som: tudo sintetizado na hora, sem amostra gravada. O núcleo (sndCore) é JavaScript puro e determinístico: o mesmo
-// código roda dentro de um AudioWorklet (jogo em tempo real) e fora do tempo real (trilha do vídeo e testes), sempre a
-// partir de 16 controles inteiros tirados da simulação (sndControl). Nenhuma alocação por bloco de áudio nem por quadro.
+// Sistema de audio procedural sintetizado en tiempo real (cero samples pregrabados). sndCore es JS determinista:
+// corre en AudioWorklet (en vivo) y offline (capturas y tests), a partir de 16 controles enteros
+// de la física (sndControl). Cero asignaciones por bloque de audio o frame.
 //
-// Controles (inteiros; no jogo viajam como AudioParams de taxa k, um número por bloco):
-//  0 bits: 1 = jogo andando (0 = pausa: a saída some e o estado congela), 2 = mudo, 4/8 = câmera (0 perseguição, 1 capô, 2 TV)
-//  1 giro (rpm)   2 acelerador ×1000   3 marcha (0 = ré)   4 velocidade do carro (cm/s)
-//  5/6 canto de pneu esquerdo/direito ×1000   7 rodas na grama/brita ×1000   8 rodas na zebra ×1000
-//  9 distância do ouvinte ao carro (dm)   10 fator Doppler ×10000   11 velocidade do ouvinte (cm/s)
-//  12 proximidade da arquibancada ×1000   13 lado da arquibancada ×1000 (-1000 esquerda .. 1000 direita)   14 contador de batidas
-// Camadas (mix[i]): 0 motor, 1 pneus (canto), 2 vento, 3 rodagem (piso, zebra, brita, batida), 4 ambiente (mata, pássaros), 5 público.
-// Níveis: VOL é o volume geral, aplicado na saída, depois do limitador (o timbre e a dinâmica não mudam com ele); AMB é o
-// ganho a mais das camadas de ambiente (mata, pássaros e público) em relação ao resto.
+// Controles enteros (viajan como AudioParams de tasa k por bloque):
+//  0 bits: 1 = juego activo (0 = pausa: silencia y congela estado), 2 = mudo, 4/8 = cámara (0 persecución, 1 capó, 2 TV)
+//  1 rpm   2 acelerador ×1000   3 marcha (0 = marcha atrás)   4 velocidad del coche (cm/s)
+//  5/6 chirrido de neumático izq/der ×1000   7 ruedas en hierba/grava ×1000   8 ruedas en piano ×1000
+//  9 distancia oyente-coche (dm)   10 factor Doppler ×10000   11 velocidad del oyente (cm/s)
+//  12 proximidad de grada ×1000   13 lado de grada (-1000 izq .. 1000 der)   14 impactos
+// Capas: 0 motor, 1 neumáticos, 2 viento, 3 rodadura/pianos/impactos, 4 ambiente, 5 público.
+// Niveles: VOL = volumen general; AMB = ganancia de capas ambientales.
+
 function sndCore(sr) {
   const VOL = 0.4, AMB = 0.5;
   const NC = 32, PI = Math.PI, NPH = 40, PH0 = 128, ctl = new Float32Array(16), st = new Float64Array(PH0 + NPH * 22), F = new Float64Array(120), Z = new Float64Array(80);
   const RS = new Int32Array(2), BI = new Int32Array(6), PHN = new Int32Array(NPH), mix = new Float32Array(6).fill(1);
   const mk = () => new Float32Array(NC);
   const wA = mk(), wB = mk(), ex = mk(), ni = mk(), tk = mk(), eg = mk(), cb = mk(), sL = mk(), sR = mk(), t1 = mk(), t2 = mk(), oL = mk(), oR = mk();
-  const L2 = mk(), R2 = mk(), L4 = mk(), R4 = mk(), L5 = mk(), R5 = mk();   // barramentos estéreo: vento, ambiente, público
-  const CG = new Float64Array([1, 0.8, 0.92, 0.74]);  // cilindros desiguais: dão as meias-ordens (o "ronco" de quatro cilindros)
-  // ganhos dos ressonadores do motor por câmera: [direto, 105, 235, 470, 980, 2100 Hz, admissão, tuchos]
+  const L2 = mk(), R2 = mk(), L4 = mk(), R4 = mk(), L5 = mk(), R5 = mk();   // Buses estéreo: viento, ambiente, público
+  const CG = new Float64Array([1, 0.8, 0.92, 0.74]);  // Cilindros asimétricos: armónicos y pulsos de combustión
+  // Ganancias de resonadores del motor por cámara: [directo, 105, 235, 470, 980, 2100 Hz, admisión, escape]
   const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1]);
   const kc = t => 1 - Math.exp(-NC / (sr * t)), K8 = kc(0.008), K20 = kc(0.02), K50 = kc(0.05), K200 = kc(0.2), K30 = kc(0.03);
   const fset = (k, hz, Q, g) => { F[3 * k] = 2 * Math.sin(PI * Math.min(hz, sr * 0.16) / sr); F[3 * k + 1] = 1 / Q; F[3 * k + 2] = g; };
-  // filtros fixos
+  // Filtros de frecuencia
   fset(0, 22, 0.7, 1); fset(1, 105, 2.2, 1); fset(2, 235, 3, 1); fset(3, 470, 3.5, 1); fset(4, 980, 3, 1); fset(5, 2100, 2.5, 1); fset(6, 1400, 1.1, 1); fset(7, 3400, 0.8, 1);
-  fset(8, 1900, 1.4, 1); fset(9, 1900, 1.4, 1);      // raspado do pneu E/D
-  fset(10, 300, 0.7, 1); fset(11, 300, 0.7, 1);       // vento E/D (frequência varia)
-  fset(12, 200, 0.7, 1);                              // rodagem (varia)
-  fset(13, 650, 0.8, 1); fset(14, 2600, 1.6, 1);      // grama/brita: corpo e estalos
-  fset(15, 82, 5, 1); fset(16, 310, 2.2, 1);          // zebra
-  fset(17, 190, 1.2, 1); fset(18, 1300, 1.5, 1);      // batida
-  fset(19, 3100, 0.6, 1); fset(20, 3600, 0.6, 1);     // folhagem E/D
-  fset(21, 5200, 22, 1); fset(22, 6300, 26, 1);       // cigarras
-  fset(23, 540, 2.4, 1); fset(24, 1150, 3, 0.8); fset(25, 2500, 3, 0.35); fset(26, 600, 2.4, 1); fset(27, 1250, 3, 0.8); fset(28, 2700, 3, 0.35);   // público E/D (formantes de voz)
-  fset(29, 1750, 1.1, 1);                             // palmas
-  fset(30, 8000, 0.7, 1); fset(31, 8000, 0.7, 1);     // absorção do ar com a distância (varia)
-  fset(32, 90, 3, 1);                                 // tranco da troca de marcha
+  fset(8, 1900, 1.4, 1); fset(9, 1900, 1.4, 1);      // Fricción de neumático izq/der
+  fset(10, 300, 0.7, 1); fset(11, 300, 0.7, 1);       // Viento izq/der (frecuencia variable)
+  fset(12, 200, 0.7, 1);                              // Rodadura (variable)
+  fset(13, 650, 0.8, 1); fset(14, 2600, 1.6, 1);      // Hierba/grava: cuerpo y gravilla
+  fset(15, 82, 5, 1); fset(16, 310, 2.2, 1);          // Piano / bordillo
+  fset(17, 190, 1.2, 1); fset(18, 1300, 1.5, 1);      // Impacto
+  fset(19, 3100, 0.6, 1); fset(20, 3600, 0.6, 1);     // Follaje izq/der
+  fset(21, 5200, 22, 1); fset(22, 6300, 26, 1);       // Cigarras ambientales
+  fset(23, 540, 2.4, 1); fset(24, 1150, 3, 0.8); fset(25, 2500, 3, 0.35); fset(26, 600, 2.4, 1); fset(27, 1250, 3, 0.8); fset(28, 2700, 3, 0.35);   // Público izq/der (formantes de voz)
+  fset(29, 1750, 1.1, 1);                             // Aplausos
+  fset(30, 8000, 0.7, 1); fset(31, 8000, 0.7, 1);     // Absorción del aire con la distancia
+  fset(32, 90, 3, 1);                                 // Golpe de cambio de marcha
   fset(33, 20, 0.7, 1);                               // tira o nível contínuo que a saturação do motor cria
   // índices do estado
   const MG = 0, RP = 1, LD = 2, FP = 3, AMP = 4, CYL = 5, GP = 6, SHT = 7, DG = 8, DP = 9, SPD = 10, SQ = 11, SQP = 13, SQJ = 15, LSP = 17, GUST = 18, LOO = 19, KRB = 20, KPH = 21,
@@ -97,7 +97,7 @@ function sndCore(sr) {
     const dg = st[DG] += (Math.pow(9 / (9 + (dist > 7 ? dist - 7 : 0)), 0.85) - st[DG]) * K20;
     const spd = st[SPD] += (ctl[4] * 0.01 - st[SPD]) * K20, lsp = st[LSP] += (ctl[11] * 0.01 - st[LSP]) * K50;
     for (let k = 0; k < 8; k++) st[VGS + k] += (VG[view * 8 + k] - st[VGS + k]) * K20;
-    // ---- motor: pulsos de pressão e ressonâncias adaptadas a cada modelo de carro (ctl[15])
+    // ---- Motor: pulsos de presión acústica y resonancias afinadas por modelo (ctl[15])
     let ctype = (ctl[15] | 0);
     if (ctype < 0 || ctype > 8) ctype = 0;
     if (st[CART] !== ctype) {
@@ -189,19 +189,19 @@ function sndCore(sr) {
     const drv = drvBase + 2.6 * ld, ev = (0.3 + 0.7 * Math.pow(ld, 0.8)) * (0.45 + 0.55 * rp / 6500) * dg * 0.4 / (drv / (1 + drv * 0.5));
     for (let i = 0; i < m; i++) { const x = eg[i] * drv; eg[i] = x / (1 + (x < 0 ? -x : x) * 0.5) * ev; }   // saturação: mais harmônicos com carga
     svf(eg, eg, m, 33, 2, 0);
-    // ---- pneus: canto (tom instável perto de 1 kHz com harmônicos) + raspado, por lado, na proporção do escorregamento
+    // ---- Neumáticos: chirrido (~1 kHz con armónicos) + fricción por rueda proporcional al deslizamiento
     for (let s = 0; s < 2; s++) {
       const tgt = ctl[5 + s] * 0.001, a = st[SQ + s] += (tgt - st[SQ + s]) * (tgt > st[SQ + s] ? K20 : K30), o = s ? sR : sL, w = s ? wB : wA;
-      if (a < 0.004) { st[SQ + s] = tgt > 0 ? a : 0; o.fill(0); continue; }                                 // agarrou: some de vez
+      if (a < 0.004) { st[SQ + s] = tgt > 0 ? a : 0; o.fill(0); continue; }                                 // Adherencia recuperada
       const j = (st[SQJ + s] += ((rnd16() / 32768 - 1) * 0.08 - st[SQJ + s]) * 0.18) + (st[SQW + s] += ((rnd16() / 32768 - 1) * 2.2 - st[SQW + s]) * 0.004), env = st[SQA + s] += ((rnd16() / 65536) - st[SQA + s]) * 0.05;
       const f = (720 + 380 * a) * (0.86 + 0.22 * (spd < 35 ? spd / 35 : 1)) * (s ? 1.07 : 1) * (1 + j) * dp / sr, g = Math.pow(a, 1.45) * (0.45 + 1.1 * env) * 0.3 * dg, gs = Math.pow(a, 0.8) * 0.55 * dg;
       let ph = st[SQP + s];
       for (let i = 0; i < m; i++) { ph += f; if (ph >= 1) ph -= 1; const q = Math.sin(6.283185307 * ph); t1[i] = (q + 0.4 * (1 - 2 * q * q) + 0.1 * (3 * q - 4 * q * q * q)) * g; t2[i] = w[i] * gs; }
       st[SQP + s] = ph; svf(t2, t1, m, 8 + s, 1, 1); o.set(t1);
     }
-    // ---- barramento do carro visto do ouvinte: absorção do ar com a distância
+    // ---- Bus del coche hacia el oyente: absorción por distancia
     const air = 15000 / (1 + dist * 0.02); F[90] = F[93] = 2 * Math.sin(PI * (air < sr * 0.16 ? air : sr * 0.16) / sr);
-    // ---- vento (velocidade do ouvinte) e rodagem (velocidade do carro)
+    // ---- Viento y rodadura según velocidad
     const gust = st[GUST] += ((rnd16() / 65536) - st[GUST]) * 0.004, wv = lsp / 42, wg = wv * wv * (0.7 + 0.6 * gust) * (view === 1 ? 0.85 : 0.6), wf = 2 * Math.sin(PI * (260 + 21 * lsp) / sr);
     F[30] = F[33] = wf; F[32] = F[35] = wg;
     svf(wA, L2, m, 10, 1, 0); svf(wB, R2, m, 11, 1, 0);
@@ -216,7 +216,7 @@ function sndCore(sr) {
     }
     const hits = ctl[14] | 0; if (hits !== st[HIT]) { st[HIT] = hits; if (st[HITE] < 0.05) st[HITE] = 1; }
     let he = st[HITE]; if (he > 1e-4) { for (let i = 0; i < m; i++) { t2[i] = wA[i] * he * he; he *= 0.9984; } st[HITE] = he < 0.01 ? 0 : he; F[53] = 2.2 * dg; F[56] = 0.7 * dg; svf(t2, cb, m, 17, 0, 1); svf(t2, cb, m, 18, 1, 1); }
-    // ---- ambiente: folhagem, cigarras e pássaros (independem do carro)
+    // ---- Ambiente: follaje, viento y pájaros
     const fol = st[FOL] += ((rnd16() / 65536) - st[FOL]) * 0.0015, fg = 0.024 * (0.5 + fol), tm = st[TM] += m, ts = tm / sr;
     F[59] = fg; F[62] = fg; svf(wA, L4, m, 19, 1, 0); svf(wB, R4, m, 20, 1, 0);
     const c1 = Math.sin(ts * 0.48), c2 = Math.sin(ts * 0.37 + 2), a1 = c1 > 0 ? c1 * c1 * 0.07 : 0, a2 = c2 > 0 ? c2 * c2 * 0.055 : 0;
@@ -226,7 +226,7 @@ function sndCore(sr) {
     for (let v = 0; v < 3; v++) {
       if (BI[v * 2] <= 0) continue;
       const b = BV + v * 10, dur = st[b + 1], f0 = st[b + 2], df = st[b + 3] - f0, vd = st[b + 5], a = st[b + 8], pan = st[b + 9], idur = 1 / dur; let t = st[b], ph = st[b + 6];
-      if (t < 0) { t += m; st[b] = t; if (t >= 0) birdNote(v); continue; }                // pausa entre notas
+      if (t < 0) { t += m; st[b] = t; if (t >= 0) birdNote(v); continue; }                // Pausa entre trinos
       for (let i = 0; i < m && t < dur; i++, t++) {
         const u = t * idur, e = u < 0.2 ? u * 5 : (1 - u) * 1.25, f = f0 + df * u + (vd ? vd * Math.sin(t * 190 / sr) : 0);
         ph += f / sr; if (ph >= 1) ph -= 1; const q = Math.sin(6.283185307 * ph), y = (q + 0.2 * (1 - 2 * q * q)) * e * e * a * (vd ? 0.6 + 0.4 * Math.sin(t * 190 / sr) : 1);
@@ -235,7 +235,7 @@ function sndCore(sr) {
       st[b + 6] = ph;
       if (t >= dur) { if (--BI[v * 2] > 0) st[b] = -st[b + 4]; } else st[b] = t;
     }
-    // ---- público: murmúrio (ruído em formantes de voz, em ondas lentas) e palmas, só perto da arquibancada
+    // ---- Gradas: murmullo y aplausos según proximidad
     const crw = st[CRW] += (ctl[12] * 0.001 - st[CRW]) * K200;
     if (crw > 0.004) {
       const cp = st[CPN] += (ctl[13] * 0.001 - st[CPN]) * K200, sw = st[CRE] += ((rnd16() / 65536) - st[CRE]) * 0.003, cg = crw * (0.45 + 1.1 * sw) * (1 + 0.5 * (spd < 40 ? spd / 40 : 1)) * 0.75, gl = cg * (1 - 0.6 * cp) * 0.5, gr = cg * (1 + 0.6 * cp) * 0.5;
@@ -244,7 +244,7 @@ function sndCore(sr) {
       const dn = 0.0035 * (0.4 + sw); for (let i = 0; i < m; i++) t1[i] = wA[i] < -1 + dn ? 9 * (0.3 + wB[i] * wB[i]) : 0;
       svf(t1, t2, m, 29, 1, 0); for (let i = 0; i < m; i++) { L5[i] += t2[i] * gl; R5[i] += t2[i] * gr; }
     } else { L5.fill(0); R5.fill(0); }
-    // ---- mistura, absorção do ar no barramento do carro, limitador suave
+    // ---- Mezcla, atenuación y limitador suave
     const m0 = mix[0], m1 = mix[1], m2 = mix[2], m3 = mix[3], m4 = mix[4] * AMB, m5 = mix[5] * AMB, near = view === 1 ? 1.25 : 1;
     for (let i = 0; i < m; i++) { const e = eg[i] * m0 * near, c = cb[i] * m3; t1[i] = e + c + (sL[i] * 0.85 + sR[i] * 0.4) * m1; t2[i] = e + c + (sL[i] * 0.4 + sR[i] * 0.85) * m1; }
     svf(t1, t1, m, 30, 0, 0); svf(t2, t2, m, 31, 0, 0);
@@ -256,34 +256,34 @@ function sndCore(sr) {
       oL[i] = l * VOL; oR[i] = r * VOL;
     }
   }
-  // escreve n amostras em L e R a partir de off
+  // Escribe n muestras en canales L y R a partir de offset
   function render(L, R, off, n) {
     for (let o = 0; o < n; o += NC) { const m = n - o < NC ? n - o : NC; chunk(m); for (let i = 0; i < m; i++) { L[off + o + i] = oL[i]; R[off + o + i] = oR[i]; } }
   }
   return { ctl, mix, render, reset };
 }
-// ==== tempo real e fora do tempo real: ligação do sintetizador com o jogo
+// ==== Conexión del sintetizador con la simulación
 const SND = { ctx: null, node: null, P: null, ok: false, run: false, mute: false, sc: new Int32Array(16), last: new Int32Array(16), stand: new Float64Array(4), rec: null, recN: 0, pcm: null, an: null, anBuf: null };
 function sndInit() {
   const p = new Float64Array(5), S = TRK.stand, d = (S.d0 + S.d1) / 2;
   trackPos(TRK.L + S.s0, d, p); SND.stand[0] = p[0]; SND.stand[1] = p[2]; trackPos(S.s1, d, p); SND.stand[2] = p[0]; SND.stand[3] = p[2];
 }
-// Lê a simulação e a câmera e preenche os 16 controles inteiros (SND.sc). É a única entrada do sintetizador.
+// Muestrea simulación y cámara para actualizar los 16 controles enteros (SND.sc).
 function sndControl() {
   const V = VEH, c = SND.sc, cam = R.cam, cp = cam.pos, view = GS.cam, sp = GS.speed;
   let sl = 0, sr = 0, loose = 0, kerb = 0;
   for (let i = 0; i < 4; i++) {
     const z = V.wzone[i], s = V.slip[i];
     if (z === ZONE.GRASS || z === ZONE.GRAVEL || z === ZONE.ROUGH) loose += 0.25;
-    else { if (z === ZONE.KERB) kerb += 0.25; if (s > 0.03) { if (i & 1) { if (s > sr) sr = s; } else if (s > sl) sl = s; } }   // pneu só canta em piso duro
+    else { if (z === ZONE.KERB) kerb += 0.25; if (s > 0.03) { if (i & 1) { if (s > sr) sr = s; } else if (s > sl) sl = s; } }   // El neumático solo chirría en asfalto/superficie dura
   }
   const kv = sp < 12 ? sp / 12 : 1, dx = GS.cx - cp[0], dy = GS.cy + 0.6 - cp[1], dz = GS.cz - cp[2], dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
   let dop = 1, lsp = sp;
-  if (view === 2) {   // câmera de TV parada: Doppler pela velocidade de aproximação do carro; o ouvinte não tem vento próprio
+  if (view === 2) {   // Cámara de TV estática: efecto Doppler según velocidad relativa de aproximación
     const cy = Math.cos(V.yaw), sy = Math.sin(V.yaw), vr = -((V.vx * cy - V.vy * sy) * dx + (V.vx * sy + V.vy * cy) * dz) / (dist > 1 ? dist : 1);
     dop = 343 / (343 - vr); lsp = 0;
   }
-  // público: distância do ouvinte ao eixo da arquibancada e de que lado ela fica
+  // Distancia y orientación del oyente a las gradas
   const A = SND.stand, bx = A[2] - A[0], bz = A[3] - A[1]; let t = ((cp[0] - A[0]) * bx + (cp[2] - A[1]) * bz) / (bx * bx + bz * bz); t = t < 0 ? 0 : t > 1 ? 1 : t;
   const px = A[0] + bx * t - cp[0], pz = A[1] + bz * t - cp[2], pd = Math.sqrt(px * px + pz * pz) + 0.01, fw = cam.fwd, fl = Math.sqrt(fw[0] * fw[0] + fw[2] * fw[2]) + 1e-6;
   c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (view << 2);
@@ -303,21 +303,19 @@ function sndControl() {
   }
   c[15] = carType;
 }
-// O contexto de áudio só pode nascer num gesto do usuário: é chamado no clique de "Começar".
+// El AudioContext requiere interacción del usuario (click de inicio)
 function sndStart() {
   if (SND.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
   const ctx = SND.ctx = new AC({ latencyHint: 'interactive' });
-  const fallback = () => {   // navegador sem AudioWorklet: mesmo sintetizador num ScriptProcessor
+  const fallback = () => {   // Fallback a ScriptProcessor si no hay AudioWorklet
     const s = sndCore(ctx.sampleRate), n = SND.node = ctx.createScriptProcessor(1024, 0, 2);
     n.onaudioprocess = e => { const b = e.outputBuffer; for (let k = 0; k < 16; k++) s.ctl[k] = SND.sc[k]; s.render(b.getChannelData(0), b.getChannelData(1), 0, b.length); };
     n.connect(ctx.destination); SND.ok = true;
   };
   if (!ctx.audioWorklet) { fallback(); return; }
-  // (o construtor do processador roda ~4 s de áudio com controles variados e zera o estado: o V8 otimiza o sintetizador
-  // antes do primeiro bloco de verdade, em vez de passar o primeiro segundo no interpretador, alocando)
+  // Precalentamiento del sintetizador para optimización anticipada en V8
   const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|(i>>8)%3<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
-  // O módulo vai por URL data: — aberto como arquivo (file://) a página tem origem opaca e o Chrome recusa módulo por URL blob:.
-  // Se o navegador recusar data:, tenta blob:; se não houver worklet de jeito nenhum, cai no ScriptProcessor.
+  // Carga de AudioWorklet vía URL data: o blob: con fallback robusto
   const mod = u => ctx.audioWorklet.addModule(u);
   mod('data:application/javascript;charset=utf-8,' + encodeURIComponent(code)).catch(() => mod(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })))).then(() => {
     const n = SND.node = new AudioWorkletNode(ctx, 'uno', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
@@ -325,23 +323,23 @@ function sndStart() {
     n.connect(ctx.destination); SND.last.fill(-1); SND.ok = true; sndFlags();
   }).catch(e => { console.warn('AudioWorklet indisponível (' + e.message + '): som pelo ScriptProcessor'); SND.P = null; fallback(); });
 }
-// envia os controles deste quadro ao sintetizador: só números inteiros pequenos em AudioParams (nada é alocado)
+// Envía controles del frame actual como AudioParams (cero allocations)
 function sndFrame() {
   if (!SND.ok) return; sndControl();
   const P = SND.P; if (!P) return; const c = SND.sc, l = SND.last;
   for (let i = 0; i < 16; i++) { const v = c[i]; if (v !== l[i]) { l[i] = v; P[i].value = v; } }
 }
 function sndFlags() { const c = SND.sc; c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (c[0] & 12); if (SND.P) { SND.P[0].value = c[0]; SND.last[0] = c[0]; } }
-// pausa (menu) e retomada: o sintetizador some em poucos milissegundos e o contexto de áudio é suspenso em seguida
+// Pausa y reanudación instantáneas
 function sndRun(on) {
   SND.run = on; if (!SND.ctx) return; sndFlags();
   if (on) SND.ctx.resume(); else setTimeout(() => { if (!SND.run && SND.ctx.state === 'running') SND.ctx.suspend(); }, 150);
 }
 function sndMute(m) { SND.mute = m; sndFlags(); }
-// gravação dos controles a cada quadro de 1/60 s (captura): a trilha do vídeo sai da mesma simulação que os quadros
+// Registro de controles a 60 Hz para render offline
 function sndRecTick() { const r = SND.rec; if (SND.recN * 16 >= r.length) return; const was = SND.run; SND.run = true; sndControl(); SND.run = was; r.set(SND.sc, SND.recN++ * 16); }
-// Síntese fora do tempo real dos controles gravados → PCM estéreo de 16 bits a 48 kHz (800 amostras por quadro de 1/60 s).
-// mix: bits das camadas (63 = todas); mudoDe / pausaDe: quadro a partir do qual liga o mudo / a pausa (-1 = nunca).
+// Síntesis offline → PCM estéreo 16-bit a 48 kHz (800 muestras por frame a 60 Hz).
+// mix: máscara de capas (63 = todas).
 function sndOffline(mix, mudoDe, pausaDe) {
   const n = SND.recN, S = sndCore(48000), L = new Float32Array(n * 800), Rr = new Float32Array(n * 800), pcm = SND.pcm = new Int16Array(n * 1600), rec = SND.rec;
   for (let i = 0; i < 6; i++) S.mix[i] = (mix >> i) & 1;

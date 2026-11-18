@@ -1,9 +1,9 @@
 'use strict';
 // ---- 47_perf.js
-// Medição de desempenho: consultas de tempo de GPU por passe + log de tempo de quadro.
-// Com ?perf (ferramenta de medição) as consultas ficam sempre ligadas, como sempre foi. No jogo aberto por uma pessoa elas
-// só são ligadas enquanto o benchmark roda ou as estatísticas (tecla H) estão na tela (perfAttach); fora disso os passes
-// ficam sem consulta nenhuma. As promessas de mapAsync são a única alocação e só existem enquanto se mede.
+// Medición de rendimiento: consultas de tiempo de GPU por render pass + registro de frametime.
+// Con ?perf las consultas permanecen activadas. En el juego interactivo solo se activan
+// durante el benchmark o cuando las estadísticas están activas (perfAttach); fuera de eso los render passes
+// se ejecutan sin overhead de timestamp queries. Las promesas de mapAsync son la única asignación temporal.
 const PERF = {
   on: false, qs: null, resolve: null, pool: [], names: [], n: 0, cap: 16384, count: 0,
   gpu: null, span: null, cpu: null, raf: null, perPass: null, lastRaf: 0, t0: 0, pendingIdx: -1,
@@ -11,7 +11,7 @@ const PERF = {
 };
 function perfInit() {
   if (!Q.has('perf') && !GAME.ui) return;
-  PERF.raf = new Float32Array(PERF.cap); PERF.cpu = new Float32Array(PERF.cap); PERF.gpu = new Float32Array(PERF.cap); PERF.span = new Float32Array(PERF.cap);   // o tempo de quadro é gravado mesmo sem tempo de GPU
+  PERF.raf = new Float32Array(PERF.cap); PERF.cpu = new Float32Array(PERF.cap); PERF.gpu = new Float32Array(PERF.cap); PERF.span = new Float32Array(PERF.cap);   // el frametime se registra incluso sin timestamp queries de GPU
   if (!G.hasTS) return;
   const dev = G.dev, D = R.pd, list = [];
   const add = (name, descs) => { const i = list.length; list.push(name); for (const d of descs) d.timestampWrites = { querySet: null, beginningOfPassWriteIndex: i * 2, endOfPassWriteIndex: i * 2 + 1 }; PERF._d.push(...descs); };
@@ -28,12 +28,12 @@ function perfInit() {
   for (let i = 0; i < 6; i++) {
     const b = { buf: dev.createBuffer({ size: PERF.n * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }), free: true, frame: 0, cb: null };
     b.cb = () => {
-      // Em GPUs de tile (Apple) os intervalos [início, fim] de passes vizinhos se sobrepõem (o estágio de vértices do passe
-      // seguinte começa antes do fim dos fragmentos do anterior). Por isso: tempo do quadro = último fim - primeiro início,
-      // e o custo de cada passe = avanço do instante de fim em relação ao passe anterior (a soma dá o tempo do quadro).
-      const a = new BigUint64Array(b.buf.getMappedRange()); let lo = 0, hi = 0, first = true, prevEnd = 0; const k = b.frame, tRef = Number(a[0]);   // a[0] = início da cascata 0 (primeiro passe de todo quadro)
+      // En GPUs de tile (Apple Silicon) los intervalos de passes adyacentes se solapan (el vertex stage del
+      // siguiente comienza antes del fragment stage del anterior). Por ello: tiempo de frame = último fin - primer inicio,
+      // y el coste de cada pass = avance del instante de fin respecto al pass anterior.
+      const a = new BigUint64Array(b.buf.getMappedRange()); let lo = 0, hi = 0, first = true, prevEnd = 0; const k = b.frame, tRef = Number(a[0]);   // a[0] = inicio de cascada 0 (primer pass de cada frame)
       for (let i = 0; i < PERF.n; i++) {
-        const t0 = Number(a[i * 2]), t1 = Number(a[i * 2 + 1]); if (t1 <= t0 || t0 === 0 || t0 < tRef) continue;   // passes não executados neste quadro guardam tempos antigos
+        const t0 = Number(a[i * 2]), t1 = Number(a[i * 2 + 1]); if (t1 <= t0 || t0 === 0 || t0 < tRef) continue;   // passes no ejecutados en este frame conservan marcas anteriores
         if (first) { lo = t0; prevEnd = t0; first = false; }
         if (t0 < lo) lo = t0; if (t1 > hi) hi = t1;
         if (t1 > prevEnd) { PERF.perPass[i] += (t1 - prevEnd) * 1e-6; prevEnd = t1; }
@@ -41,7 +41,7 @@ function perfInit() {
       }
       if (k < PERF.cap) { PERF.gpu[k] = (hi - lo) * 1e-6; }
       PERF.live[0] = (hi - lo) * 1e-6;
-      // diagnóstico: guarda o início/fim de cada passe (relativos ao início do quadro) dos primeiros quadros lentos
+      // Diagnóstico: guarda inicio/fin de cada pass (relativos al inicio del frame) de frames lentos
       if ((hi - lo) * 1e-6 > 14 && PERF.nSpike < 24) { const o = PERF.nSpike++ * (PERF.n * 2 + 1); PERF.spike[o] = k; for (let i = 0; i < PERF.n * 2; i++) { const t = Number(a[i]); PERF.spike[o + 1 + i] = t >= tRef ? (t - lo) * 1e-6 : -1; } }
       PERF.done++; b.buf.unmap(); b.free = true;
     };
@@ -51,12 +51,12 @@ function perfInit() {
   PERF.perPass = new Float64Array(PERF.n); PERF.done = 0; PERF.on = true; PERF.own = new Float64Array(PERF.n); PERF.beg = new Float64Array(PERF.n); PERF.nSpike = 0; PERF.spike = new Float32Array(24 * (PERF.n * 2 + 1));
   if (!Q.has('perf')) perfAttach(false);
 }
-// liga/desliga as consultas de tempo nos passes (jogo aberto por uma pessoa). every = 1 mede todo quadro; N = um a cada N.
+// Activa/desactiva consultas de tiempo en passes. every = 1 mide cada frame; N = uno cada N.
 function perfAttach(on, every) {
   if (!PERF.qs) return; PERF._d.forEach((d, i) => { d.timestampWrites = on ? PERF.tw[i] : undefined; });
   PERF.on = on; PERF.every = every || 1; PERF.pendingIdx = -1; PERF.live[0] = 0;
 }
-// chamado dentro de renderFrame, antes de finish(): resolve as consultas para um buffer livre
+// Invocado dentro de renderFrame antes de finish(): resuelve timestamps a un búfer libre
 function perfResolve(enc) {
   if (!PERF.on) return;
   PERF.pendingIdx = -1;
@@ -67,7 +67,7 @@ function perfResolve(enc) {
   enc.copyBufferToBuffer(PERF.resolve, 0, PERF.pool[PERF.pendingIdx].buf, 0, PERF.n * 16);
 }
 function perfAfterSubmit() {
-  if (!PERF.rec) { if (PERF.every > 1 && PERF.pendingIdx >= 0) perfMap(PERF.cap); return; }   // estatísticas ao vivo: uma leitura de vez em quando
+  if (!PERF.rec) { if (PERF.every > 1 && PERF.pendingIdx >= 0) perfMap(PERF.cap); return; }   // Estadísticas en vivo: lectura periódica
   const k = PERF.count; if (k >= PERF.cap) return;
   if (PERF.pendingIdx >= 0) perfMap(k);
   PERF.count++;

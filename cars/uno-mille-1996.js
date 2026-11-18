@@ -3,11 +3,11 @@
 // Todo lo específico de este coche (shader, física, geometría y atlas) vive en este único archivo.
 (() => {
 
-WGSL["mat_car"] = `// Materiais do carro (Fiat Uno Mille EP): pintura metálica com verniz, plásticos, borracha, pneus, calotas, lentes, alumínio...
-// id (mat.x): 1 pintura | 2 plástico preto | 3 borracha | 4 pneu | 5 calota | 6 aço | 7 cromado | 8 interior | 9 lente opaca
-//             10 alumínio | 11 cinta | 12 decalque do atlas | 13 fundo | 14 refletor do farol | 15 espelho | 16 palhetas da grade
+WGSL["mat_car"] = `// Materiales del coche (Fiat Uno Mille EP): pintura metalizada con barniz, plásticos, gomas, neumáticos, tapacubos, ópticas...
+// id (mat.x): 1 pintura | 2 plástico negro | 3 goma | 4 neumático | 5 tapacubos | 6 acero | 7 cromado | 8 interior | 9 lente opaca
+//             10 aluminio | 11 cincha | 12 decal atlas | 13 fondo | 14 reflector faro | 15 espejo | 16 rejilla
 //             17 pintura lisa brilhante (capacete; a=1 preto vítreo)
-// O.p0 da carroceria: x = luz de freio, y = luz de ré, z = faróis. O.p0.x das rodas = |velocidade angular|.
+// O.p0 chasis: x = freno, y = marcha atrás, z = faros. O.p0.x ruedas = vel. angular.
 #include mesh_vert
 @group(3) @binding(0) var tAtlas: texture_2d<f32>;
 const PAINT_COL = vec3f(0.168, 0.275, 0.425);   // azul-claro metálico de estúdio: mais escuro e acinzentado (o sol do jogo é forte)
@@ -18,21 +18,21 @@ fn surf(in: V2F, ff: bool) -> Surface {
   let lp = in.ext.xyz;
   s.albedo = in.col.rgb;
   switch (id) {
-    case 1u: {   // pintura azul-claro metálica com verniz
-      // flocos metálicos: ruído 3D no espaço do carro (sem estrias em nenhum painel)
+    case 1u: {   // Pintura metalizada con barniz brillante
+      // Escamas metalizadas: ruido procedural 3D en espacio de chasis
       // (ruído 2D com mips, projetado pelos três eixos do carro: com a distância ou em ângulo rasante os mips levam à média
       //  e o floco some sozinho — o ruído 3D sem mips virava uma trama diagonal no capô)
       let nO = normalize((vec4f(s.normal, 0.0) * O.model).xyz); let wt = abs(nO) / (abs(nO.x) + abs(nO.y) + abs(nO.z));
       let fl = textureSample(tNoise, sLin, lp.zy * 23.0).a * wt.x + textureSample(tNoise, sLin, lp.xz * 23.0).a * wt.y + textureSample(tNoise, sLin, lp.xy * 23.0).a * wt.z - 0.5;
       s.albedo = PAINT_COL * (1.0 + 0.08 * fl); s.metal = 0.58; s.rough = 0.3 + 0.04 * fl; s.coat = 1.0;
-      // abas dos recortes junto ao chão (base das caixas de roda): escuras, para não sobrar lasca clara pendurada
+      // Pestañas de recortes junto al suelo: oscurecidas
       { let under = (1.0 - smoothstep(0.31, 0.345, lp.y)) * smoothstep(1.4, 1.5, abs(lp.x)); s.albedo = mix(s.albedo, vec3f(0.01), under); s.coat *= 1.0 - under; s.metal *= 1.0 - under; s.rough = mix(s.rough, 0.95, under); }
       if (pa > 0.5) { let low = max(1.0 - smoothstep(0.2, 0.26, lp.y), (1.0 - smoothstep(0.54, 0.6, lp.y)) * smoothstep(1.2, 1.3, abs(lp.x))); s.albedo = mix(s.albedo, vec3f(0.012), low); s.coat *= 1.0 - low; s.metal *= 1.0 - low; s.rough = mix(s.rough, 0.9, low); }
       if (pa < 0.5) {
         var d = abs(in.uv.x);
-        // tampa de combustível (lado esquerdo)
+        // Tapa de depósito de combustible (lado izquierdo)
         if (lp.z < -0.5) { d = min(d, abs(length(vec2f(lp.x + 1.04, lp.y - 0.715)) - 0.062)); }
-        // vão entre painéis: núcleo escuro de ~4 mm + sombra suave em volta (lê como fresta, não como traço);
+        // Ranura entre paneles: hendidura oscura de ~4 mm con sombra suave
         // quando fica menor que o pixel, some por cobertura em vez de engrossar
         let w = max(fwidth(d), 1e-5); let hw = 0.002;
         let line = sat((hw - d) / w + 0.5) * min(1.0, 2.0 * hw / w);
@@ -44,18 +44,18 @@ fn surf(in: V2F, ff: bool) -> Surface {
         let band = smoothstep(0.215, 0.25, lp.y) * (1.0 - smoothstep(0.575, 0.59, lp.y)) * side;
         s.albedo *= 1.0 - 0.3 * band; s.rough += 0.03 * band;
         let wy = max(fwidth(lp.y), 1e-5);
-        // friso lateral: faixa larga de borracha preta (~5 cm) na altura do topo dos para-choques, entre as caixas de roda
+        // Moldura lateral protectora de goma
         let sx = smoothstep(-0.83, -0.80, lp.x) * (1.0 - smoothstep(0.80, 0.83, lp.x));
         let sdy = lp.y - 0.607; let strip = sat((0.025 - abs(sdy)) / wy + 0.5) * min(1.0, 0.05 / wy) * side * sx;
         { let upS = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz); let eb = smoothstep(0.014, 0.024, abs(sdy)) * strip; s.normal = normalize(s.normal + upS * sign(sdy) * eb * 0.8); }
-        // soleira: faixa preta fosca sob a porta, entre as caixas de roda
+        // Talonera inferior en negro mate
         let sill = (1.0 - smoothstep(0.222, 0.234, lp.y)) * side;
         s.albedo = mix(s.albedo, vec3f(0.014), sill * 0.92); s.coat *= 1.0 - sill; s.metal *= 1.0 - sill; s.rough = mix(s.rough, 0.85, sill); s.ao = min(s.ao, 1.0 - 0.3 * sill);
-        // vinco horizontal da tampa traseira (na altura do topo das lanternas): dobra a normal numa faixa estreita
+        // Nervadura horizontal del portón trasero
         if (lp.x < -1.5 && in.uv.y > 0.66) {
           let t = (lp.y - 0.836) / 0.007; let upW = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz);
           s.normal = normalize(s.normal + upW * (t * exp(-t * t) * 0.55) * (1.0 - smoothstep(0.44, 0.48, abs(lp.z))));
-          // rebaixo da placa: degrau sombreado em volta da placa (retângulo arredondado) e fundo levemente mais escuro
+          // Hueco de matrícula con bisel sombreado
           let q = abs(vec2f(lp.z, lp.y - 0.717)) - vec2f(0.203, 0.064); let pr = length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0) - 0.014;
           let stepb = 1.0 - smoothstep(0.0, 0.007, abs(pr));
           s.albedo *= 1.0 - 0.3 * stepb - 0.07 * (1.0 - smoothstep(-0.004, 0.0, pr)); s.ao = min(s.ao, 1.0 - 0.5 * stepb);
@@ -63,32 +63,32 @@ fn surf(in: V2F, ff: bool) -> Surface {
         var black = max(line, strip); var lvShade = 1.0;
         if (in.uv.y > 0.66) {
           let zz = lp.z / 0.72; let xe = lp.x - carBulgeW(lp.x) * (1.0 - zz * zz);
-          // grade plástica na base do para-brisa
+          // Rejilla plástica en la base del parabrisas
           let cowl = smoothstep(0.6, 0.61, xe) * (1.0 - smoothstep(0.741, 0.745, xe));
           black = max(black, cowl);
-          // grelha de ventilação do capô: fileira de aletas ~10 cm à frente da borda traseira, centrada (como na foto)
+          // Rejilla de ventilación en capó
           let lz = lp.z / 0.021; let cz = fract(lz) - 0.5; let slot = smoothstep(0.3, 0.42, abs(cz) * 2.0);
           let lin = smoothstep(0.843, 0.846, xe) * (1.0 - smoothstep(0.876, 0.879, xe)) * (1.0 - smoothstep(0.218, 0.222, abs(lp.z)));
           let lv = (1.0 - slot) * lin;
-          // rebaixo: a borda de cada aleta dobra a normal (pega brilho de um lado, sombra do outro) e o fundo tem degradê
+          // Bisel de aletas con normal orientada para reflejo y sombra
           let rightW = normalize((O.model * vec4f(0.0, 0.0, 1.0, 0.0)).xyz); let fwdW = normalize((O.model * vec4f(1.0, 0.0, 0.0, 0.0)).xyz);
           let bev = smoothstep(0.22, 0.36, abs(cz) * 2.0) * (1.0 - smoothstep(0.44, 0.58, abs(cz) * 2.0)) * lin;
           let endb = (smoothstep(0.836, 0.845, xe) * (1.0 - smoothstep(0.845, 0.851, xe)) - smoothstep(0.871, 0.877, xe) * (1.0 - smoothstep(0.877, 0.886, xe))) * (1.0 - slot) * (1.0 - smoothstep(0.218, 0.222, abs(lp.z)));
           s.normal = normalize(s.normal - rightW * sign(cz) * bev * 0.7 + fwdW * endb * 0.6);
-          s.ao = min(s.ao, 1.0 - 0.35 * bev); s.ao = min(s.ao, 1.0 - 0.7 * lv);   // o fundo da fenda não devolve céu nem sol
+          s.ao = min(s.ao, 1.0 - 0.35 * bev); s.ao = min(s.ao, 1.0 - 0.7 * lv);   // El fondo de ranuras no refleja cielo ni sol directo
           lvShade = mix(1.0, mix(0.3, 1.1, sat(cz * 2.6 + 0.5)) * mix(0.5, 1.0, sat((xe - 0.846) / 0.03)), lin);   // só dentro das aletas (a base do para-brisa fica lisa)
           // pé dos dois vincos longitudinais: linha de sombra fina que acompanha o ressalto
           let zc = 0.515 - 0.145 * sat((xe - 0.72) / 1.03);
           let hx = smoothstep(0.78, 0.9, xe) * (1.0 - smoothstep(1.68, 1.76, xe));
-          // aresta viva do ressalto: a normal dobra para fora numa faixa estreita (a face do degrau pega o céu de um lado e
-          // sombra do outro), com uma linha de sombra fina no pé — o vinco lê de qualquer ângulo, inclusive da câmera de capô
+          // Nervadura del capó con resalte y sombra (a face do degrau pega o céu de um lado e
+          // Sombra fina en la base del nervio del capó
           let dz = abs(lp.z) - zc; let wz = max(fwidth(lp.z), 1e-5);
           let face = (1.0 - smoothstep(0.004, 0.0085, abs(dz))) * hx;
           let foot = (1.0 - smoothstep(0.003, 0.02 + 2.0 * wz, abs(dz - 0.013))) * hx;   // faixa de sombra larga e suave (lê a 1 m em ângulo rasante, sem tracejar)
           let crest = (1.0 - smoothstep(0.003, 0.016 + 2.0 * wz, abs(dz + 0.012))) * hx;
           s.normal = normalize(s.normal + rightW * sign(lp.z) * (face * 1.0 + foot * 0.3));
           s.albedo *= (1.0 - 0.5 * foot) * (1.0 + 0.2 * crest); s.ao = min(s.ao, 1.0 - 0.6 * foot);
-          s.coat *= 1.0 - 0.8 * foot; s.rough = mix(s.rough, 0.7, foot);   // no pé do degrau o verniz não devolve o céu: a linha de sombra aparece também em ângulo rasante
+          s.coat *= 1.0 - 0.8 * foot; s.rough = mix(s.rough, 0.7, foot);   // Atenuación de barniz en hendiduras para marcar sombras
           black = max(black, lv);
         }
         s.albedo = mix(s.albedo, vec3f(0.016) * lvShade, black); s.coat *= 1.0 - black; s.rough = mix(s.rough, 0.95, black); s.metal *= 1.0 - black; s.ao = min(s.ao, 1.0 - line * 0.6);
@@ -100,7 +100,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       s.albedo = in.col.rgb * vec3f(0.96, 1.0, 1.05) * (0.2 + 0.13 * g + 0.09 * g2); s.rough = select(0.94 + 0.05 * g2, 0.4, pa > 0.5); s.ao = 0.38 + 0.2 * g2; s.metal = select(0.0, 0.55, pa > 0.5);
     }
     case 3u: { s.albedo = in.col.rgb * vec3f(0.96, 1.0, 1.05) * 1.0; s.rough = 0.84; s.ao = 0.6; s.metal = 0.5; }
-    case 4u: {   // pneu de passeio
+    case 4u: {   // Neumáticos de turismo
       let r = length(lp.xy); let ang = atan2(lp.y, lp.x);
       let blur = sat(O.p0.x / 25.0);
       if (pa < 0.5) {
@@ -116,7 +116,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
         let win = step(0.55, textureSampleLevel(tNoise, sLin, vec2f(ang * 0.33, 0.61), 0.0).r);
         let st = smoothstep(0.3, 0.45, abs(fract(ang * 58.0) - 0.5)) * step(0.35, textureSampleLevel(tNoise, sLin, vec2f(ang * 9.3, 0.37), 0.0).a);
         let letters = tb * win * st * (1.0 - blur);
-        // friso largo junto ao ombro e nervuras radiais finas no flanco (pneu de verdade, não massa lisa)
+        // Flanco de neumático con nervaduras radiales realistas
         let ribs = (0.5 + 0.5 * sin(ang * 150.0)) * smoothstep(0.222, 0.226, r) * (1.0 - smoothstep(0.238, 0.242, r)) * (1.0 - blur) * sat(1.0 - fwidth(ang) * 150.0 * 0.4);
         let band2 = smoothstep(0.247, 0.249, r) * (1.0 - smoothstep(0.256, 0.258, r));
         s.albedo = in.col.rgb * vec3f(0.96, 1.0, 1.05) * 0.5 * (1.0 + 1.8 * letters + 0.8 * ring * (1.0 - blur) + 0.35 * ribs + 0.3 * band2); s.rough = 0.9 - 0.2 * letters; s.ao = 0.5 - 0.15 * ribs + 0.25 * letters; s.metal = 0.0;
@@ -153,7 +153,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     case 7u: { s.metal = 1.0; s.rough = select(0.07, 0.26, pa > 0.5); if (pa > 1.5) { s.metal = 0.72; s.rough = 0.3; } }   // a=2: cromado claro acetinado (emblema)
     case 8u: {   // interior
       s.rough = 0.92;
-      // forro interno atrás dos para-choques (a pele externa é cortada ali): escuro, para não aparecer por baixo do carro
+      // Revestimiento interior tras los parachoques
       { let under = (1.0 - smoothstep(0.56, 0.62, lp.y)) * smoothstep(1.2, 1.3, abs(lp.x)); s.albedo = mix(s.albedo, vec3f(0.006), under); }
       if ((pa > 1.5 && pa < 2.5) || pa > 3.5) { let w = sin(lp.z * 900.0) * sin(lp.x * 900.0 + lp.y * 900.0); s.albedo = in.col.rgb * (1.0 + 0.1 * w); }
       if (pa > 3.5) {
@@ -163,13 +163,13 @@ fn surf(in: V2F, ff: bool) -> Surface {
       }
       if (pa > 2.5 && pa < 3.5) { s.rough = 0.55; }
     }
-    case 9u: {   // lentes (lanterna traseira, piscas): prismas finos sobre refletor, cores profundas mesmo ao sol
+    case 9u: {   // Ópticas traseras e intermitentes con prismas sobre reflector
       s.rough = 0.38; s.coat = 0.0;
       let rib = 0.86 + 0.14 * sin(lp.y * 6.2831853 / 0.0042);
       if (pa < 1.5) {
-        // lanterna traseira: faixa superior âmbar-escuro (pisca), vermelho-rubi (posição/freio) no meio, ré clara embaixo
+        // Piloto trasero: intermitente ámbar, freno rojo rubí y marcha atrás blanca
         let v = in.uv.y; let u = in.uv.x; let br = sat(O.p0.x);
-        // o albedo fica sempre escuro (ao sol não lava para rosa); o freio aceso vem só do emissivo, em vermelho puro
+        // Albedo oscuro calibrado para luz solar; freno iluminado vía emisivo rojo
         var c = mix(vec3f(0.17, 0.003, 0.002), vec3f(0.2, 0.004, 0.002), br); var e = mix(0.03, 0.66, br);
         if (v > 0.66) { c = vec3f(0.19, 0.05, 0.002); e = 0.006; }
         else if (v < 0.2 && u < 0.36) { c = mix(vec3f(0.1, 0.1, 0.098), vec3f(1.0, 1.0, 0.95), sat(O.p0.y)); e = 0.004 + sat(O.p0.y) * 0.5; }   // ré: pequeno retângulo interno
@@ -189,7 +189,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
         s.albedo = mix(c * prism * depth, vec3f(0.006), k); s.emissive = e * (1.0 - k) * mix(1.0, 0.8 + 0.4 * (1.0 - 2.0 * max(abs(pc.x), abs(pc.y))), fade);
         s.rough = mix(0.62, 0.8, k);   // lente pouco especular: ao sol continua vermelha/âmbar, sem lavar para rosa
       } else {
-        // piscas: lente âmbar translúcida (mais escura e saturada) com o brilho do refletor por trás e verniz
+        // Intermitentes: lente ámbar translúcida
 // (uv.x = x + z: coordenada ao longo da frente/lateral) — frisos verticais finos e um degradê de refletor por trás
         let fl2 = 0.5 + 0.5 * sin(in.uv.x * 6.2831853 / 0.0075); let fadeP = sat(1.0 - fwidth(in.uv.x) / 0.0075 * 2.0);
         let gy = 1.0 - 0.45 * abs((lp.y - 0.693) / 0.062);
@@ -217,7 +217,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       s.albedo = t.rgb * select(0.7, 1.0, pa > 0.5); s.rough = select(0.62, 0.28, pa > 0.5); s.metal = select(0.0, 0.4, pa > 0.5); s.coat = select(0.0, 0.6, pa > 0.5);
     }
     case 13u: { s.rough = 1.0; s.ao = 0.3; s.metal = 0.9; }
-    case 14u: {  // refletor do farol: cuba prateada com aparência própria (pouco dependente do céu) / bulbo
+    case 14u: {  // Reflector de faros: parábola plateada con bombilla halógena
       let u = in.uv.x; let v = in.uv.y;
       // gradação: mais claro no centro (em volta do bulbo), escurecendo para as bordas e para baixo; facetas verticais em colunas
       let rightW = normalize((O.model * vec4f(0.0, 0.0, 1.0, 0.0)).xyz);
@@ -227,7 +227,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       let grad = mix(1.0, 0.36, smoothstep(0.1, 1.05, rr)) * mix(0.72, 1.0, smoothstep(-1.0, 0.3, v));
       let facet = mix(1.0, 0.86 + 0.14 * fz, ffade);
       s.albedo = vec3f(0.74, 0.75, 0.77) * grad * facet; s.metal = 0.25; s.rough = 0.32; s.ao = 1.0;
-      s.emissive = 0.105 * grad;   // a cuba fica na sombra da moldura: luz própria proporcional ao desenho (prateado, não azul do céu)
+      s.emissive = 0.105 * grad;   // Reflector en sombra con iluminación interior propia
       if (pa > 0.5) {
         // bulbo claro (a > 0,5) e sua capa prateada na ponta (a > 1,5): discretos, sem ponto preto
         s.normal = normalize(in.nrm);
@@ -235,7 +235,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
         else { s.metal = 0.2; s.albedo = vec3f(0.8, 0.79, 0.74); s.rough = 0.25; s.emissive = 0.09 + O.p0.z * 0.1; }
       }
     }
-    case 15u: {   // espelho retrovisor: reflexo FIXO (céu / horizonte de mata / chão), escurecido — não depende do cubemap
+    case 15u: {   // Retrovisores: reflejo fijo tintado
       let g = sat((lp.y - 0.965) / 0.082);
       let ground = vec3f(0.03, 0.03, 0.032); let trees = vec3f(0.018, 0.03, 0.014); let sky = mix(vec3f(0.2, 0.25, 0.3), vec3f(0.1, 0.16, 0.26), sat((g - 0.52) / 0.48));
       var c = mix(ground, trees, smoothstep(0.36, 0.42, g)); c = mix(c, sky, smoothstep(0.5, 0.56, g));
@@ -255,7 +255,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
 // ---- 30_car_a_shape.js
 // Fiat Uno Mille EP 1996 (2 portas) — forma da carroceria como superfície paramétrica única (metade direita, z >= 0).
 // Referencial do carro: origem no chão sob o centro do entre-eixos; X frente, Y cima, Z direita. Unidades: metros.
-// A pele é P(u, v): u percorre o perfil superior (frente → traseira, por comprimento de arco), v sobe a lateral
+// Superficie paramétrica P(u,v): u longitudinal (frontal → zaga), v transversal
 // (soleira → cintura → coluna → canto do teto) e atravessa o topo até o plano de simetria.
 const CS = {
   XF: 1.876, XR: -1.692,          // extremos do perfil em "coordenadas de borda" (o centro avança/recua por abaulamento)
@@ -280,7 +280,7 @@ function carYT(x) {
   y = csmin(y, roof, 0.035); y = csmin(y, hatch, 0.06); y = csmin(y, tail, 0.05); y = csmin(y, fascia, 0.05);
   return y;
 }
-// abaulamento em planta: o centro fica mais à frente (para-brisa, frente) ou mais atrás (traseira) que as bordas
+// Curvatura en planta: abombamiento central respecto a extremos
 function carBulge(x) { return 0.055 * smooth(-0.15, 0.25, x) - 0.036 * smooth(-1.15, -1.42, x); }
 function carCrown(x) { return 0.02 * smooth(0.62, 0.9, x) * smooth(1.8, 1.7, x) + 0.032 * smooth(0.2, -0.1, x) * smooth(-1.5, -1.3, x); }
 function carYtop(x, z) {
@@ -298,11 +298,11 @@ function carWPlan(x) {
   const t = sat((x - 0.55) / 1.3), t2 = sat((-0.85 - x) / 0.82);
   return 0.774 - 0.082 * t * t - 0.05 * t2 * t2;
 }
-// lateral inferior: meia largura em função da altura (bojo, faixa rebaixada, lábio das caixas de roda, dobra da soleira)
+// Lateral inferior: semiancho en función de la altura
 function carZL(x, y) {
   let z = carWPlan(x);
   const d = y - 0.63; z -= d < 0 ? 0.03 * csq(d / 0.43) : 0.022 * csq(d / 0.30);
-  z -= 0.003 * smooth(0.44, 0.53, y) * (1 - smooth(0.585, 0.675, y));   // transições largas: sem brilho ondulado na malha
+  z -= 0.003 * smooth(0.44, 0.53, y) * (1 - smooth(0.585, 0.675, y));   // Transiciones suaves sin distorsión especular
   if (y < 0.25) z -= 0.03 * csq((0.25 - y) / 0.06);
   const df = Math.hypot(x - CS.AXF, y - CS.ARCH_Y) - CS.ARCH_R, dr = Math.hypot(x - CS.AXR, y - CS.ARCH_Y) - CS.ARCH_R, da = Math.min(df, dr);
   if (da < 0.3) z += 0.0024 * Math.exp(-csq((da - 0.01) / 0.1));
@@ -394,7 +394,7 @@ function carUofX(x) {
   const T = CAR_UT, f = sat((x - CS.XF) / (CS.XR - CS.XF)) * T.n, i = Math.min(T.n - 1, Math.floor(f));
   return (T.s[i] + (T.s[i + 1] - T.s[i]) * (f - i)) / T.L;
 }
-// função de superfície para o MeshBuilder.patch (com deslocamento opcional)
+// Función de superficie para MeshBuilder.patch
 function carSkinFn(off) { return (u, v, out) => carSkin(carXofU(u), v, off || 0, out); }
 
 // ---------- campos de recorte (negativo = dentro do elemento) ----------
@@ -442,7 +442,7 @@ function carHatchGlass(P) {
   return P[0] > -1.2 ? 1 : csmax(csmax(lo, hi, 0.03), side, 0.06);
 }
 function carRRect(a, b, ha, hb, r) { const qa = Math.abs(a) - ha + r, qb = Math.abs(b) - hb + r; return Math.hypot(Math.max(qa, 0), Math.max(qb, 0)) + Math.min(Math.max(qa, qb), 0) - r; }
-const CL = { hlZ0: 0.378, hlZ1: 0.607, lY: 0.693, lH: 0.062, clZ: 0.6135, clX: 1.735 };   // farol + pisca âmbar FRONTAL ao lado (z > clZ), que dobra a quina
+const CL = { hlZ0: 0.378, hlZ1: 0.607, lY: 0.693, lH: 0.062, clZ: 0.6135, clX: 1.735 };   // Faro principal + intermitente ámbar lateral envolvente
 function carHeadlight(P) { return carRRect(P[2] - (CL.hlZ0 + CL.hlZ1) / 2, P[1] - CL.lY, (CL.hlZ1 - CL.hlZ0) / 2, CL.lH, 0.012); }
 function carCornerLamp(P, v) {
   const g = v > 0.64 ? CL.clZ - P[2] : CL.clX - P[0];
@@ -452,9 +452,9 @@ function carGrille(P) {
   const z = P[2], y = P[1];
   return carRRect(z, y - 0.694, 0.356, 0.0475, 0.008);   // abertura única; a barra central na cor do carro é uma peça à parte
 }
-const CT = { z0: 0.497, y0: 0.584, y1: 0.822 };   // lanterna quase quadrada, colada ao para-choque, contornando a quina
+const CT = { z0: 0.497, y0: 0.584, y1: 0.822 };   // Piloto trasero envolvente
 function carTailLamp(P, v) {
-  // face traseira (x atrás de -1,572) + dobra de ~4 cm pela lateral
+  // Cara trasera + solapa lateral
   // face traseira + dobra de largura constante (~5,5 cm) pela lateral, paralela à aresta traseira inclinada
   return Math.max(carRRect(0, P[1] - (CT.y0 + CT.y1) / 2, 1, (CT.y1 - CT.y0) / 2, 0.012), CT.z0 - P[2], P[0] - (-1.585 + (P[1] - 0.93) / 6.2 + 0.055));
 }
@@ -482,7 +482,7 @@ function carSeam(P, v) {
   if (v > 0.6) {
     const xe = carXe(P), st = carStation(x);
     if (xe > 0.5) d = Math.min(d, Math.max(z - (st.zE - 0.058), 0.745 - xe, xe - 1.742));     // capô
-    if (x < -1.1) {   // tampa traseira: lateral em S (contorna as lanternas), dobradiça no teto e borda inferior
+    if (x < -1.1) {   // Portón trasero con bisagras en techo
       const zs = lerp(CT.z0 - 0.014, st.zE - 0.05, smooth(CT.y1 + 0.006, CT.y1 + 0.07, y));
       d = Math.min(d, Math.max(z - zs, 0.565 - y, x + 1.315));
     }
@@ -491,10 +491,10 @@ function carSeam(P, v) {
 }
 
 // ---- 30_car_b_body.js
-// Carroceria: pintura, borrachas, vidros, forro interno e lentes — tudo recortado da mesma pele paramétrica.
+// Carrocería: chapa, gomas, cristales y ópticas recortados de superficie paramétrica.
 const CM = { PAINT: 1, PLASTIC: 2, RUBBER: 3, TIRE: 4, HUBCAP: 5, STEEL: 6, CHROME: 7, INTERIOR: 8, LENS: 9, ALU: 10, STRAP: 11, DECAL: 12, UNDER: 13, REFLECTOR: 14, MIRROR: 15, GRILLE: 16, GLOSS: 17 };
 const _cuv = [0, 0];
-// patch de um trecho da pele: x0 > x1 (frente → trás), faixa de v, tamanho de célula alvo
+// Parche paramétrico de superficie
 function carSub(mb, off, x0, x1, va, vb, cell, opts) {
   const u0 = carUofX(x0), u1 = carUofX(x1);
   opts.nu = Math.max(2, Math.ceil((u1 - u0) * CAR_UT.L / cell)); opts.nv = Math.max(2, Math.ceil((vb - va) * 3.2 / cell)); opts.flip = opts.flip === undefined ? true : opts.flip;
@@ -506,7 +506,7 @@ function carBuildBody(mb, gl) {
   const v0 = mb.nv, i0 = mb.ni, gv0 = gl.nv, gi0 = gl.ni;
   // --- pintura ---
   // dois trechos da mesma pele (emenda numa linha da grade): embaixo a aba dos recortes (caixas de roda) é na cor do carro;
-  // em cima (janelas, farol, grade) a aba é escura — por dentro não aparece moldura azul em volta dos vidros
+  // Pestañas interiores oscurecidas
   const paintField = (u, v, P) => {
     let f = 1;
     if (v < 0.42) f = carArchF(P);
@@ -529,33 +529,33 @@ function carBuildBody(mb, gl) {
   carSub(mb, 0.0015, 0.80, 0.02, 0.60, 1, 0.012, { field: band(carWindshield, -0.014, 0.004), uv: plainUV });
   carSub(mb, 0.0015, -1.27, -1.62, 0.60, 1, 0.012, { field: band(carHatchGlass, -0.014, 0.004), uv: plainUV });
   carSub(mb, 0.0012, 1.86, 1.70, 0.62, 1, 0.006, { field: band(carHeadlight, -0.0035, 0.002), uv: plainUV });
-  // --- lentes opacas sobrepostas: pisca de canto (âmbar) e lanterna traseira ---
+  // Ópticas superpuestas: intermitentes y pilotos traseros
   mb.mat(CM.LENS, 2).color(0.62, 0.3, 0.05);
   carSub(mb, 0.002, 1.84, 1.70, 0.25, 0.86, 0.006, { field: (u, v, P) => carCornerLamp(P, v), uv: (u, v, P) => { _cuv[0] = P[0] + P[2]; _cuv[1] = P[1]; return _cuv; }, rim: 0.004 });
-  // lanterna traseira: lente rente à carroceria (saliência de 2,5 mm), dobrando a quina; a moldura escura é desenhada no shader
+  // Piloto trasero enrasado con moldura perimetral oscura
   mb.mat(CM.LENS, 1).color(0.75, 0.03, 0.02);
   carSub(mb, 0.0025, -1.48, -1.688, 0.12, 0.94, 0.007, { field: (u, v, P) => carTailLamp(P, v) - 0.003, uv: (u, v, P) => { _cuv[0] = (P[2] - CT.z0) / (0.74 - CT.z0); _cuv[1] = (P[1] - CT.y0) / (CT.y1 - CT.y0); return _cuv; }, rim: 0.0025 });
   // pisca lateral no para-lama
   mb.mat(CM.LENS, 2).color(0.5, 0.17, 0.012);
   carSub(mb, 0.003, 0.86, 0.74, 0.2, 0.36, 0.005, { field: (u, v, P) => carRRect(P[0] - 0.797, P[1] - 0.745, 0.026, 0.011, 0.004), uv: plainUV, rim: 0.003 });
-  // maçaneta (preta, vertical, na borda traseira da porta) e fechadura
+  // Manilla vertical negra y cerradura
   mb.mat(CM.PLASTIC).color(0.03, 0.03, 0.03);
   carSub(mb, 0.004, -0.30, -0.42, 0.2, 0.37, 0.005, { field: (u, v, P) => carRRect(P[0] + 0.366, P[1] - 0.862, 0.02, 0.055, 0.008), uv: plainUV, rim: 0.004 });
   // fundo das fendas da grade (palhetas pretas)
   mb.mat(CM.GRILLE).color(0.012, 0.012, 0.013);
   carSub(mb, -0.024, 1.86, 1.70, 0.62, 1, 0.012, { field: (u, v, P) => carRRect(P[2], P[1] - 0.694, 0.372, 0.055, 0.005), uv: plainUV });
-  // barra central da grade, na cor do carro (malha própria: fina demais para o recorte da pele)
+  // Barra central de calandra en color carrocería
   mb.mat(CM.PAINT, 255).color(1, 1, 1);
   mb.patch((u, v, o) => { o[0] = carTopX(u, v, false) - 0.003; o[1] = v; o[2] = u; }, 0, 0.3565, 0.6845, 0.7045, { nu: 24, nv: 2, flip: true, uv: plainUV });
   mb.quad(carTopX(0.3565, 0.6845, false) - 0.003, 0.6845, 0.3565, carTopX(0, 0.6845, false) - 0.003, 0.6845, 0, carTopX(0, 0.6845, false) - 0.02, 0.6845, 0, carTopX(0.3565, 0.6845, false) - 0.02, 0.6845, 0.3565);
   mb.quad(carTopX(0, 0.7045, false) - 0.003, 0.7045, 0, carTopX(0.3565, 0.7045, false) - 0.003, 0.7045, 0.3565, carTopX(0.3565, 0.7045, false) - 0.02, 0.7045, 0.3565, carTopX(0, 0.7045, false) - 0.02, 0.7045, 0);
-  // --- forro interno (visto pelos vidros): portas/laterais escuras, teto claro ---
+  // Revestimiento interior: paneles oscuros y techo claro
   const inner = (u, v, P) => -(Math.min(carWinDoor(P), carWinQuarter(P), v > 0.55 ? Math.min(carWindshield(P), carHatchGlass(P)) : 1) - 0.014);
   mb.mat(CM.INTERIOR).color(0.075, 0.078, 0.085);
   carSub(mb, -0.03, 0.80, -1.63, 0.03, 0.60, 0.026, { field: inner, uv: plainUV, flip: false });
   mb.mat(CM.INTERIOR, 1).color(0.2, 0.2, 0.195);
   carSub(mb, -0.03, 0.80, -1.63, 0.60, 1, 0.026, { field: inner, uv: plainUV, flip: false });
-  // --- vidros ---
+  // --- Cristales ---
   gl.mat(0).color(0.83, 0.915, 0.88);
   const glz = fn => (u, v, P) => fn(P, v) + 0.008;
   carSub(gl, -0.005, 0.74, -0.39, 0.40, 0.64, 0.02, { field: glz(carWinDoor), uv: plainUV });
@@ -568,7 +568,7 @@ function carBuildBody(mb, gl) {
 }
 
 // ---- 30_car_c_parts.js
-// Peças do carro: para-choques, caixas de roda, faróis, retrovisores, limpadores, interior, rack + escada, rodas, volante, atlas.
+// Componentes del coche: parachoques, pasos de rueda, faros, espejos, limpiaparabrisas, baca con escalera, ruedas, volante.
 // polilinha 2D com cantos arredondados (filete parabólico): pts = [[a,b,raio]...]; at(s) → [a, b, ta, tb]
 function carPath(pts) {
   const n = pts.length, cum = [0], dir = [];
@@ -588,7 +588,7 @@ function carPath(pts) {
     }
   };
 }
-// x da superfície do topo (frente ou traseira) em (z, y)
+// Cota x de superficie frontal o trasera
 function carTopX(z, y, rear) {
   let a = rear ? -1.76 : 1.6, b = rear ? -1.35 : 1.95;
   for (let i = 0; i < 40; i++) { const m = (a + b) / 2, f = carYtop(m, z) - y; if ((f > 0) === !rear) a = m; else b = m; }
@@ -610,7 +610,7 @@ function carBuildParts(mb, gl) {
   const v0 = mb.nv, i0 = mb.ni, gv0 = gl.nv, gi0 = gl.ni;
   // ================= para-choques (plástico preto texturizado) =================
   mb.mat(CM.PLASTIC).color(0.02, 0.02, 0.021);
-  // dianteiro: peça baixa (0,30–0,60 m), rente à frente, logo abaixo dos faróis; a lateral acompanha o para-lama até a caixa de roda
+  // Parachoques delantero bajo ópticas
   const fPath = carPath([[1.869, 0], [1.862, 0.30, 0.15], [1.838, 0.56, 0.12], [1.822, 0.686, 0.07], [1.70, 0.702, 0.06], [1.49, 0.722, 0.1], [1.25, 0.742]]);
   // perfil: borda superior saliente (lábio), face, friso rebaixado, saia
   const fProf = carPath([[-0.09, 0.600], [0.026, 0.598, 0.004], [0.034, 0.590, 0.004], [0.034, 0.574, 0.004], [0.029, 0.568, 0.004], [0.029, 0.474, 0.003], [0.023, 0.470, 0.003], [0.023, 0.458, 0.003], [0.029, 0.454, 0.003], [0.028, 0.340, 0.012], [0.006, 0.308, 0.008], [-0.07, 0.300]]);
@@ -636,7 +636,7 @@ function carBuildParts(mb, gl) {
   for (const ax of [CS.AXF, CS.AXR]) {
     const R0 = CS.ARCH_R + 0.006, N = 28, zo = carZL(ax, 0.55) - 0.012, zi = 0.33;
     for (let i = 0; i < N; i++) {
-      // o forro termina na altura da borda inferior do para-choque no lado do balanço (não fica pendurado abaixo dele)
+      // Revestimiento inferior a cota de parachoques
       const aS = ax > 0 ? 12 : -18, aE = ax > 0 ? 198 : 163;
       const a0 = (aS + (aE - aS) * i / N) * PI / 180, a1 = (aS + (aE - aS) * (i + 1) / N) * PI / 180;
       const x0 = ax + Math.cos(a0) * R0, y0 = CS.ARCH_Y + Math.sin(a0) * R0, x1 = ax + Math.cos(a1) * R0, y1 = CS.ARCH_Y + Math.sin(a1) * R0;
@@ -648,15 +648,15 @@ function carBuildParts(mb, gl) {
   // fechamentos sob os para-choques (escuros) + assoalho por baixo (meio carro; espelhado depois)
   mb.quad(1.56, 0.2, 0.56, 1.56, 0.2, 0, 1.56, 0.42, 0, 1.56, 0.42, 0.56);
   mb.quad(-1.33, 0.2, 0, -1.33, 0.2, 0.56, -1.33, 0.42, 0.56, -1.33, 0.42, 0);
-  // fundo elevado sob os balanços (não aparece por baixo dos para-choques)
+  // Fondo plano elevado bajo voladizos
   mb.quad(1.56, 0.42, 0, 1.86, 0.42, 0, 1.86, 0.42, 0.72, 1.56, 0.42, 0.72);
   mb.quad(-1.68, 0.42, 0, -1.33, 0.42, 0, -1.33, 0.42, 0.74, -1.68, 0.42, 0.74);
-  // fundo: largura inteira só entre as rodas; ao lado das rodas fica estreito (o plano inteiro atravessava pneu e calota e
+  // Suelo plano entre pasos de rueda
   // aparecia como um risco fino horizontal na calota)
   mb.quad(-0.84, 0.2, 0, 0.84, 0.2, 0, 0.84, 0.2, 0.705, -0.84, 0.2, 0.705);
   mb.quad(0.84, 0.2, 0, 1.56, 0.2, 0, 1.56, 0.2, 0.5, 0.84, 0.2, 0.5);
   mb.quad(-1.33, 0.2, 0, -0.84, 0.2, 0, -0.84, 0.2, 0.5, -1.33, 0.2, 0.5);
-  // ================= farol: refletor cromado em cuba atrás da lente =================
+  // ================= Faro: reflector cromado tras la lente =================
   {
     const z0 = CL.hlZ0 + 0.003, z1 = CL.hlZ1 - 0.003, y0 = CL.lY - CL.lH + 0.003, y1 = CL.lY + CL.lH - 0.003, D = 0.062;
     const zc = (z0 + z1) / 2, yc = (y0 + y1) / 2, hz = (z1 - z0) / 2, hy = (y1 - y0) / 2;
@@ -665,11 +665,11 @@ function carBuildParts(mb, gl) {
     mb.patch((u, v, o) => { const z = zc + u * hz, y = yc + v * hy, d = dep(u, v), x = carTopX(z, y, false); o[0] = x - d * 0.97; o[1] = y - d * 0.2; o[2] = z; }, -1, 1, -1, 1, { nu: 22, nv: 12, flip: true, uv: (u, v, P) => { _cuv[0] = u; _cuv[1] = v; return _cuv; } });
     // lâmpada (pequena, no fundo da cuba)
     const xb = carTopX(zc, yc, false) - (dep(0, 0) - 0.012) * 0.97, ybb = yc - (dep(0, 0) - 0.012) * 0.2;
-    // bulbo de vidro no centro da cuba, com colar cromado na base e capa escura na ponta
+    // Bombilla con casquillo cromado en el centro de la parábola
     mb.push(m4translate(m4(), xb, ybb, zc)); mb.push(m4rotZ(m4(), -PI / 2 + 0.2));
     mb.mat(CM.REFLECTOR, 1).color(1, 0.95, 0.8); mb.cyl(0, -0.012, 0, 0.0105, 0.024, 0.0095, 12, false, true);
     mb.mat(CM.REFLECTOR, 2).color(0.85, 0.85, 0.86); mb.cyl(0, -0.012, 0, 0.016, -0.007, 0.014, 14, false, true);   // colar prateado (o cromado refletia escuro: virava ponto preto)
-    mb.mat(CM.REFLECTOR, 2).color(0.6, 0.6, 0.6); mb.cyl(0, 0.022, 0, 0.0105, 0.029, 0.007, 12, false, true);   // capa prateada (não um pino preto)
+    mb.mat(CM.REFLECTOR, 2).color(0.6, 0.6, 0.6); mb.cyl(0, 0.022, 0, 0.0105, 0.029, 0.007, 12, false, true);   // Capuchón plateado antideslumbrante
     mb.pop(); mb.pop();
   }
   // ================= retrovisores externos: carcaça retangular, braço sanfonado, base na porta =================
@@ -724,7 +724,7 @@ function carBuildParts(mb, gl) {
     mb.push(m4translate(m4(), xb, st.yE - 0.012, st.zE + 0.012)); mb.push(m4rotX(m4(), 0.34)); mb.box(0, 0, 0, 0.06, 0.07, 0.006); mb.pop(); mb.pop();
   }
   mb.mirror(v0, i0, 2); gl.mirror(gv0, gi0, 2);
-  // ======================= peças não simétricas =======================
+  // ======================= Componentes asimétricos =======================
   // barras do rack + escada + cintas
   mb.mat(CM.STEEL).color(0.035, 0.035, 0.038);
   for (const xb of [CRK.x0, CRK.x1]) mb.rbox(xb, CRK.barY, 0, 0.036, 0.028, 1.2, 0.006, 2);
@@ -744,7 +744,7 @@ function carBuildParts(mb, gl) {
   mb.rbox(0.23, 1.29, 0, 0.025, 0.055, 0.2, 0.012, 2); mb.tube([[0.24, 1.29, 0], [0.2, 1.35, 0]], 0.008, 6);
   mb.tube([[0.2, 0.42, 0.0], [0.17, 0.6, 0.0]], 0.01, 6); mb.rbox(0.168, 0.62, 0, 0.045, 0.045, 0.045, 0.02, 3);
   mb.rbox(-0.12, 0.40, 0, 0.3, 0.05, 0.04, 0.015, 2);
-  // piloto: tronco, ombros, braços no volante e capacete (simples, visto pelos vidros)
+  // Piloto: torso, brazos al volante y casco
   {
     const zd = -0.345;
     mb.mat(CM.INTERIOR, 2).color(0.2, 0.028, 0.03);   // macacão vermelho-escuro
@@ -760,7 +760,7 @@ function carBuildParts(mb, gl) {
     // cinto de segurança diagonal (ombro esquerdo → quadril direito), à frente do tronco
     mb.mat(CM.INTERIOR, 3).color(0.012, 0.012, 0.013);
     mb.sweep([[-0.262, 1.0, zd - 0.15], [-0.15, 0.82, zd - 0.02], [-0.085, 0.63, zd + 0.15]], [[-0.022, 0.004], [0.022, 0.004], [0.022, -0.004], [-0.022, -0.004]], { closedProfile: true, hard: true, up: [1, 0.3, 0] });
-    mb.mat(CM.GLOSS).color(0.05, 0.052, 0.058);   // capacete integral grafite (discreto pelo vidro); o macacão é vermelho-escuro
+    mb.mat(CM.GLOSS).color(0.05, 0.052, 0.058);   // Casco integral grafito visto por cristal; mono rojo oscuro
     mb.rbox(-0.262, 1.168, zd, 0.25, 0.25, 0.228, 0.112, 7);          // casco
     mb.rbox(-0.236, 1.092, zd, 0.186, 0.105, 0.206, 0.05, 5);         // queixeira (rente ao casco)
     mb.mat(CM.GLOSS, 1).color(0.01, 0.011, 0.014);
@@ -829,7 +829,7 @@ function carWipers(mb) {
 // regiões do atlas (u0, v0, u1, v1)
 const CAT = { plate: [0, 0, 0.5, 0.332], fiat: [0.5, 0, 0.75, 0.16], mille: [0.5, 0.18, 0.95, 0.4] };
 function carDecals(mb) {
-  // quad sobre a superfície traseira/dianteira: centro (z, y), largura w, altura h; rear: texto lido por quem olha de trás
+  // Quad sobre superficie delantera/trasera
   const dq = (reg, zc, y0, w, h, rear, lift) => {
     const P = (z, y) => { const x = rear ? carTopX(z, y, true) - lift : lift; return [x, y, z]; };
     const s = rear ? 1 : -1, a = P(zc - s * w / 2, y0), b = P(zc + s * w / 2, y0), c = P(zc + s * w / 2, y0 + h), d = P(zc - s * w / 2, y0 + h);
@@ -870,7 +870,7 @@ function carText(g, txt, x, y, h, lw, skew) {
 }
 function carAtlas() {
   const W = 1024, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
-  // placa cinza (padrão brasileiro dos anos 90): fundo cinza-claro, letras pretas, tarja do município
+  // Placa de matrícula histórica
   g.fillStyle = '#b9bcbc'; g.fillRect(0, 0, 512, 170); g.strokeStyle = '#1a1a1a'; g.lineWidth = 6; g.strokeRect(5, 5, 502, 160);
   g.fillStyle = '#9fa3a3'; g.fillRect(150, 12, 212, 26); g.strokeStyle = '#222'; carText(g, 'UNO Mille', 178, 34, 17, 2.4, 0);
   g.strokeStyle = '#141414'; carText(g, 'UNO-1996', 30, 146, 76, 11, 0);
@@ -909,7 +909,7 @@ function carAtlas() {
 // ---------- roda (eixo Z local; face externa em +Z) ----------
 function carBuildWheel(mb, mbBlur) {
   mb.push(m4rotY(m4(), -PI / 2));    // X local do torno → +Z
-  mb.push(m4translate(m4(), -0.015, 0, 0));   // roda 1,5 cm para dentro: a face externa do pneu fica atrás do lábio do para-lama
+  mb.push(m4translate(m4(), -0.015, 0, 0));   // Rueda desplazada al interior del paso de rueda
   const R = CAR.wheelR, hw = 0.0725, seg = 72;
   // flanco interno, banda com sulcos, flanco externo
   const tj = [0.5, 1];
@@ -934,7 +934,7 @@ function carBuildWheel(mb, mbBlur) {
     uv: (u, v, P) => { _cuv[0] = u; _cuv[1] = v; return _cuv; },
     field: (u, v, P) => { const r = v * 0.1665, da = (u * NS - Math.round(u * NS)) / NS * TAU, t = r * Math.sin(da), q = Math.max(Math.abs(r - 0.123) - 0.019, 0); return -(Math.hypot(t, q) - 0.0082); }
   });
-  // disco de borrão em malha própria (fora do passe de sombra: sem ele a sombra do disco riscava a calota parada)
+  // Disco de desenfoque rotacional en malla independiente
   const bm = mbBlur || mb; if (mbBlur) { bm.push(m4rotY(m4(), -PI / 2)); bm.push(m4translate(m4(), -0.015, 0, 0)); }
   bm.mat(CM.HUBCAP, 1).color(0.62, 0.63, 0.65);
   bm.patch((u, v, o) => { const a = u * TAU, r = 0.036 + v * 0.127; o[0] = prof(r) + 0.002; o[1] = r * Math.cos(a); o[2] = r * Math.sin(a); }, 0, 1, 0, 1, { nu: 56, nv: 8, flip: true, uv: (u, v, P) => { _cuv[0] = u; _cuv[1] = v; return _cuv; } });
@@ -990,7 +990,7 @@ const CAR = {
     }
     if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); CAR.tris += s.ni / 3; set.add(s.upload(), CAR.slotSteer, 3); }
     const tex = typeof carAtlas === 'function' ? carAtlas() : mkTex(4, 4, 'rgba8unorm-srgb');
-    // desenhável: liga o atlas (grupo 3) e não entra no mapa de sombras estático do mundo
+    // Drawable: enlaza atlas en grupo 3
     R.drawables.push({ draw(pass, ctx) {
       if (ctx.kind === KIND.SHADOW && ctx.cascade === 3) return;
       if (!CAR.atlasBG) { if (!fam.bgl3) return; CAR.atlasBG = G.dev.createBindGroup({ layout: fam.bgl3, entries: [{ binding: 0, resource: tex.createView() }] }); }
@@ -1011,7 +1011,7 @@ const CAR = {
     for (let i = 0; i < 4; i++) {
       const s = CAR.slotWheel[i], h = CAR.hubs[i], left = (i & 1) === 0;
       objPrev(s).set(objModel(s));
-      // roda: T(cubo + suspensão) · Ry(esterço [+π à esquerda]) · Rz(giro)
+      // Cinemática de rueda: traslación suspensión * dirección * rotación
       const a = -(i < 2 ? steer : 0) + (left ? PI : 0), c = Math.cos(a), sn = Math.sin(a);
       const g = left ? spin[i] : -spin[i], cg = Math.cos(g), sg = Math.sin(g);
       // Ry(a) * Rz(g)

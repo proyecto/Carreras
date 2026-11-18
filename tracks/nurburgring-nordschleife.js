@@ -136,9 +136,9 @@
 
     // Poses de cámara
     poses: [
-      { nome: 'carro-frente-34', tipo: 'carro', s: 170, d: -1.0, yaw: 3.75, olho: [5.0, 1.40, -3.4], alvo: [0.1, 0.75, 0], fov: 0.5 },
-      { nome: 'carro-traseira-34', tipo: 'carro', s: 170, d: -1.0, yaw: 0.61, olho: [-5.1, 1.80, 3.5], alvo: [-0.1, 0.85, 0], fov: 0.5 },
-      { nome: 'carro-lateral-baixa', tipo: 'carro', s: 170, d: -1.0, yaw: 2.1, olho: [1.0, 0.65, -5.3], alvo: [0.05, 0.85, 0], fov: 0.6 },
+      { nome: 'coche-frontal-34', tipo: 'coche', s: 170, d: -1.0, yaw: 3.75, ojo: [5.0, 1.40, -3.4], blanco: [0.1, 0.75, 0], fov: 0.5 },
+      { nome: 'coche-trasera-34', tipo: 'coche', s: 170, d: -1.0, yaw: 0.61, ojo: [-5.1, 1.80, 3.5], blanco: [-0.1, 0.85, 0], fov: 0.5 },
+      { nome: 'coche-lateral-baja', tipo: 'coche', s: 170, d: -1.0, yaw: 2.1, ojo: [1.0, 0.65, -5.3], blanco: [0.05, 0.85, 0], fov: 0.6 },
     ],
 
     replayB64: null,
