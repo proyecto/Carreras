@@ -40,7 +40,7 @@ function runTracksTestSuite() {
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
-  assert(trackList.length === 1, `Se espera 1 circuito oficial GT3 en TRACK_LIST, se encontraron ${trackList.length}`);
+  assert(trackList.length === 2, `Se esperan 2 circuitos oficiales GT3 en TRACK_LIST, se encontraron ${trackList.length}`);
 
   for (const trackFile of trackList) {
     const filePath = path.join(root, 'tracks', trackFile);

@@ -107,6 +107,11 @@ const I18N = {
           subtitle: 'GP-Strecke',
           specs: '5.15 km · 16 turns · FIA GT3 width · Official Grand Prix circuit',
         },
+        'spa-francorchamps': {
+          name: 'Spa-Francorchamps',
+          subtitle: 'Circuit de Spa-Francorchamps',
+          specs: '7.00 km · 19 turns · La Source, Eau Rouge, Raidillon, Blanchimont & Bus Stop',
+        },
       },
     },
 
@@ -211,6 +216,11 @@ const I18N = {
           name: 'Nürburgring GP',
           subtitle: 'GP-Strecke',
           specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio',
+        },
+        'spa-francorchamps': {
+          name: 'Spa-Francorchamps',
+          subtitle: 'Circuit de Spa-Francorchamps',
+          specs: '7,00 km · 19 curvas · La Source, Eau Rouge, Raidillon, Blanchimont y Bus Stop',
         },
       },
     },
