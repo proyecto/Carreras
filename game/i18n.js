@@ -103,9 +103,9 @@ const I18N = {
       // Circuitos
       tracks: {
         'nurburgring-gp': {
-          name: 'Nürburgring GP',
-          subtitle: 'GP-Strecke',
-          specs: '5.15 km · 16 turns · FIA GT3 width · Official Grand Prix circuit',
+          name: 'Autódromo Internacional',
+          subtitle: 'Grand Prix Circuit',
+          specs: '5.15 km · 16 turns · FIA GT3 width · Grand Prix circuit',
         },
       },
     },
@@ -208,9 +208,9 @@ const I18N = {
       // Circuitos
       tracks: {
         'nurburgring-gp': {
-          name: 'Nürburgring GP',
-          subtitle: 'GP-Strecke',
-          specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio',
+          name: 'Autódromo Internacional',
+          subtitle: 'Trazado Gran Premio',
+          specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado de Gran Premio',
         },
       },
     },

@@ -1,13 +1,12 @@
 'use strict';
-// Circuito: Nürburgring GP-Strecke (1 archivo = 1 circuito)
-// Trazado oficial de Gran Premio (~5,15 km) con 14,4 m de pista (hw: 7.2) para carreras de GT3 y F1.
-// Incluye Yokohama-S, Mercedes-Arena, Ford-Kurve, Dunlop-Kehre, Schumacher-S, Kumho y la chicana Veedol/NGK.
+// Circuito: Autódromo Internacional (Trazado Gran Premio)
+// Trazado de Gran Premio (~5,15 km) con 14,4 m de pista (hw: 7.2) para carreras de GT3 y F1.
 (() => {
   TRACKS.register({
     id: 'nurburgring-gp',
-    name: 'Nürburgring GP',
-    subtitle: 'GP-Strecke',
-    specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio',
+    name: 'Autódromo Internacional',
+    subtitle: 'Trazado Gran Premio',
+    specs: '5,15 km · 16 curvas · Ancho FIA GT3 · Trazado de Gran Premio',
     storageKey: 'mejor-nurburgring-gp',
 
     hw: 7.2, // Pista ancha de 14,4 m para GT3
