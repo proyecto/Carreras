@@ -23,7 +23,7 @@ const ZONE = { ASPHALT: 0, KERB: 1, GRASS: 2, GRAVEL: 3, ROUGH: 4, PIT: 5, CONCR
 
 function trackBuild(spec) {
   spec = spec || (typeof TRACKS !== 'undefined' ? TRACKS.active : null);
-  if (!spec || !spec.segments) throw new Error('Ningún circuito activo registrado en TRACKS.');
+  if (!spec || (!spec.segments && !spec.points)) throw new Error('Ningún circuito activo registrado en TRACKS.');
   TRK.spec = spec;
   TRK.segs = []; TRK.corners = [];
   TRK.hw = spec.hw ?? 5.5;
@@ -31,48 +31,77 @@ function trackBuild(spec) {
   TRK.stand = Object.assign({ s0: -75, s1: 75, d0: -15.5, d1: -36 }, spec.stand || {});
   TRK.startS = spec.startS ?? -14;
   TRK.startD = spec.startD ?? -1.6;
-  // Segmentos: ['S', longitud, elev] o ['A', radio, ángulo° (+ derecha), elev, nombre]. Lw y Ln ajustados para cerrar bucle.
-  const def = spec.segments;
-  // Resuelve Lw, Ln para cierre de bucle
-  const walk = (Lw, Ln, emit) => {
-    let x = -60, z = 0, th = 0, s = 0;
-    for (const sg of def) {
-      const s0 = s;
-      if (sg[0] === 'S') {
-        const L = sg[1] === 'Lw' ? Lw : sg[1] === 'Ln' ? Ln : sg[1];
-        if (emit) emit(sg, s0, L, x, z, th, 0);
-        x += Math.cos(th) * L; z += Math.sin(th) * L; s += L;
-      } else {
-        const R = sg[1], a = sg[2] * PI / 180, L = Math.abs(a) * R, sgn = Math.sign(a);
-        if (emit) emit(sg, s0, L, x, z, th, sgn / R);
-        const cx = x - Math.sin(th) * R * sgn, cz = z + Math.cos(th) * R * sgn;
-        th += a; x = cx + Math.sin(th) * R * sgn; z = cz - Math.cos(th) * R * sgn; s += L;
+
+  const raw = []; const elevKeys = [];
+  let total = 0;
+  if (spec.points && spec.points.length > 10) {
+    for (let i = 0; i < spec.points.length; i++) {
+      raw.push([spec.points[i][0], spec.points[i][1]]);
+    }
+    if (spec.elevKeys) {
+      for (const ek of spec.elevKeys) elevKeys.push(ek);
+    }
+    if (spec.corners) {
+      for (const cg of spec.corners) {
+        TRK.segs.push({
+          type: 'A',
+          s0: cg.s0,
+          s1: cg.s1,
+          k: cg.k ?? (cg.ang >= 0 ? 1 / cg.R : -1 / cg.R),
+          name: cg.name || '',
+          R: cg.R || 50,
+          ang: cg.ang || 90
+        });
       }
     }
-    return [x, z, s];
-  };
-  const hasLw = def.some(sg => sg[0] === 'S' && sg[1] === 'Lw');
-  const hasLn = def.some(sg => sg[0] === 'S' && sg[1] === 'Ln');
-  let Lw = 0, Ln = 0;
-  if (hasLw && hasLn) {
-    const p0 = walk(0, 0), pw = walk(1, 0), pn = walk(0, 1);
-    // [pw-p0, pn-p0] * [Lw,Ln] = target - p0
-    const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = -60 - p0[0], ez = 0 - p0[1], det = a * d - b * c;
-    if (Math.abs(det) > 1e-6) { Lw = (ex * d - b * ez) / det; Ln = (a * ez - c * ex) / det; }
-  }
-  // Muestreo preliminar cada 0.5 m
-  const raw = []; const elevKeys = [];
-  const total = walk(Lw, Ln, (sg, s0, L, x, z, th, k) => {
-    TRK.segs.push({ type: sg[0], s0, s1: s0 + L, k, name: sg[4] || '', R: sg[0] === 'A' ? sg[1] : 0, ang: sg[0] === 'A' ? sg[2] : 0 });
-    elevKeys.push([s0 + L, sg[0] === 'S' ? sg[2] : sg[3]]);
-    const n = Math.max(1, Math.round(L / 0.5));
-    for (let i = 0; i < n; i++) {
-      const t = i / n * L;
-      if (k === 0) raw.push([x + Math.cos(th) * t, z + Math.sin(th) * t]);
-      else { const R = 1 / Math.abs(k), sgn = Math.sign(k), cx = x - Math.sin(th) * R * sgn, cz = z + Math.cos(th) * R * sgn, t2 = th + t * k; raw.push([cx + Math.sin(t2) * R * sgn, cz - Math.cos(t2) * R * sgn]); }
+    for (let i = 0; i < raw.length; i++) {
+      const p0 = raw[i], p1 = raw[(i + 1) % raw.length];
+      total += Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
     }
-  })[2];
-  TRK.Lw = Lw; TRK.Ln = Ln;
+    TRK.Lw = 0; TRK.Ln = 0;
+  } else {
+    // Segmentos: ['S', longitud, elev] o ['A', radio, ángulo° (+ derecha), elev, nombre]. Lw y Ln ajustados para cerrar bucle.
+    const def = spec.segments;
+    // Resuelve Lw, Ln para cierre de bucle
+    const walk = (Lw, Ln, emit) => {
+      let x = -60, z = 0, th = 0, s = 0;
+      for (const sg of def) {
+        const s0 = s;
+        if (sg[0] === 'S') {
+          const L = sg[1] === 'Lw' ? Lw : sg[1] === 'Ln' ? Ln : sg[1];
+          if (emit) emit(sg, s0, L, x, z, th, 0);
+          x += Math.cos(th) * L; z += Math.sin(th) * L; s += L;
+        } else {
+          const R = sg[1], a = sg[2] * PI / 180, L = Math.abs(a) * R, sgn = Math.sign(a);
+          if (emit) emit(sg, s0, L, x, z, th, sgn / R);
+          const cx = x - Math.sin(th) * R * sgn, cz = z + Math.cos(th) * R * sgn;
+          th += a; x = cx + Math.sin(th) * R * sgn; z = cz - Math.cos(th) * R * sgn; s += L;
+        }
+      }
+      return [x, z, s];
+    };
+    const hasLw = def.some(sg => sg[0] === 'S' && sg[1] === 'Lw');
+    const hasLn = def.some(sg => sg[0] === 'S' && sg[1] === 'Ln');
+    let Lw = 0, Ln = 0;
+    if (hasLw && hasLn) {
+      const p0 = walk(0, 0), pw = walk(1, 0), pn = walk(0, 1);
+      // [pw-p0, pn-p0] * [Lw,Ln] = target - p0
+      const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = -60 - p0[0], ez = 0 - p0[1], det = a * d - b * c;
+      if (Math.abs(det) > 1e-6) { Lw = (ex * d - b * ez) / det; Ln = (a * ez - c * ex) / det; }
+    }
+    // Muestreo preliminar cada 0.5 m
+    total = walk(Lw, Ln, (sg, s0, L, x, z, th, k) => {
+      TRK.segs.push({ type: sg[0], s0, s1: s0 + L, k, name: sg[4] || '', R: sg[0] === 'A' ? sg[1] : 0, ang: sg[0] === 'A' ? sg[2] : 0 });
+      elevKeys.push([s0 + L, sg[0] === 'S' ? sg[2] : sg[3]]);
+      const n = Math.max(1, Math.round(L / 0.5));
+      for (let i = 0; i < n; i++) {
+        const t = i / n * L;
+        if (k === 0) raw.push([x + Math.cos(th) * t, z + Math.sin(th) * t]);
+        else { const R = 1 / Math.abs(k), sgn = Math.sign(k), cx = x - Math.sin(th) * R * sgn, cz = z + Math.cos(th) * R * sgn, t2 = th + t * k; raw.push([cx + Math.sin(t2) * R * sgn, cz - Math.cos(t2) * R * sgn]); }
+      }
+    })[2];
+    TRK.Lw = Lw; TRK.Ln = Ln;
+  }
   // Suavizado (gaussiana periódica) para transiciones de curvatura
   const M = raw.length, sm = new Array(M), SG = 14, KS = 42;
   for (let i = 0; i < M; i++) {
