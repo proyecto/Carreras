@@ -63,7 +63,8 @@
     wet: [[3400, 3600, 0.6], [4700, 4900, 0.5]],
 
     // Coordenadas mundiales del MSG Sphere (ubicado con holgura segura dentro del bucle de T5-T9)
-    spherePos: [-770.0, 0.0, -1450.0],
+    spherePos: [-750.0, 0.0, -1410.0],
+    sphereR: 64.0,
 
     // Torres de cámaras de televisión
     tvTowers: [
@@ -94,22 +95,22 @@
       {
         nome: 'MSG Sphere Loop',
         tipo: 'coche',
-        ojo: [58.0, 12.0, -1550.0],
-        blanco: [66.6, 6.0, -1594.9],
-        fov: 0.75
+        ojo: [-16.0, 4.2, 14.0],
+        blanco: [0.0, 1.2, 0.0],
+        fov: 0.65
       },
       {
         nome: 'The Strip Straight (Las Vegas Blvd)',
         tipo: 'coche',
-        ojo: [-620.0, 4.5, -420.0],
-        blanco: [-580.0, 1.2, -410.0],
+        ojo: [8.5, 2.2, 12.0],
+        blanco: [0.0, 1.0, 0.0],
         fov: 0.55
       },
       {
         nome: 'Harmon Avenue Chicane',
         tipo: 'coche',
-        ojo: [320.0, 3.8, 120.0],
-        blanco: [300.0, 1.0, 110.0],
+        ojo: [-12.0, 3.5, 10.0],
+        blanco: [0.0, 1.0, 0.0],
         fov: 0.60
       }
     ]

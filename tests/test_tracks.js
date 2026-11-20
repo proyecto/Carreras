@@ -101,6 +101,15 @@ function runTracksTestSuite() {
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 
+  // 6. Validación de patrocinio y escenografía de boxes (world/props.js)
+  const propsCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
+  assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
+  assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');
+  assert(propsCode.includes('PADDOCK BUILDING OFICIAL F1 LAS VEGAS'), 'Modelo arquitectónico oficial de boxes / Paddock Building de Las Vegas presente');
+  assert(propsCode.includes('MSG Sphere') && propsCode.includes('Planet Earth') && propsCode.includes('earthColor'), 'Modelo monumental y textura Planet Earth del MSG Sphere presente');
+  assert(propsCode.includes('S2.add(md, sphI0, 7, 5000)'), 'MSG Sphere registrado en S2 sin face culling con 5000m de distancia de renderizado');
+  assert(propsCode.includes('distToSph < 185.0') && propsCode.includes('s >= 2500 && s <= 3750 && side < 0'), 'Corredor de visión y exclusión de rascacielos en la plaza del MSG Sphere verificados');
+
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };
 }

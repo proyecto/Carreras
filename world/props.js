@@ -184,21 +184,106 @@ function atlasBuild() {
   g.fillStyle = '#888'; g.fillRect(0, 0, 2048, 1024);
   const REG = PROPS.regions, reg = (name, x, y, w, h) => { REG[name] = [x / 2048, y / 1024, (x + w) / 2048, (y + h) / 1024]; };
   const centered = (txt, x, y, w, h, th, color, weight, skew) => strokeText(g, txt, x + (w - textW(txt, th)) / 2, y + (h - th) / 2, th, color, weight, skew);
-  // nome do circuito
-  g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, 1024, 128); g.fillStyle = '#e8b21c'; g.fillRect(0, 0, 1024, 10); g.fillRect(0, 118, 1024, 10);
-  centered('CIRCUITO SERRA DA MATA', 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1); reg('name', 0, 0, 1024, 128);
-  // setas de curva (chevrons)
+  const isVegas = Boolean(typeof TRK !== 'undefined' && TRK.spec && (TRK.spec.id === 'las-vegas-strip' || TRK.spec.urban));
+  const trackId = (typeof TRK !== 'undefined' && TRK.spec && TRK.spec.id) || '';
+
+  // Nome do circuito
+  if (isVegas) {
+    g.fillStyle = '#070b14'; g.fillRect(0, 0, 1024, 128);
+    g.fillStyle = '#e10600'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
+    g.fillStyle = '#d4af37'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
+    centered('LAS VEGAS STRIP CIRCUIT', 0, 0, 1024, 128, 52, '#ffffff', 1.85, 0.08);
+  } else if (trackId === 'nurburgring-gp') {
+    g.fillStyle = '#09131f'; g.fillRect(0, 0, 1024, 128);
+    g.fillStyle = '#de0000'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
+    g.fillStyle = '#ffcc00'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
+    centered('NÜRBURGRING GP-STRECKE', 0, 0, 1024, 128, 50, '#ffffff', 1.8, 0.08);
+  } else if (trackId === 'spa-francorchamps') {
+    g.fillStyle = '#0b1626'; g.fillRect(0, 0, 1024, 128);
+    g.fillStyle = '#ffcc00'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
+    g.fillStyle = '#de0000'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
+    centered('SPA-FRANCORCHAMPS', 0, 0, 1024, 128, 52, '#f5f5f5', 1.8, 0.08);
+  } else {
+    const trkTitle = (typeof TRK !== 'undefined' && TRK.spec && TRK.spec.name) ? TRK.spec.name.toUpperCase() : 'CIRCUIT GP';
+    g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, 1024, 128); g.fillStyle = '#e8b21c'; g.fillRect(0, 0, 1024, 10); g.fillRect(0, 118, 1024, 10);
+    centered(trkTitle, 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1);
+  }
+  reg('name', 0, 0, 1024, 128);
+
+  // Setas de curva (chevrons)
   g.fillStyle = '#e9e6dc'; g.fillRect(1024, 0, 512, 128); g.fillStyle = '#b3160f';
   for (let i = 0; i < 5; i++) { const x = 1034 + i * 102; g.beginPath(); g.moveTo(x, 8); g.lineTo(x + 48, 8); g.lineTo(x + 92, 64); g.lineTo(x + 48, 120); g.lineTo(x, 120); g.lineTo(x + 44, 64); g.closePath(); g.fill(); }
   reg('chev', 1024, 0, 512, 128);
-  // faixa "BOXES"
-  g.fillStyle = '#d8d6ce'; g.fillRect(1536, 0, 512, 128); centered('BOXES', 1536, 0, 512, 128, 74, '#16181c', 1.8, 0.1); reg('boxes', 1536, 0, 512, 128);
-  // marcas inventadas
-  const brands = [
-    ['ARARA PNEUS', '#c9281c', '#fff6e0', 0], ['TORQUE FREIOS', '#16181c', '#f2c318', 1], ['CAFE SERRANO', '#3b2416', '#f0dfc0', 2], ['JATOBA SEGUROS', '#0f5d3a', '#f4f4ee', 3],
-    ['VELA NORTE', '#f0efe8', '#1b3f8f', 4], ['ESCADAS ALUMINAR', '#b8bec4', '#12202e', 5], ['ZEBRA TINTAS', '#f4f4f0', '#111111', 6], ['GUARANA DO VALE', '#1f7a2e', '#ffe14a', 2],
-    ['RADIO PISTA 98', '#5a1b78', '#ffffff', 1], ['MOTOR CLUBE DA MATA', '#e0791a', '#1a1a1a', 0], ['OFICINA DO TONHO', '#18406b', '#ffd23a', 3], ['POSTO IPE 24H', '#f2d21f', '#16501e', 4],
-  ];
+
+  // Faixa "PIT LANE" / "BOXENGASSE" / "BOXES"
+  g.fillStyle = '#161a22'; g.fillRect(1536, 0, 512, 128);
+  g.fillStyle = isVegas ? '#00a3e0' : '#e8b21c'; g.fillRect(1536, 0, 512, 8); g.fillRect(1536, 120, 512, 8);
+  centered(isVegas ? 'PIT LANE' : (trackId === 'nurburgring-gp' ? 'BOXENGASSE' : 'PIT LANE'), 1536, 0, 512, 128, 68, '#ffffff', 1.8, 0.08);
+  reg('boxes', 1536, 0, 512, 128);
+
+  // Marcas patrocinadoras oficiais de competición
+  let brands;
+  if (isVegas) {
+    brands = [
+      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
+      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
+      ['ARAMCO', '#002044', '#00A3E0', 3],
+      ['DHL', '#D40511', '#FFCC00', 4],
+      ['PIRELLI', '#D52B1E', '#FFD100', 6],
+      ['ROLEX', '#004d30', '#c8a85c', 5],
+      ['CAESARS PALACE', '#221230', '#e5c158', 3],
+      ['BELLAGIO', '#0e1e36', '#e5c158', 2],
+      ['MGM GRAND', '#0a2e1d', '#e5c158', 0],
+      ['WYNN LAS VEGAS', '#45131b', '#f5d688', 1],
+      ['LVMH', '#141416', '#f5f5f5', 5],
+      ['F1 LAS VEGAS', '#e10600', '#ffffff', 4],
+    ];
+  } else if (trackId === 'nurburgring-gp') {
+    brands = [
+      ['BILSTEIN', '#005bac', '#ffd000', 0],
+      ['ADAC', '#ffcc00', '#111111', 1],
+      ['RAVENOL', '#003087', '#ffd100', 3],
+      ['BBS', '#15171c', '#c8c8c8', 6],
+      ['MICHELIN', '#002060', '#ffea00', 2],
+      ['DEKRA', '#008754', '#ffffff', 4],
+      ['TOTAL ENERGIES', '#da291c', '#ffffff', 5],
+      ['RECARO', '#16181d', '#e30613', 0],
+      ['H&R SPRINGS', '#16181d', '#ed1c24', 1],
+      ['ROWE MOTOR OIL', '#002f6c', '#ff6600', 3],
+      ['PUMA MOTORSPORT', '#111111', '#ffffff', 2],
+      ['BOSCH', '#e2001a', '#ffffff', 4],
+    ];
+  } else if (trackId === 'spa-francorchamps') {
+    brands = [
+      ['ROLEX', '#004d30', '#c8a85c', 5],
+      ['TOTAL ENERGIES', '#da291c', '#ffffff', 2],
+      ['PIRELLI', '#D52B1E', '#FFD100', 6],
+      ['MOOBLUZ', '#0c1e38', '#ffffff', 3],
+      ['DHL', '#D40511', '#FFCC00', 4],
+      ['ARAMCO', '#002044', '#00A3E0', 1],
+      ['SPA-FRANCORCHAMPS', '#162238', '#dfba60', 0],
+      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
+      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
+      ['MICHELIN', '#002060', '#ffea00', 2],
+      ['AWS', '#1b2432', '#ff9900', 5],
+      ['LIQUI MOLY', '#003e7e', '#e30613', 3],
+    ];
+  } else {
+    brands = [
+      ['PIRELLI', '#D52B1E', '#FFD100', 6],
+      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
+      ['ARAMCO', '#002044', '#00A3E0', 3],
+      ['DHL', '#D40511', '#FFCC00', 4],
+      ['MICHELIN', '#002060', '#ffea00', 2],
+      ['ROLEX', '#004d30', '#c8a85c', 5],
+      ['TOTAL ENERGIES', '#da291c', '#ffffff', 2],
+      ['BILSTEIN', '#005bac', '#ffd000', 0],
+      ['BOSCH', '#e2001a', '#ffffff', 4],
+      ['BBS', '#15171c', '#c8c8c8', 6],
+      ['PUMA', '#111111', '#ffffff', 1],
+      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
+    ];
+  }
   brands.forEach((b, i) => {
     const x = (i % 4) * 512, y = 128 + Math.floor(i / 4) * 128; g.fillStyle = b[1]; g.fillRect(x, y, 512, 128);
     g.fillStyle = b[2]; g.strokeStyle = b[2]; g.lineWidth = 7;
@@ -474,10 +559,225 @@ function propsBuild() {
     if (local) return;
     toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 3, 900); S2.add(md, k0, 5, 1500);   // la pancarta (lona microperforada) no proyecta sombra: solo la celosía marca el asfalto
   };
-  gantry(0, -7.7, 7.05, 'name', true);
+  const isVegas = Boolean(TRK.spec && (TRK.spec.id === 'las-vegas-strip' || TRK.spec.urban));
+  const gantryDL = isVegas ? -(hw + 2.2) : -7.7;
+  const gantryDR = isVegas ? (pit.wallD - 0.6) : 7.05;
+  gantry(0, gantryDL, gantryDR, 'name', true);
+  if (isVegas) {
+    // Pórtico publicitario Heineken 0.0 cruzando la calle de boxes hacia el edificio del paddock
+    gantry(35, pit.wallD - 0.4, pit.bldD0 + 0.4, 'b0', false);
+  }
 
   // ---- prédio dos boxes ----
-  {
+  if (isVegas) {
+    // ================= PADDOCK BUILDING OFICIAL F1 LAS VEGAS =================
+    // Estructura de 4 niveles inspirada fielmente en el edificio de 500M$ de Las Vegas F1
+    // Nivel 1: Garajes de boxes con portales oscuros, rótulos luminosos de escuderías y perchas de repostaje.
+    // Niveles 2 y 3: Suites VIP Paddock Club acristaladas panorámicas con terrazas en voladizo continuo.
+    // Nivel 4: Terraza superior abierta con la estructura de marquesina Heineken 0.0, focos cenitales VIP y torre TAG Heuer.
+    const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1;
+    const nBay = 20, bw = (u1 - u0) / nBay; // 9.5 m por garaje
+
+    for (let part = 0; part < 4; part++) {
+      const b0 = part * 5, b1 = b0 + 5;
+      const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, pv0 = mp.nv, pi0 = mp.ni;
+
+      for (let b = b0; b < b1; b++) {
+        const a = u0 + b * bw, c = a + bw, cx = (a + c) * 0.5;
+        const closed = (b % 5 === 1 && b !== 0 && b !== 19);
+
+        // --- Planta Baja: Garajes (0 a 4.8 m) ---
+        // Pilares de fachada en composite grafito oscuro
+        mb.mat(2, 110, 150); col(mb, 0.08, 0.09, 0.10);
+        Bx(mb, a - 0.35, a + 0.35, -0.5, 4.8, vF - 0.15, vF + 0.45);
+        if (b === nBay - 1) Bx(mb, c - 0.35, c + 0.35, -0.5, 4.8, vF - 0.15, vF + 0.45);
+
+        // Dintel y rótulo retroiluminado del equipo
+        mb.mat(2, 120, 140); col(mb, 0.06, 0.07, 0.08);
+        Bx(mb, a, c, 4.08, 4.8, vF - 0.22, vF + 0.05);
+        mb.mat(6, 160, 0); col(mb, 0.95, 0.95, 0.98); // Luz LED blanca continua
+        Bx(mb, a + 0.8, c - 0.8, 4.22, 4.68, vF - 0.24, vF - 0.18);
+        sign(md, cx + 0.85, 4.22, vF - 0.25, -1.7, 0, 0, 0.46, 'g' + b);
+
+        // Brazo voladizo de servicio (gantry de mangueras neumáticas y piruleta de parada)
+        mb.mat(2, 128, 128); col(mb, 0.22, 0.24, 0.27);
+        mb.tube([[cx, 4.6, vF], [cx, 4.6, vF - 3.8]], 0.055, 5);
+        mb.tube([[cx, 4.6, vF - 3.8], [cx, 3.1, vF - 3.8]], 0.035, 4);
+        mb.mat(2, 150, 0); col(mb, 0.9, 0.05, 0.02); mb.cyl(cx, 3.0, vF - 3.8, 0.22, 3.12, 0.22, 8, true, true);
+        mb.mat(2, 150, 0); col(mb, 0.05, 0.85, 0.2); mb.cyl(cx, 3.12, vF - 3.8, 0.22, 3.24, 0.22, 8, true, true);
+
+        // Interior del garaje (profundidad 12m)
+        const dp = 12.0, x0 = a + 0.35, x1 = c - 0.35;
+        mb.mat(3); col(mb, 0.25, 0.25, 0.27, 0.85); // Suelo de resina epoxi gris
+        mb.quad(x0, 0.02, vF + dp, x1, 0.02, vF + dp, x1, 0.02, vF, x0, 0.02, vF);
+        col(mb, 0.35, 0.36, 0.38, 0.7); // Pared de fondo
+        mb.quad(x1, 0, vF + dp, x0, 0, vF + dp, x0, 4.8, vF + dp, x1, 4.8, vF + dp);
+        const tc = SHIRTS[(b * 3 + 1) % SHIRTS.length];
+        mb.mat(2, 140, 0); col(mb, tc[0], tc[1], tc[2]);
+        Bx(mb, x0, x1, 2.0, 2.5, vF + dp - 0.05, vF + dp);
+        mb.mat(3); col(mb, 0.3, 0.31, 0.33); // Paredes laterales
+        mb.quad(x0, 0, vF + dp, x0, 0, vF, x0, 4.8, vF, x0, 4.8, vF + dp);
+        mb.quad(x1, 0, vF, x1, 0, vF + dp, x1, 4.8, vF + dp, x1, 4.8, vF);
+        col(mb, 0.2, 0.2, 0.22); // Techo
+        mb.quad(x0, 4.8, vF, x1, 4.8, vF, x1, 4.8, vF + dp, x0, 4.8, vF + dp);
+        mb.mat(6, 150, 0); col(mb, 1.0, 0.95, 0.9);
+        for (let k = 1; k <= 3; k++) Bx(mb, cx - 1.2, cx + 1.2, 4.75, 4.78, vF + k * 2.8 - 0.2, vF + k * 2.8 + 0.2);
+
+        if (closed) {
+          mb.mat(5); col(mb, 1, 1, 1);
+          mb.quad(x1, 0, vF + 0.08, x0, 0, vF + 0.08, x0, 4.08, vF + 0.08, x1, 4.08, vF + 0.08, 0, 0, x1 - x0, 4.08);
+        } else {
+          // Carro de herramientas y puesto de ingenieros
+          mb.mat(2, 110, 80); col(mb, 0.75, 0.08, 0.06);
+          Bx(mb, x0 + 0.5, x0 + 2.5, 0, 1.2, vF + dp - 1.4, vF + dp - 0.4);
+          col(mb, 0.15, 0.16, 0.18);
+          Bx(mb, x1 - 3.2, x1 - 0.5, 0.9, 0.96, vF + dp - 1.5, vF + dp - 0.4);
+          // Pilas de neumáticos Pirelli P Zero
+          for (let q = 0; q < 2; q++) {
+            const tyreCol = q === 0 ? [0.85, 0.1, 0.1] : [0.9, 0.8, 0.1];
+            mb.mat(4); col(mb, 0.03, 0.03, 0.03); mb.cyl(x0 + 3.2 + q * 0.85, 0, vF + dp - 0.8, 0.36, 1.05, 0.36, 12, false, true);
+            mb.mat(2, 128, 0); col(mb, tyreCol[0], tyreCol[1], tyreCol[2]); mb.cyl(x0 + 3.2 + q * 0.85, 0.48, vF + dp - 0.8, 0.365, 0.55, 0.365, 12, false, false);
+          }
+          // Mecánicos de boxes
+          const tm = [tc[0] * 0.6 + 0.1, tc[1] * 0.6 + 0.1, tc[2] * 0.6 + 0.1];
+          stander(x0 + 1.2 + (b % 3) * 0.8, 0.02, vF - 0.8 + (b % 2) * 1.5, tm, 0.9);
+          stander(x1 - 1.5, 0.02, vF + 1.2, tm, 0.9);
+        }
+      }
+
+      const a = u0 + b0 * bw, c = u0 + b1 * bw;
+
+      // --- Planta 2: Paddock Club Hospitality Nivel 1 (4.8 a 9.2 m) ---
+      // Voladizo de terraza en hormigón arquitectónico blanco
+      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
+      Bx(mb, a, c, 4.8, 5.25, vF - 2.2, vB);
+      // Barandilla de cristal continua de la terraza
+      mb.mat(5); col(mb, 1, 1, 1);
+      mb.quad(c, 5.25, vF - 2.15, a, 5.25, vF - 2.15, a, 6.35, vF - 2.15, c, 6.35, vF - 2.15, 0, 0, c - a, 1.1);
+      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
+      Bx(mb, a, c, 6.35, 6.42, vF - 2.2, vF - 2.1);
+      // Invitados VIP en la terraza nivel 1
+      for (let k = 0; k < 4; k++) stander(a + 2.5 + k * 11.0, 5.25, vF - 1.5, pick(CROWD), 0.9);
+      // Fachada acristalada panorámica piso 2
+      mb.mat(5);
+      mb.quad(c, 5.25, vF + 0.2, a, 5.25, vF + 0.2, a, 9.2, vF + 0.2, c, 9.2, vF + 0.2, a, 0, c, 3.95);
+      // Montantes verticales oscuros
+      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
+      for (let x = a; x <= c + 0.01; x += 2.375) Bx(mb, x - 0.04, x + 0.04, 5.25, 9.2, vF + 0.12, vF + 0.24);
+
+      // --- Planta 3: Paddock Club Hospitality Nivel 2 (9.2 a 13.6 m) ---
+      // Voladizo de terraza nivel 2 blanco
+      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
+      Bx(mb, a, c, 9.2, 9.65, vF - 2.2, vB);
+      // Barandilla de cristal terraza 2
+      mb.mat(5); col(mb, 1, 1, 1);
+      mb.quad(c, 9.65, vF - 2.15, a, 9.65, vF - 2.15, a, 10.75, vF - 2.15, c, 10.75, vF - 2.15, 0, 0, c - a, 1.1);
+      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
+      Bx(mb, a, c, 10.75, 10.82, vF - 2.2, vF - 2.1);
+      // Invitados VIP terraza 2
+      for (let k = 0; k < 4; k++) stander(a + 4.0 + k * 11.0, 9.65, vF - 1.5, pick(CROWD), 0.9);
+      // Fachada acristalada piso 3
+      mb.mat(5);
+      mb.quad(c, 9.65, vF + 0.2, a, 9.65, vF + 0.2, a, 13.6, vF + 0.2, c, 13.6, vF + 0.2, a, 0, c, 3.95);
+      // Montantes piso 3
+      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
+      for (let x = a; x <= c + 0.01; x += 2.375) Bx(mb, x - 0.04, x + 0.04, 9.65, 13.6, vF + 0.12, vF + 0.24);
+
+      // --- Planta 4: Terraza Superior & Cubierta Heineken (13.6 a 18.5 m) ---
+      // Losa perimetral de la azotea
+      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
+      Bx(mb, a, c, 13.6, 14.15, vF - 2.4, vB + 0.5);
+      // Barandilla perimetral de la azotea
+      mb.mat(5); col(mb, 1, 1, 1);
+      mb.quad(c, 14.15, vF - 2.35, a, 14.15, vF - 2.35, a, 15.35, vF - 2.35, c, 15.35, vF - 2.35, 0, 0, c - a, 1.2);
+      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
+      Bx(mb, a, c, 15.35, 15.42, vF - 2.4, vF - 2.3);
+      // Pavimento de la azotea
+      mb.mat(9); col(mb, 0.25, 0.26, 0.28);
+      mb.quad(a, 14.16, vB + 0.5, c, 14.16, vB + 0.5, c, 14.16, vF - 2.4, a, 14.16, vF - 2.4, 0, 0, c - a, vB - vF + 2.9);
+
+      // Marquesina icónica Heineken 0.0 en los tramos centrales
+      if (part === 1 || part === 2) {
+        mb.mat(2, 110, 150); col(mb, 0.0, 0.48, 0.20); // Verde Heineken
+        for (const px of [a + 4.0, (a + c) * 0.5, c - 4.0]) {
+          mb.tube([[px, 14.15, vF - 1.0], [px, 17.5, vF - 1.0]], 0.08, 6);
+          mb.tube([[px, 14.15, vB - 2.0], [px, 17.5, vB - 2.0]], 0.08, 6);
+        }
+        Bx(mb, a + 2.0, c - 2.0, 17.5, 17.85, vF - 1.2, vB - 1.8);
+        // Letrero Heineken 0.0 gigante retroiluminado en la azotea
+        sign(md, (a + c) * 0.5 + 10.0, 15.6, vF - 2.38, -20.0, 0, 0, 2.0, 'b0');
+      } else {
+        const nm = part === 0 ? 'name' : 'b1';
+        sign(md, (a + c) * 0.5 + 9.0, 14.35, vF - 2.38, -18.0, 0, 0, 1.8, nm);
+      }
+
+      // Proyectores arquitectónicos hacia el cielo nocturno
+      for (let q = 0; q < 3; q++) {
+        const sx = a + (q + 0.5) * (c - a) / 3, sz = vF + 2.0 + q * 3.5;
+        mb.mat(2, 128, 128); col(mb, 0.1, 0.1, 0.12); mb.cyl(sx, 14.15, sz, 0.35, 14.8, 0.35, 8, false, true);
+        mb.mat(6, 180, 0); col(mb, 0.9, 0.95, 1.0); mb.cyl(sx, 14.8, sz, 0.3, 14.85, 0.3, 8, true, true);
+      }
+
+      // Fachada trasera
+      mb.mat(3); col(mb, 0.2, 0.21, 0.23);
+      mb.quad(a, -0.5, vB, c, -0.5, vB, c, 14.15, vB, a, 14.15, vB);
+      mb.mat(5); col(mb, 1, 1, 1);
+      mb.quad(a + 1.0, 5.5, vB + 0.02, c - 1.0, 5.5, vB + 0.02, c - 1.0, 8.5, vB + 0.02, a + 1.0, 8.5, vB + 0.02, a, 0, c, 3.0);
+      mb.quad(a + 1.0, 10.0, vB + 0.02, c - 1.0, 10.0, vB + 0.02, c - 1.0, 13.0, vB + 0.02, a + 1.0, 13.0, vB + 0.02, a, 0, c, 3.0);
+
+      // Fachadas extremas
+      if (part === 0) {
+        mb.mat(3); col(mb, 0.18, 0.19, 0.21);
+        mb.quad(a, -0.5, vF - 2.2, a, -0.5, vB, a, 14.15, vB, a, 14.15, vF - 2.2);
+        sign(md, a - 0.05, 5.0, vF + 1.0, 0, 0, 10.0, 2.5, 'name');
+      }
+      if (part === 3) {
+        mb.mat(3); col(mb, 0.18, 0.19, 0.21);
+        mb.quad(c, -0.5, vB, c, -0.5, vF - 2.2, c, 14.15, vF - 2.2, c, 14.15, vB);
+        // Torre de cronometraje TAG Heuer integrada en el extremo norte
+        mb.mat(2, 110, 150); col(mb, 0.08, 0.09, 0.11);
+        Bx(mb, c - 0.5, c + 4.5, 0, 20.5, vF + 1.0, vF + 5.0);
+        sign(md, c + 4.55, 15.5, vF + 4.8, 0, 0, -3.6, 2.8, 'b1'); // TAG HEUER
+        sign(md, c + 4.55, 11.5, vF + 4.8, 0, 0, -3.6, 2.8, 'b0'); // HEINEKEN
+        mb.mat(6, 180, 0); col(mb, 0.0, 0.85, 0.6); // Pantalla LED de tabla de clasificación
+        Bx(mb, c + 4.52, c + 4.54, 4.0, 11.0, vF + 1.4, vF + 4.6);
+      }
+
+      toStraight(mb, v0); toStraight(md, w0);
+      S1.add(mb, i0, 7, 2500); S2.add(md, k0, 3, 1200);
+      toStraight(mp, pv0); SP.add(mp, pi0, 1, 600);
+    }
+
+    // Línea pintada oficial Aramco en el pit lane (borde de velocidad límite)
+    const vA = mb.nv, iA = mb.ni;
+    for (let s = pit.s0 + 10; s <= pit.s1 - 10; s += 3.0) {
+      const isTurq = ((Math.floor(s / 3.0)) % 2 === 0);
+      mb.mat(2, 140, 0);
+      if (isTurq) col(mb, 0.0, 0.64, 0.88);
+      else col(mb, 0.95, 0.95, 0.95);
+      Bx(mb, s, s + 2.8, 0.015, 0.025, pit.laneD0 - 0.25, pit.laneD0 + 0.25);
+    }
+    toStraight(mb, vA); S1.add(mb, iA, 3, 900);
+
+    // Puestos de mandos / perchas de estrategas de F1 a lo largo del muro de boxes
+    const vP = mb.nv, iP = mb.ni;
+    for (const s of [-60, -40, -20, 0, 20, 40, 60, 80]) {
+      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
+      Bx(mb, s - 2.2, s + 2.2, 0.95, 1.05, pit.wallD - 0.6, pit.wallD + 1.2);
+      col(mb, 0.08, 0.08, 0.09);
+      Bx(mb, s - 2.4, s + 2.4, 2.5, 2.6, pit.wallD - 0.8, pit.wallD + 1.4);
+      for (const sx of [s - 2.2, s + 2.2]) for (const sz of [pit.wallD - 0.6, pit.wallD + 1.2]) {
+        mb.tube([[sx, 0.95, sz], [sx, 2.5, sz]], 0.035, 5);
+      }
+      mb.mat(6, 170, 0); col(mb, 0.0, 0.75, 0.95);
+      for (let scr = 0; scr < 4; scr++) {
+        const scx = s - 1.5 + scr * 1.0;
+        Bx(mb, scx - 0.4, scx + 0.4, 1.4, 1.85, pit.wallD + 0.7, pit.wallD + 0.73);
+      }
+    }
+    toStraight(mb, vP); S1.add(mb, iP, 3, 900);
+  } else {
+    // ---- prédio dos boxes clássico ----
     const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1, nBay = 20, bw = (u1 - u0) / nBay, hG = 3.7, hS = 4.5, hT = 8.2;
     const wallC = [0.6, 0.6, 0.58], darkC = [0.1, 0.11, 0.12];
     for (let part = 0; part < 4; part++) {
@@ -551,7 +851,7 @@ function propsBuild() {
       toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 7, 1500); S2.add(md, k0, 3, 900);
       toStraight(mp, pv0); SP.add(mp, pi0, 1, 400);
     }
-    // ---- torre de controle ----
+    // ---- torre de controle clássica ----
     const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, tu0 = u1 + 3, tu1 = u1 + 13, tv0 = vF + 1, tv1 = vF + 11;
     mb.mat(3); col(mb, 0.62, 0.62, 0.6); Bx(mb, tu0, tu1, -0.5, 13.5, tv0, tv1);
     mb.mat(5); col(mb, 1, 1, 1);
@@ -865,8 +1165,14 @@ function propsBuild() {
       const s = st * stepS;
       for (const side of [-1, 1]) {
         // En zona de boxes o gradas principales se colocan por detrás
-        const isPit = side > 0 && s > TRK.pit.bldS0 - 20 && s < TRK.pit.bldS1 + 20;
-        const isStand = side < 0 && s > TRK.stand.s0 - 20 && s < TRK.stand.s1 + 20;
+        const sr = s > TRK.L / 2 ? s - TRK.L : s;
+        const isPit = side > 0 && sr > TRK.pit.bldS0 - 30 && sr < TRK.pit.bldS1 + 35;
+        const isStand = side < 0 && sr > TRK.stand.s0 - 30 && sr < TRK.stand.s1 + 30;
+
+        // Exclusión total en el corredor y plaza del MSG Sphere:
+        // 1. El lado interior (side < 0) del bucle T5-T9 (s entre 2500 y 3750) se reserva despejado
+        //    para garantizar una vista panorámica limpia del monumental orbe iluminado desde la pista
+        if (s >= 2500 && s <= 3750 && side < 0) continue;
 
         const w = 24.0 + rnd() * 14.0;
         const depth = 20.0 + rnd() * 10.0;
@@ -907,6 +1213,10 @@ function propsBuild() {
           }
 
           if (minD >= hw + 2.8) {
+            // Comprobación de distancia a la plaza del MSG Sphere:
+            const sphP = (TRK.spec && TRK.spec.spherePos) || [-750.0, 0.0, -1410.0];
+            const distToSph = Math.hypot(pOrigin[0] - sphP[0], pOrigin[2] - sphP[2]);
+            if (distToSph < 185.0) { safe = false; break; }
             safe = true;
             break;
           } else {
@@ -971,25 +1281,102 @@ function propsBuild() {
       }
     }
 
-    // 2. MSG Sphere (Esfera icónica de Las Vegas)
-    // Ubicada en el centro del bucle de las curvas T5 a T9
-    const spherePos = (TRK.spec && TRK.spec.spherePos) || [-770.0, 0.0, -1450.0];
-    const sphI0 = mb.ni;
-    const sphR = 44.0;
+    // 2. MSG Sphere (Monumental Exosfera LED de Las Vegas · Planet Earth Display)
+    // Ubicada majestuosamente en la plaza central del bucle de las curvas T5 a T9
+    const spherePos = (TRK.spec && TRK.spec.spherePos) || [-750.0, 0.0, -1410.0];
+    const sphR = (TRK.spec && TRK.spec.sphereR) || 64.0; // Radio horizontal de 64 m (128 m de diámetro)
+    const sphH = 88.0; // Altura colosal de 88 m que corona el horizonte de Las Vegas
     const sphCX = spherePos[0], sphCY = spherePos[1], sphCZ = spherePos[2];
-    const nRings = 16, nSec = 28;
 
-    // Base circular de hormigón
-    mb.mat(3); col(mb, 0.45, 0.46, 0.48);
-    mb.cyl(sphCX, sphCY - 1.0, sphCZ, sphR + 12.0, sphCY + 3.0, sphR + 8.0, 32, true, true);
+    // A. Explanada y basamento arquitectónico del pabellón de acceso
+    const sphBaseI0 = mb.ni;
+    // Explanada de asfalto y hormigón de la plaza
+    mb.mat(3); col(mb, 0.22, 0.24, 0.26);
+    mb.cyl(sphCX, sphCY - 0.5, sphCZ, sphR + 42.0, sphCY + 0.1, sphR + 40.0, 48, true, false);
 
-    // Malla de la Esfera LED
-    mb.mat(6, 220, 0);
+    // Podio Nivel 1: Atrio circular de hormigón arquitectónico
+    col(mb, 0.44, 0.45, 0.48);
+    mb.cyl(sphCX, sphCY - 1.0, sphCZ, sphR + 18.0, sphCY + 3.2, sphR + 15.0, 48, true, true);
+
+    // Podio Nivel 2: Cornisa cilíndrica de soporte de la cúpula
+    col(mb, 0.35, 0.37, 0.40);
+    mb.cyl(sphCX, sphCY + 3.2, sphCZ, sphR + 10.0, sphCY + 6.0, sphR + 7.0, 48, true, true);
+
+    // Anillo perimetral de neón arquitectónico cian en la cornisa del podio
+    mb.mat(6, 240, 0); col(mb, 0.0, 0.85, 1.0);
+    mb.cyl(sphCX, sphCY + 5.8, sphCZ, sphR + 7.2, sphCY + 6.3, sphR + 7.2, 48, false, true);
+
+    // Batería de 12 torres de proyectores en la periferia de la plaza apuntando hacia la Esfera
+    for (let pt = 0; pt < 12; pt++) {
+      const pAng = (pt / 12) * TAU;
+      const px = sphCX + (sphR + 32.0) * Math.cos(pAng);
+      const pz = sphCZ + (sphR + 32.0) * Math.sin(pAng);
+      mb.mat(1); col(mb, 1, 1, 1);
+      mb.cyl(px, sphCY, pz, 0.25, sphCY + 11.0, 0.14, 8, false, true);
+      mb.mat(2, 120, 130); col(mb, 0.15, 0.16, 0.18);
+      Bx(mb, px - 0.6, px + 0.6, sphCY + 10.8, sphCY + 11.6, pz - 0.6, pz + 0.6);
+      mb.mat(6, 235, 0); col(mb, 0.95, 0.98, 1.0);
+      Bx(mb, px - 0.5, px + 0.5, sphCY + 11.2, sphCY + 11.7, pz - 0.5, pz + 0.5);
+    }
+    S1.add(mb, sphBaseI0, 7, 3500);
+
+    // B. Malla de la Esfera LED (Planet Earth / La Tierra brillante en el cielo nocturno)
+    // Se inserta en md (doble cara, famDS, cull: none) con devanado exterior para máxima fidelidad visual y 0 culling
+    const sphI0 = md.ni;
+    const nRings = 32, nSec = 48;
+    md.mat(6, 248, 0);
+
+    // Generador procedural de continentes, océanos y remolinos de nubes del Planeta Tierra
+    const earthColor = (th, ph) => {
+      const cx = Math.cos(ph) * Math.cos(th);
+      const cy = Math.sin(ph);
+      const cz = Math.cos(ph) * Math.sin(th);
+
+      // Armónicos esféricos multi-octava para siluetas continentales
+      let n = Math.sin(cx * 2.5 + 0.3) * Math.cos(cy * 2.2) * Math.sin(cz * 2.8 + 0.7);
+      n += 0.5 * Math.sin(cx * 5.1 + cy * 4.3) * Math.cos(cz * 5.2 - cx * 2.1);
+      n += 0.25 * Math.sin(cx * 10.5 - cz * 8.4) * Math.cos(cy * 9.7);
+      n += 0.12 * Math.sin(cy * 18.2 + cz * 16.5);
+
+      // Capa de nubes con remolinos ciclónicos
+      const twist = Math.sin(cy * 4.0) * 1.5;
+      let clouds = Math.sin((cx + twist) * 4.2 + cz * 3.8) * Math.cos(cy * 5.0);
+      clouds += 0.5 * Math.sin(cx * 8.5 - cy * 9.1 + cz * 7.4);
+      clouds = Math.max(0, clouds * 0.72 + 0.12);
+
+      const isLand = n > 0.08;
+      const isCoast = n > 0.0 && n <= 0.08;
+
+      let r, g, b;
+      if (isLand) {
+        // Vegetación y desiertos continentales
+        const arid = Math.sin(cx * 3.0 + cz * 4.0) * 0.5 + 0.5;
+        r = 0.12 + 0.45 * arid;
+        g = 0.42 + 0.16 * (1.0 - arid);
+        b = 0.15 + 0.12 * arid;
+      } else if (isCoast) {
+        // Plataformas marinas cian
+        r = 0.05; g = 0.52; b = 0.85;
+      } else {
+        // Océano azul cobalto profundo
+        r = 0.02; g = 0.18; b = 0.72;
+      }
+
+      // Remolinos de nubes blancas luminosas
+      if (clouds > 0.26) {
+        const cAlpha = Math.min(1.0, (clouds - 0.26) * 2.8);
+        r = r * (1 - cAlpha) + 0.95 * cAlpha;
+        g = g * (1 - cAlpha) + 0.98 * cAlpha;
+        b = b * (1 - cAlpha) + 1.00 * cAlpha;
+      }
+      return [r, g, b];
+    };
+
     for (let ring = 0; ring < nRings; ring++) {
-      const phi0 = (ring / nRings) * (PI * 0.52);
-      const phi1 = ((ring + 1) / nRings) * (PI * 0.52);
-      const y0 = sphCY + 3.0 + sphR * Math.sin(phi0);
-      const y1 = sphCY + 3.0 + sphR * Math.sin(phi1);
+      const phi0 = -0.14 * PI + (ring / nRings) * (0.64 * PI);
+      const phi1 = -0.14 * PI + ((ring + 1) / nRings) * (0.64 * PI);
+      const y0 = sphCY + 6.0 + sphH * (Math.sin(phi0) + Math.sin(0.14 * PI)) / (1.0 + Math.sin(0.14 * PI));
+      const y1 = sphCY + 6.0 + sphH * (Math.sin(phi1) + Math.sin(0.14 * PI)) / (1.0 + Math.sin(0.14 * PI));
       const r0 = sphR * Math.cos(phi0);
       const r1 = sphR * Math.cos(phi1);
 
@@ -1002,25 +1389,25 @@ function propsBuild() {
         const x01 = sphCX + r1 * Math.cos(theta0), z01 = sphCZ + r1 * Math.sin(theta0);
         const x11 = sphCX + r1 * Math.cos(theta1), z11 = sphCZ + r1 * Math.sin(theta1);
 
-        // Patrón psicodélico de colores de neón de Las Vegas para la pantalla exterior
-        const pat = Math.sin(ring * 0.8 + sec * 0.4) * 0.5 + 0.5;
-        const pat2 = Math.cos(ring * 0.5 - sec * 0.6) * 0.5 + 0.5;
-        const sr = lerp(0.1, 1.0, pat);
-        const sg = lerp(0.9, 0.2, pat2);
-        const sb = lerp(1.0, 0.85, pat);
-        col(mb, sr, sg, sb);
+        // Color de la Tierra en el centro de la celda
+        const midTh = (theta0 + theta1) * 0.5, midPh = (phi0 + phi1) * 0.5;
+        const rgb = earthColor(midTh, midPh);
+        col(md, rgb[0], rgb[1], rgb[2]);
 
-        // Quad en la superficie esférica con normales esféricas exactas
-        const ny0 = (y0 - (sphCY + 3.0)) / sphR;
-        const ny1 = (y1 - (sphCY + 3.0)) / sphR;
-        const v0 = mb.v(x00, y0, z00, (x00 - sphCX) / sphR, ny0, (z00 - sphCZ) / sphR, sec / nSec, ring / nRings);
-        const v1 = mb.v(x10, y0, z10, (x10 - sphCX) / sphR, ny0, (z10 - sphCZ) / sphR, (sec + 1) / nSec, ring / nRings);
-        const v2 = mb.v(x11, y1, z11, (x11 - sphCX) / sphR, ny1, (z11 - sphCZ) / sphR, (sec + 1) / nSec, (ring + 1) / nRings);
-        const v3 = mb.v(x01, y1, z01, (x01 - sphCX) / sphR, ny1, (z01 - sphCZ) / sphR, sec / nSec, (ring + 1) / nRings);
-        mb.quadI(v0, v1, v2, v3);
+        // Normales esféricas hacia el exterior
+        const ny0 = (y0 - (sphCY + 6.0)) / sphH;
+        const ny1 = (y1 - (sphCY + 6.0)) / sphH;
+        const v0 = md.v(x00, y0, z00, (x00 - sphCX) / sphR, ny0, (z00 - sphCZ) / sphR, sec / nSec, ring / nRings);
+        const v1 = md.v(x10, y0, z10, (x10 - sphCX) / sphR, ny0, (z10 - sphCZ) / sphR, (sec + 1) / nSec, ring / nRings);
+        const v2 = md.v(x11, y1, z11, (x11 - sphCX) / sphR, ny1, (z11 - sphCZ) / sphR, (sec + 1) / nSec, (ring + 1) / nRings);
+        const v3 = md.v(x01, y1, z01, (x01 - sphCX) / sphR, ny1, (z01 - sphCZ) / sphR, sec / nSec, (ring + 1) / nRings);
+
+        // Devanado antihorario visto desde el exterior (v0, v3, v2, v1) con normales hacia fuera
+        md.quadI(v0, v3, v2, v1);
       }
     }
-    S1.add(mb, sphI0, 7, 3500);
+    // Añadido a S2 (chapas/doble cara, famDS, cull: none) con rango máximo de 5000 m (visible desde toda la pista)
+    S2.add(md, sphI0, 7, 5000);
 
     // 3. Postes de luz de Gran Premio nocturno (F1 Floodlights) a lo largo de toda la pista
     const floodStep = 36;
