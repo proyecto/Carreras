@@ -248,6 +248,31 @@ function hudDrawMinimap() {
   m.strokeStyle = '#ffffff';
   m.stroke();
 
+  // Rival IA en el minimapa (punto amarillo de competición #7)
+  if ((typeof GAME === 'undefined' || GAME.rivalEnabled !== false) && typeof VEH_RIVAL !== 'undefined') {
+    const rx = cX + (VEH_RIVAL.x - midTrackX) * scale;
+    const ry = cZ + (VEH_RIVAL.z - midTrackZ) * scale;
+    m.beginPath();
+    m.arc(rx, ry, Math.max(2, r * 0.038), 0, TAU);
+    m.fillStyle = '#facc15';
+    m.fill();
+    m.lineWidth = Math.max(1, r * 0.012);
+    m.strokeStyle = '#000000';
+    m.stroke();
+  }
+
+  // Posición de carrera en pista (P1 / P2)
+  if ((typeof GAME === 'undefined' || GAME.rivalEnabled !== false) && typeof VEH_RIVAL !== 'undefined' && typeof VEH !== 'undefined') {
+    const playerProgress = VEH.laps * trk.L + VEH.lapS;
+    const rivalProgress = VEH_RIVAL.laps * trk.L + VEH_RIVAL.lapS;
+    const isP1 = playerProgress >= rivalProgress;
+    m.font = '700 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillStyle = isP1 ? '#4ade80' : '#facc15';
+    m.textAlign = 'right';
+    m.textBaseline = 'top';
+    m.fillText(isP1 ? 'POS: P1' : 'POS: P2', W - Math.round(r * 0.18), Math.round(r * 0.18));
+  }
+
   // Distancia recorrida / longitud de vuelta (e.g. 3.2 / 5.1 km)
   m.font = '600 ' + Math.round(r * 0.11) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.75)';
@@ -381,6 +406,24 @@ function hudDrawMinimap() {
   m.lineWidth = 1.5;
   m.strokeStyle = '#ffffff';
   m.stroke();
+
+  // Rival IA en el radar dinámico de curva (si está en el rango visible)
+  if ((typeof GAME === 'undefined' || GAME.rivalEnabled !== false) && typeof VEH_RIVAL !== 'undefined') {
+    const rdx = VEH_RIVAL.x - GS.cx, rdz = VEH_RIVAL.z - GS.cz;
+    const rlat = -rdx * sinY + rdz * cosY;
+    const rfwd = rdx * cosY + rdz * sinY;
+    if (rfwd > -25 && rfwd < 240) {
+      const rsx = rcx + rlat * rScale;
+      const rsy = rcy - rfwd * rScale;
+      m.beginPath();
+      m.arc(rsx, rsy, Math.max(2.5, r * 0.045), 0, TAU);
+      m.fillStyle = '#facc15';
+      m.fill();
+      m.lineWidth = 1.5;
+      m.strokeStyle = '#000000';
+      m.stroke();
+    }
+  }
 
   m.restore();
 }

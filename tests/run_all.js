@@ -3,6 +3,9 @@ const { runCarsTestSuite } = require('./test_cars');
 const { runTracksTestSuite } = require('./test_tracks');
 const { runPhysicsTestSuite } = require('./test_physics');
 const { runShaderTests } = require('./test_shaders');
+const { runControlsTestSuite } = require('./test_controls');
+const { runRivalTestSuite } = require('./test_rival');
+const { totalAsserts: patternsAsserts } = require('./test_patterns');
 
 console.log('================================================================');
 console.log('  🏎️  CARRERAS - SUITE COMPLETA DE PRUEBAS AUTOMATIZADAS');
@@ -28,6 +31,16 @@ try {
   const physicsRes = runPhysicsTestSuite();
   totalPassed += physicsRes.passed;
   totalFailed += physicsRes.failed;
+
+  const controlsRes = runControlsTestSuite();
+  totalPassed += controlsRes.passed;
+  totalFailed += controlsRes.failed;
+
+  const rivalRes = runRivalTestSuite();
+  totalPassed += rivalRes.passed;
+  totalFailed += rivalRes.failed;
+
+  totalPassed += patternsAsserts;
 } catch (err) {
   console.error('\n❌ ERROR CRÍTICO DURANTE LA EJECUCIÓN DE PRUEBAS:\n', err);
   process.exit(1);

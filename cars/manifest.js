@@ -3,6 +3,22 @@
 // Cada entrada define la ficha visual para el menú de selección sin tener que cargar los megabytes de mallas y texturas 3D.
 window.CAR_MANIFEST = [
   {
+    file: 'ford-mustang-gt3-2024.js',
+    id: 'ford-mustang-gt3-2024',
+    name: 'Ford Mustang GT3 (2024)',
+    subtitle: '2024 WEC & IMSA Spec · 5.4L Coyote V8 · 540 CV · RWD',
+    specs: '1280 kg · 540 CV · Hewland 6-vel seq · RWD · Multimatic Aero',
+    accent: '#0d47a1'
+  },
+  {
+    file: 'ford-mustang-gt3.js',
+    id: 'ford-mustang-gt3',
+    name: 'Ford Mustang GT3',
+    subtitle: 'Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD',
+    specs: '1270 kg · 535 CV · 6-vel seq · RWD · Multimatic Carbon Aero',
+    accent: '#002244'
+  },
+  {
     file: 'uno-mille-1996.js',
     id: 'uno-mille-1996',
     name: 'Uno con escalera',

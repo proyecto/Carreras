@@ -20,6 +20,35 @@ const I18N = {
       btn_apply_race: 'Apply & Race',
       btn_bench: 'Benchmark',
       btn_repeat_bench: 'Rerun benchmark',
+      btn_options: '⚙️ Options',
+      btn_back: '← Back',
+      options_title: 'Options',
+      options_lang_title: 'Language',
+      options_controls_title: 'Controls & Keyboard',
+      options_controls_hint: 'Click a key button to rebind. Press any key to assign, or Esc to cancel.',
+      btn_reset_controls: 'Reset to default controls',
+      press_key: 'Press key…',
+
+      rival_title: 'AI Rival Car',
+      rival_btn_enabled: 'Rival: Enabled',
+      rival_btn_disabled: 'Rival: Disabled (Solo)',
+      options_rival_title: 'AI Rival Car',
+      options_rival_hint: 'Choose whether you want an AI rival competing with you on the track or practice solo. The rival is chosen at random from all available real models.',
+      btn_reroll_rival: '🎲 Change rival randomly',
+      rival_status_on: 'Competing on track · Random model',
+      rival_status_off: 'Solo practice · Empty track',
+      rival_model_label: 'Current rival: {name}',
+
+      action_accel: 'Accelerate',
+      action_brake: 'Brake / Reverse',
+      action_left: 'Steer left',
+      action_right: 'Steer right',
+      action_handbrake: 'Handbrake',
+      action_camera: 'Change camera',
+      action_look_back: 'Look back (hold)',
+      action_reset: 'Reset car to track',
+      action_mute: 'Toggle sound',
+      action_stats: 'Performance stats',
       tag_bench: 'Benchmark: 60 s scripted lap · Esc cancels',
       tag_replay: 'Replay lap · R takes the wheel · Esc menu',
       tag_pose: 'Pose {n} · {name} · 1 to {total} switch · Esc resumes driving',
@@ -98,6 +127,16 @@ const I18N = {
           subtitle: '2018 GT3 Spec · 3.8L Twin-Turbo V6 VR38DETT · RWD',
           specs: '1290 kg · 550 HP · Hewland 6-speed seq · RWD · Nismo Aero',
         },
+        'ford-mustang-gt3-2024': {
+          name: 'Ford Mustang GT3 (2024)',
+          subtitle: '2024 WEC & IMSA Spec · 5.4L Coyote V8 · 540 HP · RWD',
+          specs: '1280 kg · 540 HP · Hewland 6-speed seq · RWD · Multimatic Aero',
+        },
+        'ford-mustang-gt3': {
+          name: 'Ford Mustang GT3',
+          subtitle: 'Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD',
+          specs: '1270 kg · 535 HP · 6-speed seq · RWD · Multimatic Carbon Aero',
+        },
       },
 
       // Circuitos
@@ -130,6 +169,35 @@ const I18N = {
       btn_apply_race: 'Aplicar y correr',
       btn_bench: 'Benchmark',
       btn_repeat_bench: 'Repetir benchmark',
+      btn_options: '⚙️ Opciones',
+      btn_back: '← Volver',
+      options_title: 'Opciones',
+      options_lang_title: 'Idioma / Language',
+      options_controls_title: 'Controles y Teclado',
+      options_controls_hint: 'Haz clic en una tecla para reasignarla. Pulsa cualquier tecla para asignarla o Esc para cancelar.',
+      btn_reset_controls: 'Restablecer controles predeterminados',
+      press_key: 'Pulsa tecla…',
+
+      rival_title: 'Coche Rival IA',
+      rival_btn_enabled: 'Rival: Activado',
+      rival_btn_disabled: 'Rival: Desactivado (Solo)',
+      options_rival_title: 'Coche Rival IA',
+      options_rival_hint: 'Elige si quieres competir contra un rival IA en pista o rodar en solitario. El coche rival se escoge al azar entre todos los modelos reales disponibles.',
+      btn_reroll_rival: '🎲 Cambiar rival al azar',
+      rival_status_on: 'En pista compitiendo · Modelo al azar',
+      rival_status_off: 'Práctica en solitario · Pista libre',
+      rival_model_label: 'Rival actual: {name}',
+
+      action_accel: 'Acelerar',
+      action_brake: 'Frenar / Marcha atrás',
+      action_left: 'Girar a la izquierda',
+      action_right: 'Girar a la derecha',
+      action_handbrake: 'Freno de mano',
+      action_camera: 'Cambiar cámara',
+      action_look_back: 'Mirar hacia atrás (mantener)',
+      action_reset: 'Devolver coche a pista',
+      action_mute: 'Activar/desactivar sonido',
+      action_stats: 'Estadísticas de rendimiento',
       tag_bench: 'Benchmark: vuelta grabada de 60 s · Esc cancela',
       tag_replay: 'Repetición · R toma el volante · Esc menú',
       tag_pose: 'Pose {n} · {name} · 1 a {total} cambian · Esc vuelve a conducir',
@@ -207,6 +275,16 @@ const I18N = {
           name: 'Nissan GT-R Nismo GT3',
           subtitle: '2018 Spec GT3 · 3.8L Twin-Turbo V6 VR38DETT · RWD',
           specs: '1290 kg · 550 CV · Hewland 6 marchas sec · RWD · Aero Nismo',
+        },
+        'ford-mustang-gt3-2024': {
+          name: 'Ford Mustang GT3 (2024)',
+          subtitle: '2024 Spec WEC & IMSA · 5.4L Coyote V8 · 540 CV · RWD',
+          specs: '1280 kg · 540 CV · Hewland 6 marchas sec · RWD · Aero Multimatic',
+        },
+        'ford-mustang-gt3': {
+          name: 'Ford Mustang GT3',
+          subtitle: 'Ford Performance GT3 · 5.4L V8 · Carbon Spec · RWD',
+          specs: '1270 kg · 535 CV · 6 marchas sec · RWD · Aero Carbono Multimatic',
         },
       },
 
@@ -351,6 +429,7 @@ const I18N = {
     // Reconstruye selectores de coche/circuito para reflejar nombres e idiomas
     if (typeof uiBuildSelectors === 'function') uiBuildSelectors();
     if (typeof uiUpdatePrimaryBtn === 'function') uiUpdatePrimaryBtn();
+    if (typeof uiRenderControls === 'function') uiRenderControls();
 
     // Reconstruye HUD strips (LAPS, STATS) con los rótulos traducidos
     if (typeof hudLayout === 'function' && typeof HUD !== 'undefined' && HUD.cg) hudLayout();

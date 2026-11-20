@@ -179,13 +179,13 @@ body {
   display: grid;
   gap: .55em;
   margin-top: .35em;
-  max-height: min(38vh, 320px);
+  max-height: min(50vh, 440px);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: .45em;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 111, 76, .5) rgba(255, 255, 255, .05);
+  scrollbar-color: rgba(255, 111, 76, .65) rgba(255, 255, 255, .08);
 }
 
 .pick-grid::-webkit-scrollbar {
@@ -466,4 +466,251 @@ body {
   background: #d8351c !important;
   color: #fff !important;
   box-shadow: 0 2px 8px rgba(216, 53, 28, .4)
+}
+
+/* Panel de Opciones y Configuración */
+#panel-options {
+  text-align: left;
+  width: 100%;
+}
+
+#panel-main {
+  width: 100%;
+}
+
+.options-topbar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-height: 44px;
+  margin-bottom: 1.2em;
+}
+
+#ui .options-topbar h1 {
+  margin: 0 auto;
+  font-size: 2em;
+  text-align: center;
+}
+
+.btn-back {
+  position: absolute;
+  left: 0;
+  background: rgba(255, 255, 255, .12) !important;
+  font-size: .88em !important;
+  padding: .4em .95em !important;
+  border-radius: .4em !important;
+  min-block-size: 36px !important;
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, .22) !important;
+}
+
+.options-group {
+  margin-bottom: 1.2em !important;
+  text-align: left;
+}
+
+.options-group .lang-selector {
+  margin: .4em 0 .6em;
+  display: inline-flex;
+}
+
+.options-hint {
+  font-size: .84em;
+  color: rgba(235, 238, 242, .75);
+  margin: .2em 0 .8em;
+}
+
+.controls-config-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .35em;
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: .4em;
+}
+
+.ctrl-config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .45em .6em;
+  background: rgba(255, 255, 255, .03);
+  border-radius: .45em;
+  border: 1px solid rgba(255, 255, 255, .06);
+}
+
+.ctrl-config-row:hover {
+  background: rgba(255, 255, 255, .06);
+}
+
+.ctrl-config-label {
+  font-weight: 600;
+  font-size: .92em;
+  color: #fff;
+}
+
+.ctrl-config-keys {
+  display: flex;
+  align-items: center;
+  gap: .45em;
+}
+
+.key-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 34px;
+  padding: 0 .7em;
+  border-radius: 6px;
+  font-size: .85em !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em;
+  background: #1e2229 !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, .2) !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+  cursor: pointer;
+  user-select: none;
+  transition: all .12s ease;
+  min-block-size: 34px !important;
+}
+
+.key-btn:hover {
+  background: #2a303a !important;
+  border-color: rgba(255, 255, 255, .35) !important;
+}
+
+.key-btn.empty {
+  color: rgba(255, 255, 255, .3) !important;
+  border-style: dashed !important;
+  font-weight: 400 !important;
+}
+
+.key-btn.listening {
+  background: #d8351c !important;
+  border-color: #ff8a6a !important;
+  box-shadow: 0 0 10px rgba(216, 53, 28, .8);
+  animation: pulseListening .8s infinite alternate;
+}
+
+@keyframes pulseListening {
+  0% { transform: scale(0.97); opacity: 0.85; }
+  100% { transform: scale(1.03); opacity: 1; }
+}
+
+.controls-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: .85em;
+}
+
+.btn-subtle {
+  background: rgba(255, 255, 255, .08) !important;
+  color: rgba(255, 255, 255, .8) !important;
+  font-size: .84em !important;
+  padding: .45em 1.1em !important;
+  border-radius: .4em !important;
+  min-block-size: 36px !important;
+  transition: all .15s;
+}
+
+.btn-subtle:hover {
+  background: rgba(255, 255, 255, .15) !important;
+  color: #fff !important;
+}
+
+/* ---- Modo Rival IA Toggle ---- */
+.rival-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  background: rgba(18, 22, 28, .75);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 8px;
+  padding: .7em 1em;
+  margin: .8em 0 1em;
+}
+
+.rival-panel-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: .2em;
+}
+
+.rival-panel-title {
+  font-size: .95em;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .02em;
+}
+
+.rival-panel-sub {
+  font-size: .82em;
+  color: rgba(220, 225, 235, .75);
+}
+
+.btn-rival-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .25);
+  color: #fff;
+  padding: .5em .95em;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: .88em;
+  cursor: pointer;
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+
+.btn-rival-toggle:hover {
+  background: rgba(255, 255, 255, .2);
+  border-color: rgba(255, 255, 255, .4);
+}
+
+.btn-rival-toggle.is-active {
+  background: rgba(34, 197, 94, .25) !important;
+  border-color: rgba(74, 222, 128, .6) !important;
+  color: #86efac !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, .2) !important;
+}
+
+.btn-rival-toggle:not(.is-active) {
+  background: rgba(239, 68, 68, .15) !important;
+  border-color: rgba(248, 113, 113, .4) !important;
+  color: #fca5a5 !important;
+}
+
+.options-rival-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .8em;
+  margin-top: .6em;
+}
+
+.opt-rival-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 180px;
+  text-align: left;
+}
+
+.opt-rival-car-name {
+  font-weight: 700;
+  font-size: .92em;
+  color: #fff;
+}
+
+.opt-rival-car-specs {
+  font-size: .8em;
+  color: rgba(230, 235, 245, .7);
 }

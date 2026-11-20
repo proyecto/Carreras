@@ -71,7 +71,7 @@ function terrainBuild() {
   const split = (x, z, size) => {
     if (size <= MINS) return false; if (size > 4096) return true;
     const key = x + ',' + z + ',' + size; let v = splitCache.get(key);
-    if (v === undefined) { v = distBox(x + size / 2, z + size / 2, size / 2) < size * (size >= 256 ? 3.4 : 2.0); /* folhas distantes mais finas: a silhueta das serras não mostra facetas */ splitCache.set(key, v); }
+    if (v === undefined) { v = distBox(x + size / 2, z + size / 2, size / 2) < size * (size >= 256 ? 3.4 : 2.0); /* nodos lejanos más refinados: la silueta montañosa no muestra facetas */ splitCache.set(key, v); }
     return v;
   };
   const leaves = [];
@@ -88,7 +88,7 @@ function terrainBuild() {
   const H = (px, pz) => (px >= HF.x0 && pz >= HF.z0 && px <= hx1 && pz <= hz1 && Number.isInteger(px) && Number.isInteger(pz)) ? HF.d[(pz - HF.z0) * HF.w + (px - HF.x0)] : terrainH(px, pz);
   const mb = new MeshBuilder(1 << 19), rs = WORLD.terrain;
   const W = NQ + 3, hg = new Float32Array(W * W);
-  // ordena as folhas por balde espacial para formar faixas contíguas
+  // ordena los nodos por cuadrícula espacial para generar franjas contiguas
   const nL = leaves.length / 3, order = [];
   for (let i = 0; i < nL; i++) order.push(i);
   const bucketOf = i => { const s = leaves[i * 3 + 2], b = s >= 256 ? s : s >= 64 ? 512 : 128; return b + ':' + Math.floor(leaves[i * 3] / b) + ':' + Math.floor(leaves[i * 3 + 1] / b); };
@@ -151,7 +151,7 @@ function ribbonBuild() {
     for (let i = 0; i < N; i++) { let a = 0; for (let q = -5; q <= 5; q++) a += t[(i + q + N) % N]; brk[i] = a / 11; }
   }
   const wetAt = s => { let w = 0; for (const z of WORLD.wet) w = Math.max(w, z[2] * Math.min(1, (s - z[0]) / 14, (z[1] - s) / 14)); return Math.max(0, w); };
-  // colunas: [x além da borda (ou d absoluto para o asfalto), dy fixo, tipo]  tipo: 0 asfalto, 1 zebra, 2 acostamento
+  // columnas: [x más allá del borde (o d absoluto para asfalto), dy fijo, tipo] tipo: 0 asfalto, 1 piano/bordillo, 2 arcén
   const kx = [KERB_W, 1.28, 1.066, 0.8, 0.53, 0.27, 0.03, 0];
   const strips = [];
   for (const side of [-1, 1]) {
@@ -199,7 +199,7 @@ function ribbonBuild() {
       }
       for (let r = 0; r < rows - 1; r++) for (let c = 0; c < nc - 1; c++) {
         const a = base + r * nc + c, b = a + 1, cc = a + nc + 1, d = a + nc;
-        // colunas em ordem crescente de d (lado esquerdo e asfalto) ou decrescente (lado direito: x cresce para fora)
+        // columnas en orden creciente de d (lado izquierdo y asfalto) o decreciente (lado derecho: x crece hacia el exterior)
         const dA = st.side === 0 ? st.cols[c].d : st.side * (hw + st.cols[c].x), dB = st.side === 0 ? st.cols[c + 1].d : st.side * (hw + st.cols[c + 1].x);
         if (dA < dB) mb.quadI(a, b, cc, d); else mb.quadI(a, d, cc, b);
       }

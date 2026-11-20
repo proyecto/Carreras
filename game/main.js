@@ -55,6 +55,29 @@ async function main() {
     const saved = GAME.ui ? loadSelection() : {};
     const activeCar = CARS.select(Q.get('car') || saved.car);
     const activeTrack = TRACKS.select(Q.get('track') || saved.track);
+
+    // Configuración del rival IA: habilitado por defecto salvo indicación expresa
+    const rivalParam = (typeof Q !== 'undefined') ? Q.get('rival') : null;
+    const rivalEnabled = rivalParam !== null
+      ? (rivalParam === '1' || rivalParam === 'true')
+      : (typeof window !== 'undefined' && typeof window.__rivalEnabled !== 'undefined'
+          ? window.__rivalEnabled
+          : (saved.rival !== false));
+    GAME.rivalEnabled = rivalEnabled;
+
+    if (rivalEnabled) {
+      const rivalId = (typeof window !== 'undefined' && window.__rivalCarId) || (typeof Q !== 'undefined' && Q.get('rivalCar')) || saved.rivalCar;
+      const rivalCar = CARS.get(rivalId);
+      if (rivalCar && rivalCar !== activeCar) {
+        CARS.selectRival(rivalCar.id);
+      } else {
+        const other = CARS.list.find(c => c.id !== activeCar.id && typeof c.build === 'function');
+        if (other) CARS.selectRival(other.id);
+      }
+    } else {
+      CARS.rival = null;
+    }
+
     applyCarPhysics(activeCar);
     const initialLoadingText = (typeof I18N !== 'undefined') ? I18N.t('loading') : 'Loading…';
     setMsg(initialLoadingText);

@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Carreras</title>
-  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/main.css?v=5">
 </head>
 
 <body>
@@ -20,139 +20,175 @@
 
   <div id="ui" role="dialog" aria-modal="true" aria-labelledby="ui-title">
     <div class="panel">
-      <div class="lang-selector" role="radiogroup" aria-label="Language / Idioma">
-        <button type="button" class="lang-btn" data-lang="es">Español</button>
-        <button type="button" class="lang-btn" data-lang="en">English</button>
-      </div>
+      <!-- PANEL PRINCIPAL (Inicio / Pausa) -->
+      <div id="panel-main">
+        <h1 id="ui-title">Uno with Ladder</h1>
+        <p class="sub">Fiat Uno Mille EP 1996 · Circuit</p>
+        <div id="res"></div>
 
-      <h1 id="ui-title">Uno with Ladder</h1>
-      <p class="sub">Fiat Uno Mille EP 1996 · Circuit</p>
-      <div id="res"></div>
-
-      <div class="selectors">
-        <fieldset class="pick-group">
-          <legend data-i18n="legend_car">Car</legend>
-          <div id="pick-cars" class="pick-grid"></div>
-        </fieldset>
-        <fieldset class="pick-group">
-          <legend data-i18n="legend_track">Track</legend>
-          <div id="pick-tracks" class="pick-grid"></div>
-        </fieldset>
-      </div>
-
-      <details class="controls-box">
-        <summary data-i18n="controls_summary">Controls and shortcuts</summary>
-        <div class="cols">
-          <div>
-            <h2 data-i18n="controls_keyboard">Keyboard</h2>
-            <table>
-              <tr>
-                <td>W or ↑</td>
-                <td data-i18n="ctrl_w">accelerate</td>
-              </tr>
-              <tr>
-                <td>S or ↓</td>
-                <td data-i18n="ctrl_s">brake and reverse</td>
-              </tr>
-              <tr>
-                <td>A D or ← →</td>
-                <td data-i18n="ctrl_ad">steer</td>
-              </tr>
-              <tr>
-                <td>Space</td>
-                <td data-i18n="ctrl_space">handbrake</td>
-              </tr>
-              <tr>
-                <td>C</td>
-                <td data-i18n="ctrl_c">change camera</td>
-              </tr>
-              <tr>
-                <td>V (hold)</td>
-                <td data-i18n="ctrl_v">look back</td>
-              </tr>
-              <tr>
-                <td>R</td>
-                <td data-i18n="ctrl_r">reset car to track</td>
-              </tr>
-              <tr>
-                <td>Esc</td>
-                <td data-i18n="ctrl_esc">pause and open menu</td>
-              </tr>
-            </table>
-          </div>
-          <div>
-            <h2 data-i18n="controls_gamepad">Gamepad</h2>
-            <table>
-              <tr>
-                <td data-i18n="gp_rt">Right trigger</td>
-                <td data-i18n="ctrl_w">accelerate</td>
-              </tr>
-              <tr>
-                <td data-i18n="gp_lt">Left trigger</td>
-                <td data-i18n="ctrl_s">brake and reverse</td>
-              </tr>
-              <tr>
-                <td data-i18n="gp_stick">Left stick</td>
-                <td data-i18n="ctrl_ad">steer</td>
-              </tr>
-              <tr>
-                <td>A</td>
-                <td data-i18n="ctrl_space">handbrake</td>
-              </tr>
-              <tr>
-                <td>Y</td>
-                <td data-i18n="ctrl_c">change camera</td>
-              </tr>
-              <tr>
-                <td data-i18n="gp_rb">RB (hold)</td>
-                <td data-i18n="ctrl_v">look back</td>
-              </tr>
-              <tr>
-                <td>X</td>
-                <td data-i18n="ctrl_r">reset car to track</td>
-              </tr>
-              <tr>
-                <td>Start</td>
-                <td data-i18n="gp_start">open menu</td>
-              </tr>
-            </table>
-          </div>
-          <div>
-            <h2 data-i18n="controls_tools">Tools</h2>
-            <table>
-              <tr>
-                <td>M</td>
-                <td data-i18n="tool_m">toggle sound</td>
-              </tr>
-              <tr>
-                <td>H</td>
-                <td data-i18n="tool_h">performance stats</td>
-              </tr>
-              <tr>
-                <td>B</td>
-                <td data-i18n="tool_b">benchmark (60 s lap)</td>
-              </tr>
-              <tr>
-                <td>F</td>
-                <td data-i18n="tool_f">watch replay lap</td>
-              </tr>
-              <tr>
-                <td>1 to 6</td>
-                <td data-i18n="tool_poses">fixed camera poses</td>
-              </tr>
-              <tr>
-                <td colspan="2" data-i18n="tool_footer" style="font-weight:400;color:#ddd;opacity:.75;padding-top:.5em">
-                  Automatic transmission · Lap times start upon crossing the finish line</td>
-              </tr>
-            </table>
-          </div>
+        <div class="selectors">
+          <fieldset class="pick-group">
+            <legend data-i18n="legend_car">Car</legend>
+            <div id="pick-cars" class="pick-grid"></div>
+          </fieldset>
+          <fieldset class="pick-group">
+            <legend data-i18n="legend_track">Track</legend>
+            <div id="pick-tracks" class="pick-grid"></div>
+          </fieldset>
         </div>
-      </details>
 
-      <div class="bt">
-        <button id="b0" type="button" data-i18n="btn_start">Start</button>
-        <button id="b1" type="button" data-i18n="btn_bench">Benchmark</button>
+        <div class="rival-panel-toggle">
+          <div class="rival-panel-info">
+            <span class="rival-panel-title" data-i18n="rival_title">Coche Rival IA</span>
+            <span id="rival-panel-model" class="rival-panel-sub"></span>
+          </div>
+          <button type="button" id="btn-toggle-rival" class="btn-rival-toggle is-active" onclick="uiToggleRival()"
+            aria-pressed="true">
+            <span class="rival-icon" aria-hidden="true">🏁</span>
+            <span id="rival-toggle-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
+          </button>
+        </div>
+
+        <div class="bt">
+          <button id="b0" type="button" data-i18n="btn_start">Start</button>
+          <button id="b1" type="button" data-i18n="btn_bench">Benchmark</button>
+          <button id="b-opt" type="button" onclick="uiShowOptions(true)" data-i18n="btn_options">⚙️ Opciones</button>
+        </div>
       </div>
+
+      <!-- PANEL DE OPCIONES Y CONFIGURACIÓN -->
+      <div id="panel-options" style="display:none">
+        <div class="options-topbar">
+          <button id="b-opt-back" type="button" class="btn-back" onclick="uiShowOptions(false)" data-i18n="btn_back">←
+            Volver</button>
+          <h1 data-i18n="options_title">Opciones</h1>
+        </div>
+
+        <!-- 1. Idioma -->
+        <fieldset class="pick-group options-group">
+          <legend data-i18n="options_lang_title">Idioma / Language</legend>
+          <div class="lang-selector" role="radiogroup" aria-label="Language / Idioma">
+            <button type="button" class="lang-btn" data-lang="es">Español</button>
+            <button type="button" class="lang-btn" data-lang="en">English</button>
+          </div>
+        </fieldset>
+
+        <!-- 2. Coche Rival IA -->
+        <fieldset class="pick-group options-group">
+          <legend data-i18n="options_rival_title">Coche Rival IA</legend>
+          <p class="options-hint" data-i18n="options_rival_hint">Elige si quieres competir contra un rival IA en pista o
+            practicar en solitario. El coche rival se escoge al azar entre todos los modelos reales disponibles.</p>
+          <div class="options-rival-row">
+            <button type="button" id="b-opt-rival" class="btn-rival-toggle is-active" onclick="uiToggleRival()"
+              aria-pressed="true">
+              <span class="rival-icon" aria-hidden="true">🏁</span>
+              <span id="opt-rival-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
+            </button>
+            <div id="opt-rival-info" class="opt-rival-info">
+              <span id="opt-rival-car-name" class="opt-rival-car-name"></span>
+              <span id="opt-rival-car-specs" class="opt-rival-car-specs"></span>
+            </div>
+            <button type="button" id="b-opt-reroll-rival" class="btn-subtle" onclick="uiRerollRival()"
+              data-i18n="btn_reroll_rival">🎲 Cambiar rival al azar</button>
+          </div>
+        </fieldset>
+
+        <!-- 2. Configuración de Controles de Teclado -->
+        <fieldset class="pick-group options-group">
+          <legend data-i18n="options_controls_title">Controles y Teclado</legend>
+          <p class="options-hint" data-i18n="options_controls_hint">Haz clic en una tecla para reasignarla. Pulsa
+            cualquier tecla para asignarla o Esc para cancelar.</p>
+          <div id="controls-config" class="controls-config-grid"></div>
+          <div class="controls-actions">
+            <button id="b-reset-controls" type="button" class="btn-subtle" data-i18n="btn_reset_controls">Restablecer
+              controles predeterminados</button>
+          </div>
+        </fieldset>
+
+        <!-- 3. Mando y Atajos -->
+        <fieldset class="pick-group options-group">
+          <legend data-i18n="controls_gamepad">Mando / Gamepad & Atajos</legend>
+          <div class="cols">
+            <div>
+              <h2 data-i18n="controls_gamepad">Gamepad</h2>
+              <table>
+                <tr>
+                  <td data-i18n="gp_rt">Right trigger</td>
+                  <td data-i18n="ctrl_w">accelerate</td>
+                </tr>
+                <tr>
+                  <td data-i18n="gp_lt">Left trigger</td>
+                  <td data-i18n="ctrl_s">brake and reverse</td>
+                </tr>
+                <tr>
+                  <td data-i18n="gp_stick">Left stick</td>
+                  <td data-i18n="ctrl_ad">steer</td>
+                </tr>
+                <tr>
+                  <td>A</td>
+                  <td data-i18n="ctrl_space">handbrake</td>
+                </tr>
+                <tr>
+                  <td>Y</td>
+                  <td data-i18n="ctrl_c">change camera</td>
+                </tr>
+                <tr>
+                  <td data-i18n="gp_rb">RB (hold)</td>
+                  <td data-i18n="ctrl_v">look back</td>
+                </tr>
+                <tr>
+                  <td>X</td>
+                  <td data-i18n="ctrl_r">reset car to track</td>
+                </tr>
+                <tr>
+                  <td>Start</td>
+                  <td data-i18n="gp_start">open menu</td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <h2 data-i18n="controls_tools">Tools</h2>
+              <table>
+                <tr>
+                  <td>1 to 6</td>
+                  <td data-i18n="tool_poses">fixed camera poses</td>
+                </tr>
+                <tr>
+                  <td>B</td>
+                  <td data-i18n="tool_b">benchmark (60 s lap)</td>
+                </tr>
+                <tr>
+                  <td>F</td>
+                  <td data-i18n="tool_f">watch replay lap</td>
+                </tr>
+                <tr>
+                  <td>Esc</td>
+                  <td data-i18n="ctrl_esc">pause and open menu</td>
+                </tr>
+                <tr>
+                  <td colspan="2" data-i18n="tool_footer"
+                    style="font-weight:400;color:#ddd;opacity:.75;padding-top:.5em">
+                    Automatic transmission · Lap times start upon crossing the finish line</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+      <script>
+        function uiShowOptions(show) {
+          var pMain = document.getElementById('panel-main');
+          var pOpt = document.getElementById('panel-options');
+          if (pMain) pMain.style.display = show ? 'none' : 'block';
+          if (pOpt) pOpt.style.display = show ? 'block' : 'none';
+          if (show && typeof window.uiRenderControls === 'function') {
+            window.uiRenderControls();
+          }
+          var b = document.getElementById(show ? 'b-opt-back' : 'b0');
+          if (b) b.focus();
+        }
+        window.uiShowOptions = uiShowOptions;
+      </script>
     </div>
   </div>
 
@@ -174,6 +210,7 @@
   <script src="engine/sky.js"></script>
   <script src="engine/forward.js"></script>
   <script src="engine/perf.js"></script>
+  <script src="engine/patterns.js"></script>
   <script src="engine/car-factory.js"></script>
 
   <!-- 3. Constructores genéricos del mundo (pista, terreno, entorno, vegetación) -->
@@ -183,43 +220,71 @@
   <script src="world/vegetation.js"></script>
   <script src="world/track-glb.js"></script>
 
-  <!-- 4. Coches (metadatos de selección + carga bajo demanda exclusiva del coche activo) -->
-  <script src="cars/manifest.js"></script>
+  <!-- 4. Coches (metadatos de selección + carga bajo demanda del coche activo y rival IA) -->
+  <script src="cars/manifest.js?v=5"></script>
   <script>
     (() => {
-      // Determina el coche activo desde URL (?car=id), última selección guardada o el primero disponible
       let carId = null;
+      let rivalParam = null;
+      let rivalCarId = null;
       try {
         const p = new URLSearchParams(location.search);
         if (p.get('car')) carId = p.get('car');
-      } catch (e) {}
-      if (!carId && typeof loadSelection === 'function') {
-        const saved = loadSelection();
-        if (saved && saved.car) carId = saved.car;
+        if (p.has('rival')) rivalParam = p.get('rival');
+        if (p.get('rivalCar')) rivalCarId = p.get('rivalCar');
+      } catch (e) { }
+
+      let saved = {};
+      if (typeof loadSelection === 'function') {
+        saved = loadSelection() || {};
+        if (!carId && saved.car) carId = saved.car;
       }
+
       const manifest = window.CAR_MANIFEST || [];
       const entry = (carId && manifest.find(c => c.id === carId)) || manifest[0];
       if (entry && entry.file) {
         document.write('<script src="cars/' + entry.file + '"><\/script>');
       }
+
+      // Evaluar si el rival está activo (por defecto sí, salvo que rival=0 o saved.rival === false)
+      const rivalEnabled = rivalParam !== null
+        ? (rivalParam === '1' || rivalParam === 'true')
+        : (saved.rival !== false);
+      window.__rivalEnabled = rivalEnabled;
+
+      if (rivalEnabled) {
+        const availableRivals = manifest.filter(c => !entry || c.id !== entry.id);
+        const pool = availableRivals.length > 0 ? availableRivals : manifest;
+        let chosenRival = (rivalCarId && manifest.find(c => c.id === rivalCarId));
+        if (!chosenRival && saved.rivalCar) {
+          chosenRival = manifest.find(c => c.id === saved.rivalCar);
+        }
+        if (!chosenRival || (entry && chosenRival.id === entry.id)) {
+          chosenRival = pool[Math.floor(Math.random() * pool.length)];
+        }
+        window.__rivalCarId = chosenRival ? chosenRival.id : null;
+        if (chosenRival && chosenRival.file && chosenRival.file !== (entry && entry.file)) {
+          document.write('<script src="cars/' + chosenRival.file + '"><\/script>');
+        }
+      }
     })();
   </script>
 
   <!-- 5. Circuitos (gestionados desde tracks/manifest.js) -->
-  <script src="tracks/manifest.js"></script>
+  <script src="tracks/manifest.js?v=5"></script>
   <script src="tracks/nurburgring-gp.js"></script>
   <script src="tracks/spa-francorchamps.js"></script>
 
   <!-- 6. Física, IA, efectos, audio, HUD, interfaz y arranque -->
-  <script src="game/i18n.js"></script>
-  <script src="game/physics.js"></script>
-  <script src="game/ai.js"></script>
+  <script src="game/i18n.js?v=5"></script>
+  <script src="game/physics.js?v=5"></script>
+  <script src="game/ai.js?v=5"></script>
   <script src="game/fx.js"></script>
-  <script src="game/game.js"></script>
+  <script src="game/game.js?v=5"></script>
   <script src="game/audio.js"></script>
-  <script src="game/hud.js"></script>
-  <script src="game/ui.js"></script>
-  <script src="game/main.js"></script>
+  <script src="game/hud.js?v=5"></script>
+  <script src="game/ui.js?v=5"></script>
+  <script src="game/main.js?v=5"></script>
 </body>
 
 </html>

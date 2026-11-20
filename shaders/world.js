@@ -275,7 +275,7 @@ fn asphaltSurf(in: V2F) -> Surface {
   // ---- pintura ----
   let chip = 0.72 + 0.28 * smoothstep(0.25, 0.55, n3.b + (n2.g - 0.5) * 0.6);
   var paint = aaLine(abs(d) - (TRK_HW - 0.23), 0.09, aaD) * chip;
-  // linha de largada: xadrez de 3 fileiras
+  // línea de salida/meta: damero de 3 filas
   var sw = s; if (sw > TRK_LEN * 0.5) { sw -= TRK_LEN; }
   let inSF = aaLine(sw, 0.6, aaS) * step(abs(d), TRK_HW - 0.34);
   let chk = step(0.5, fract(floor((sw + 0.6) / 0.4) * 0.5 + floor((d + 20.0) / 0.4) * 0.5 + 0.25));
@@ -344,26 +344,26 @@ fn kerbSurf(in: V2F) -> Surface {
   let red = smoothstep(0.5 - aaS / 5.0, 0.5 + aaS / 5.0, abs(f - 0.5) * 2.0);   // 2,5 m vermelho / 2,5 m branco
   var alb = mix(vec3f(0.5, 0.5, 0.48), vec3f(0.3, 0.005, 0.004), red);         // vermelho escuro saturado, tinta fosca
   alb *= 0.8 + 0.28 * n2.r;
-  // ---- dentes transversais (ranhuras de 30 cm): relevo com sombra própria. A amplitude cai suavemente com o tamanho do
+  // ---- estrías transversales (ranuras de 30 cm): relieve con auto-sombra. La amplitud decrece suavemente con el tamaño de
   // dente na tela (fwidth), então de longe ou em ângulo rasante não sobra padrão para fazer moiré.
   let PER = 0.3;
   let fw = fwidth(s) / PER;
   let tf = 1.0 - smoothstep(0.1, 0.34, fw);
   let inK = smoothstep(0.08, 0.3, x) * (1.0 - smoothstep(1.02, 1.16, x));
   let saw = fract(s / PER);
-  // perfil: rampa longa subindo (0..0,78) e face curta descendo (0,78..1), com transições alargadas pelo tamanho do pixel
+  // perfil: rampa ascendente larga (0..0,78) y vertiente descendente corta (0,78..1), con transiciones suavizadas por píxel
   let e = clamp(fw * 1.2, 0.02, 0.2);
   let back = smoothstep(0.78 - e, 0.78 + e, saw) * (1.0 - smoothstep(1.0 - e, 1.0, saw));
   let tnx = (0.22 * (1.0 - back) - 0.95 * back) * 0.42 * tf * inK;
   let ts = normalize(dpdx(in.wpos) * dpdy(s) - dpdy(in.wpos) * dpdx(s) + vec3f(1e-9, 0.0, 0.0));
   let tdir = normalize(cross(sf.normal, ts));
-  // sombra própria na face de trás do dente + sujeira/borracha acumulada no pé de cada dente
+  // auto-sombra en cara trasera del resalte + suciedad y goma acumulada en la base de cada estría
   let foot = (1.0 - smoothstep(0.0, 0.16 + e, saw)) * tf * inK;
   alb *= 1.0 - 0.3 * back * tf * inK - 0.22 * foot * (0.5 + 0.5 * n2.g);
   // junta entre os blocos de concreto (a cada 1,25 m)
   let jl = 1.0 - smoothstep(0.012, 0.012 + aaS, min(fract(s / 1.25), 1.0 - fract(s / 1.25)) * 1.25);
   alb = mix(alb, vec3f(0.05), jl * 0.7 * (1.0 - smoothstep(30.0, 90.0, dist)));
-  // sujeira: terra no lado de fora, escorridos e manchas de média escala
+  // suciedad: tierra en el exterior, escorrentías y manchas a media escala
   let grime = smoothstep(0.5, 1.25, x) * (0.3 + 0.5 * n2.g) + smoothstep(0.55, 0.8, n1.r) * 0.35;
   alb = mix(alb, vec3f(0.1, 0.085, 0.06), sat(grime) * 0.55);
   // tinta gasta: lascas mostrando o concreto
@@ -388,9 +388,9 @@ fn surf(in: V2F, ff: bool) -> Surface {
 WGSL["mat_props"] = `// Materiais dos adereços do circuito (barreiras, construções, placas). cor.a do vértice = oclusão de ambiente assada.
 // id: 1 aço galvanizado | 2 pintura (a = rugosidade, b = metal) | 3 concreto | 4 pneu (cor = tinta) | 5 vidro de fachada
 //     6 emissivo (a = intensidade) | 7 placa (atlas) | 8 assentos | 9 telha ondulada | 10 lona | 11 poste (some ao longe)
-//     (ids 1, 2 e 11: byte c = distância de sumiço pontilhado / 4 m; 0 = nunca some)
+//     (ids 1, 2 y 11: byte c = distancia de desvanecimiento por tramado / 4 m; 0 = permanente)
 //     12 muro de pneus distante (substituto) | 13 porta de enrolar | 14 cone | 15 pneus próximos (somem ao longe)
-//     18 lâmpada do semáforo de largada (acesa com F.car2.x)
+//     18 óptica del semáforo de salida (encendida con F.car2.x)
 //     17 chapa nervurada pintada   (gente — público, equipes, fiscais — fica na família world_crowd)
 #include mesh_vert
 #include palette
@@ -414,7 +414,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
   s.ao = in.col.a;
   var bump = vec3f(0.0);
 #ifdef PASS_GBUF
-  // sumiço pontilhado de peças finas: byte c do material = distância de início / 4 m (termina a 1,4x)
+  // desvanecimiento tramado de piezas esbeltas: byte c = distancia de inicio / 4 m (concluye a 1,4x)
   let fd = f32((in.mat >> 24u) & 255u) * 4.0;
   if (fd > 0.0 && (id == 1u || id == 2u || id == 11u || id == 7u || id == 17u)) { if (smoothstep(fd, fd * 1.4, dist) > ign(in.pos.xy, F.misc.y) * 0.98 + 0.01) { discard; } }
 #endif
@@ -422,20 +422,20 @@ fn surf(in: V2F, ff: bool) -> Surface {
     let rust = smoothstep(0.66, 0.82, n1.b * 0.55 + n2.r * 0.45) * 0.55;
     s.albedo = mix(vec3f(0.5, 0.52, 0.54) * (0.8 + 0.35 * n1.r), vec3f(0.16, 0.08, 0.04), rust);
     s.metal = select(0.9, 0.55, id == 11u) * (1.0 - rust); s.rough = 0.42 + 0.2 * n2.g + rust * 0.3; if (id == 11u) { s.albedo *= 0.55; }
-    // escorridos de sujeira
+    // marcas verticales de escorrentía
     let streak = textureSample(tNoise, sLin, vec2f(pu.x * 1.3, wp.y * 0.12)).r;
     s.albedo *= 0.75 + 0.3 * streak;
-    // sujeira acumulada: poeira de terra e borracha em manchas de média escala, mais forte perto do chão
+    // suciedad acumulada: polvo terroso y goma en manchas a media escala, más densas junto al suelo
     let hgA = wp.y - wmHeight(wp.xz);
     let dirtM = sat(smoothstep(0.5, 0.78, n1.g * 0.6 + n2.b * 0.5) * 0.7 + (1.0 - smoothstep(0.15, 0.7, hgA)) * 0.45);
     s.albedo = mix(s.albedo, vec3f(0.13, 0.11, 0.085) * (0.7 + 0.5 * n2.r), dirtM * 0.6); s.rough = mix(s.rough, 0.85, dirtM * 0.7); s.metal *= 1.0 - dirtM * 0.6;
   } else if (id == 2u) {
-    // pintura: variação de tom, escorridos verticais de sujeira e lascas/desgaste finos (nada de cor chapada)
+    // pintura: gradación tonal, escorrentías verticales y desconchados de desgaste (sin colores planos artificiales)
     let streak = textureSample(tNoise, sLin, vec2f(pu.x * 1.1, wp.y * 0.09)).g;
     let chip = smoothstep(0.7, 0.84, n2.b * 0.6 + n1.g * 0.5) * near;
     var c = in.col.rgb * (0.8 + 0.3 * n1.r) * (0.94 + 0.12 * n2.a * near) * (0.8 + 0.3 * streak);
     c = mix(c, c * 0.5 + vec3f(0.02, 0.018, 0.015), chip * 0.6);
-    // desgaste em escala de metros (tinta desbotada/raspada) e respingo de sujeira junto ao chão
+    // desgaste métrico (pintura erosionada) y salpicaduras de suciedad junto a la cota del suelo
     let wearM = smoothstep(0.52, 0.8, textureSample(tNoise, sLin, vec2f(pu.x * 0.31, wp.y * 0.6)).b * 0.6 + n1.b * 0.5);
     c = mix(c, c * 0.62 + vec3f(0.07, 0.068, 0.062), wearM * 0.5);
     let hgP = wp.y - wmHeight(wp.xz);
@@ -445,7 +445,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     bump = (vec3f(n2.r, n2.g, n2.b) - 0.5) * 0.06 * near;
   } else if (id == 3u) {
     let streak = textureSample(tNoise, sLin, vec2f(pu.x * 0.9, wp.y * 0.07)).g;
-    // concreto: tom quase uniforme de perto (nada de manchas de ruído); a leitura vem das juntas, dos painéis e dos escorridos
+    // hormigón: textura casi uniforme de cerca (sin ruido exagerado); el detalle procede de juntas, encofrados y escorrentías
     var c = in.col.rgb * (0.92 + 0.12 * n1.r) * (0.97 + 0.06 * n2.a * near);
     c *= 0.84 + 0.2 * streak;
     // juntas de fôrma
@@ -480,7 +480,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     var c = mix(vec3f(0.022, 0.022, 0.024) * (0.7 + 0.8 * n2.r), in.col.rgb * (0.75 + 0.3 * n1.r), painted * (1.0 - chip * 0.55));
     // poeira nas faces de cima
     c = mix(c, vec3f(0.11, 0.09, 0.065), sat(N.y) * 0.5 * (0.5 + 0.5 * n1.b));
-    // cada pilha com um tom (tinta nova, desbotada ou quase gasta) e sujeira de terra na base
+    // cada pila de neumáticos con diferente tono (nueva, desgastada o degradada) y tierra acumulada en la base
     let pid = floor(wp.xz / 0.66); let ph2 = fract(sin(dot(pid, vec2f(127.1, 311.7))) * 43758.5453);
     c *= 0.62 + 0.6 * ph2; c = mix(c, vec3f(dot(c, vec3f(0.33))), 0.45 * step(0.6, ph2));
     let hgT = wp.y - wmHeight(wp.xz);
@@ -537,7 +537,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       let t = textureSampleBias(tAtlas, sLin, in.uv, -0.8);
       s.albedo = t.rgb * (0.82 + 0.2 * n1.r) * (0.95 + 0.08 * n2.a * near); s.rough = 0.42;
     } else {
-      // verso da placa: chapa galvanizada com quadro de travessas e montantes (desenhado no shader, em metros do mundo)
+      // reverso del cartel: chapa galvanizada con estructura de perfiles y montantes en metros de mundo
       let tg = normalize(cross(vec3f(0.0, 1.0, 0.0), N) + vec3f(1e-5, 0.0, 0.0)); let a = dot(wp, tg);
       let aw = max(fwidth(wp.y) + fwidth(a), 0.004);
       let ry = abs(fract(wp.y / 0.7 + 0.2) - 0.5) * 0.7; let rx = abs(fract(a / 1.2) - 0.5) * 1.2;
@@ -570,12 +570,12 @@ fn surf(in: V2F, ff: bool) -> Surface {
     let band = step(0.45, in.uv.y) * step(in.uv.y, 0.68);
     s.albedo = mix(vec3f(0.75, 0.16, 0.02), vec3f(0.7), band) * (0.85 + 0.2 * n2.r); s.rough = 0.55;
   } else if (id == 18u) {
-    // lâmpada do semáforo de largada: vermelha acesa enquanto o carro espera no grid (F.car2.x = 1), apagada depois
+    // óptica de semáforo de salida: roja mientras el vehículo aguarda en parrilla (F.car2.x = 1), apagada tras la salida
     // Apagada: lente roja oscura lisa (refleja cielo); encendida: rojo saturado emisivo
     let on = F.car2.x;
     s.albedo = mix(vec3f(0.05, 0.004, 0.003), in.col.rgb, on); s.emissive = matA(in.mat) * on; s.rough = mix(0.12, 0.3, on); s.coat = 1.0 - on;
   } else if (id == 17u) {
-    // chapa metálica nervurada pintada (revestimento de fachadas e pilares): nervuras verticais, emendas de painel, escorridos
+    // chapa grecada lacada (revestimiento de fachadas y pilares): grecas verticales, uniones de panel y escorrentías
     let tg = normalize(cross(vec3f(0.0, 1.0, 0.0), N) + vec3f(1e-5, 0.0, 0.0)); let a = dot(wp, tg);
     let ph = a / 0.22 * 6.2832; let k = 1.0 - smoothstep(0.2, 0.8, fwidth(a / 0.22));
     let aw = max(fwidth(a) + fwidth(wp.y), 0.004);
@@ -733,7 +733,7 @@ fn vert(in: VIn) -> VSOut {
 }
 fn shade(in: V2F, ff: bool) -> vec4f {
   let r = length(in.uv);
-  // dois níveis de ruído deslocados pela semente: bordas rasgadas e miolo com relevo
+  // dos niveles de ruido con desplazamiento por semilla: bordes rasgados y núcleo con relieve
   let sd = vec2f(in.ext.x * 7.3, in.ext.x * 3.1);
   let n = textureSampleLevel(tNoise, sLin, in.uv * 0.19 + sd, 1.0);
   let n2 = textureSampleLevel(tNoise, sLin, in.uv * 0.47 - sd * 1.7, 0.0);

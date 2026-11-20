@@ -76,7 +76,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
           let endb = (smoothstep(0.836, 0.845, xe) * (1.0 - smoothstep(0.845, 0.851, xe)) - smoothstep(0.871, 0.877, xe) * (1.0 - smoothstep(0.877, 0.886, xe))) * (1.0 - slot) * (1.0 - smoothstep(0.218, 0.222, abs(lp.z)));
           s.normal = normalize(s.normal - rightW * sign(cz) * bev * 0.7 + fwdW * endb * 0.6);
           s.ao = min(s.ao, 1.0 - 0.35 * bev); s.ao = min(s.ao, 1.0 - 0.7 * lv);   // El fondo de ranuras no refleja cielo ni sol directo
-          lvShade = mix(1.0, mix(0.3, 1.1, sat(cz * 2.6 + 0.5)) * mix(0.5, 1.0, sat((xe - 0.846) / 0.03)), lin);   // só dentro das aletas (a base do para-brisa fica lisa)
+          lvShade = mix(1.0, mix(0.3, 1.1, sat(cz * 2.6 + 0.5)) * mix(0.5, 1.0, sat((xe - 0.846) / 0.03)), lin);   // solo dentro de las aletas (la base del parabrisas queda lisa)
           // pé dos dois vincos longitudinais: linha de sombra fina que acompanha o ressalto
           let zc = 0.515 - 0.145 * sat((xe - 0.72) / 1.03);
           let hx = smoothstep(0.78, 0.9, xe) * (1.0 - smoothstep(1.68, 1.76, xe));
@@ -126,12 +126,12 @@ fn surf(in: V2F, ff: bool) -> Surface {
       let r = length(lp.xy);
       s.albedo = in.col.rgb; s.metal = 0.75; s.rough = 0.36; s.coat = 0.25;
       if (pa > 0.5) {
-        // disco de borrão: cobre os rasgos por pontilhado conforme a roda gira (média radial: anel dos rasgos mais escuro)
+        // disco de desenfoque: cubre las ranuras por punteado conforme la rueda gira (media radial: anillo de ranuras más oscuro)
         let cov = smoothstep(9.0, 34.0, O.p0.x);
         if (ign(in.pos.xy, F.misc.y) >= cov) { discard; }
         let ringd = 1.0 - smoothstep(0.016, 0.03, abs(r - 0.123));
         let rim = 1.0 - smoothstep(0.001, 0.003, abs(r - 0.156)); let hub = 1.0 - smoothstep(0.016, 0.024, r); let bolts = 1.0 - smoothstep(0.005, 0.01, abs(r - 0.058));
-        let streak = 0.5 + 0.5 * sin(atan2(lp.y, lp.x) * 16.0);   // resto dos 16 rasgos, quase apagado pelo giro
+        let streak = 0.5 + 0.5 * sin(atan2(lp.y, lp.x) * 16.0);   // resto de las 16 ranuras, casi atenuadas por el giro
         s.albedo = in.col.rgb * (1.0 - 0.5 * ringd * (0.85 + 0.15 * streak) - 0.35 * rim - 0.4 * hub - 0.22 * bolts); s.rough = 0.42; s.coat = 0.15; s.ao = 1.0 - 0.35 * ringd;
         return s;
       }
@@ -142,7 +142,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       let q = lp.x + lp.y * 0.3;
       let bars = (1.0 - smoothstep(0.2, 0.3, abs(fract(q / 0.0078 + 0.5) - 0.5))) * step(abs(lp.y), 0.0155) * step(abs(q), 0.0195) * (1.0 - sat(O.p0.x / 20.0));
       s.albedo *= 1.0 - 0.5 * bars; s.rough += 0.1 * bars;
-      // friso na borda e sombra suave para dentro dos rasgos
+      // reborde exterior y sombra suave hacia el interior de las ranuras
       s.albedo *= 1.0 - 0.3 * (1.0 - smoothstep(0.001, 0.0025, abs(r - 0.156)));
       // cinco rebaixos de parafuso em volta do centro
       let a5 = atan2(lp.y, lp.x) / 6.2831853 * 5.0; let da = (a5 - round(a5)) / 5.0 * 6.2831853 * r;
@@ -241,7 +241,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
       var c = mix(ground, trees, smoothstep(0.36, 0.42, g)); c = mix(c, sky, smoothstep(0.5, 0.56, g));
       s.albedo = c; s.metal = 0.0; s.rough = 0.5; s.coat = 0.25; s.emissive = 0.045;
     }
-    case 16u: {  // palhetas no fundo das fendas: quase pretas
+    case 16u: {  // láminas en el fondo de las hendiduras: casi negras
       let k = fract(lp.y / select(0.0105, 0.0175, pa > 0.5));
       s.albedo = in.col.rgb * mix(0.1, 1.0, smoothstep(0.25, 0.5, k)); s.rough = 0.92; s.metal = 0.3; s.ao = mix(0.2, 0.7, smoothstep(0.25, 0.5, k));
     }
@@ -253,10 +253,10 @@ fn surf(in: V2F, ff: bool) -> Surface {
 `;
 
 // ---- 30_car_a_shape.js
-// Fiat Uno Mille EP 1996 (2 portas) — forma da carroceria como superfície paramétrica única (metade direita, z >= 0).
-// Referencial do carro: origem no chão sob o centro do entre-eixos; X frente, Y cima, Z direita. Unidades: metros.
+// Fiat Uno Mille EP 1996 (2 puertas) — carrocería modelada como superficie paramétrica continua (mitad derecha, z >= 0).
+// Referencial del coche: origen en el suelo bajo el centro de la batalla; X adelante, Y arriba, Z derecha. Unidades: metros.
 // Superficie paramétrica P(u,v): u longitudinal (frontal → zaga), v transversal
-// (soleira → cintura → coluna → canto do teto) e atravessa o topo até o plano de simetria.
+// (talonera → cintura → pilar → esquina del techo) y cruza la parte superior hasta el plano de simetría.
 const CS = {
   XF: 1.876, XR: -1.692,          // extremos do perfil em "coordenadas de borda" (o centro avança/recua por abaulamento)
   YS: 0.19,                       // soleira
@@ -268,7 +268,7 @@ const CS = {
 const csq = x => x * x;
 function csmin(a, b, k) { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; }
 function csmax(a, b, k) { return -csmin(-a, -b, k); }
-// perfil superior no plano de borda: capô, para-brisa, teto, vigia, tampa, frente
+// perfil superior en el plano de borde: capó, parabrisas, techo, luneta, portón trasero, frontal
 function carYT(x) {
   const fascia = 0.765 - 4.3 * (x - 1.752);
   const hood = 0.96 - 0.1806 * (x - 0.672) + 0.012 * (1 - csq((x - 1.21) / 0.54));
@@ -288,7 +288,7 @@ function carYtop(x, z) {
   let y = carYT(x - xi) - carCrown(x) * zz * zz;
   // ressalto central do capô (dois vincos que convergem para a frente)
   if (x > 0.6) {
-    // (posição medida na foto de frente: ~0,51 m do eixo junto ao para-brisa, ~0,37 m na frente; degrau de 9 mm com aresta viva)
+    // (posición medida en fotografía frontal: ~0,51 m del eje junto al parabrisas, ~0,37 m en el frontal; escalón de 9 mm con arista viva)
     const zc = 0.515 - 0.145 * sat((x - 0.72) / 1.03);
     y += 0.0095 * (1 - smooth(zc - 0.0065, zc + 0.0065, z)) * smooth(0.77, 0.9, x - xi) * smooth(1.78, 1.70, x - xi);
   }
@@ -310,7 +310,7 @@ function carZL(x, y) {
 }
 function carBeltN(x) { return 0.922 + 0.005 * (0.67 - x); }
 function carR2(x) {
-  // raio do canto superior: ombro do capô, coluna A, teto, coluna C, canto traseiro, canto dianteiro
+  // radio de la esquina superior: hombro del capó, pilar A, techo, pilar C, esquina trasera, esquina delantera
   let r = 0.045;
   r = lerp(r, 0.024, smooth(-0.05, 0.2, x));       // coluna A
   r = lerp(r, 0.013, smooth(0.6, 0.8, x));         // ombro do para-lama
@@ -401,12 +401,12 @@ function carSkinFn(off) { return (u, v, out) => carSkin(carXofU(u), v, off || 0,
 function carArchF(P) {
   return Math.min(Math.hypot(P[0] - CS.AXF, P[1] - CS.ARCH_Y), Math.hypot(P[0] - CS.AXR, P[1] - CS.ARCH_Y)) - CS.ARCH_R;
 }
-// janelas laterais em vista lateral (x, y): máximos suaves de semiplanos
+// ventanillas laterales en vista lateral (x, y): máximos suaves de semiplanos
 const CW = { apx: 0, apy: 0, anx: 0, any: 0, cpx: 0, cpy: 0, cnx: 0, cny: 0, roofA: 0, roofB: 0, roofC: 0 };
 function carWindowsInit() {
-  // linha da coluna A: pelos cantos superiores da parede em duas estações do para-brisa
+  // línea del pilar A: por las esquinas superiores de la pared en dos secciones del parabrisas
   const a = carStation(0.60), ax = 0.60, ay = a.yE, b = carStation(0.20), bx = 0.20, by = b.yE;
-  let nx = -(by - ay), ny = (bx - ax); let l = Math.hypot(nx, ny); nx /= l; ny /= l; if (ny > 0) { nx = -nx; ny = -ny; }   // normal apontando para baixo/trás (dentro da janela)
+  let nx = -(by - ay), ny = (bx - ax); let l = Math.hypot(nx, ny); nx /= l; ny /= l; if (ny > 0) { nx = -nx; ny = -ny; }   // normal apuntando hacia abajo/atrás (hacia el interior de la ventanilla)
   CW.apx = ax; CW.apy = ay; CW.anx = nx; CW.any = ny;
   const c = carStation(-1.40), cx = -1.40, cy = c.yE, d = carStation(-1.54), dx = -1.54, dy = d.yE;
   nx = -(dy - cy); ny = (dx - cx); l = Math.hypot(nx, ny); nx /= l; ny /= l; if (nx < 0) { nx = -nx; ny = -ny; }             // normal apontando para a frente
@@ -429,7 +429,7 @@ function carWinQuarter(P) {
   const rear = 0.098 - ((x - CW.cpx) * CW.cnx + (y - CW.cpy) * CW.cny);
   return csmax(csmax(bottom, top, 0.03), csmax(front, rear, 0.03), 0.035);
 }
-// para-brisa: sobre a superfície do topo, em coordenadas (x deslocado pelo abaulamento, z)
+// parabrisas: sobre la superficie superior, en coordenadas (x desplazada por curvatura, z)
 function carXe(P) { const zz = P[2] / 0.72; return P[0] - carBulge(P[0]) * (1 - zz * zz); }
 function carWindshield(P) {
   const xe = carXe(P), st = carStation(P[0]);
@@ -458,7 +458,7 @@ function carTailLamp(P, v) {
   // face traseira + dobra de largura constante (~5,5 cm) pela lateral, paralela à aresta traseira inclinada
   return Math.max(carRRect(0, P[1] - (CT.y0 + CT.y1) / 2, 1, (CT.y1 - CT.y0) / 2, 0.012), CT.z0 - P[2], P[0] - (-1.585 + (P[1] - 0.93) / 6.2 + 0.055));
 }
-// ---------- distância às linhas de junção (portas, capô, tampa) — vai em uv.x e vira linha escura no shader ----------
+// ---------- distancia a las líneas de unión (puertas, capó, portón) — viaja en uv.x y genera hendidura oscura en shader ----------
 const CSEAM = { door: null };
 function carSeamInit() {
   const p = [[0.74, 0.215], [0.74, 0.92], [0.722, 0.95]];
@@ -467,7 +467,7 @@ function carSeamInit() {
   CSEAM.door = p;
 }
 function carSegDist(px, py, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, t = sat(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)); return Math.hypot(px - ax - dx * t, py - ay - dy * t); }
-// distância ASSINADA à junção mais próxima: união (mínimo) das regiões porta, capô e tampa — negativa dentro.
+// distancia CON SIGNO a la unión más cercana: unión (mínimo) de las regiones puerta, capó y portón — negativa en el interior.
 // (interpola certo entre vértices; o shader desenha a linha onde |d| ≈ 0)
 function carSeam(P, v) {
   const x = P[0], y = P[1], z = P[2]; let d = 1;
@@ -505,7 +505,7 @@ function carBuildBody(mb, gl) {
   const plainUV = (u, v, P) => { _cuv[0] = 1; _cuv[1] = v; return _cuv; };
   const v0 = mb.nv, i0 = mb.ni, gv0 = gl.nv, gi0 = gl.ni;
   // --- pintura ---
-  // dois trechos da mesma pele (emenda numa linha da grade): embaixo a aba dos recortes (caixas de roda) é na cor do carro;
+  // dos secciones de la misma superficie (empalme en la rejilla): abajo el reborde de los pasos de rueda va en color carrocería;
   // Pestañas interiores oscurecidas
   const paintField = (u, v, P) => {
     let f = 1;
@@ -521,7 +521,7 @@ function carBuildBody(mb, gl) {
   mb.patch(carSkinFn(0), 0, 1, 0, VS, { nu: 384, nv: 64, flip: true, uv: seamUV, rim: 0.016, rimMat: m => m.mat(CM.PAINT, 255), field: paintField });
   mb.mat(CM.PAINT).color(1, 1, 1);
   mb.patch(carSkinFn(0), 0, 1, VS, 1, { nu: 384, nv: 100, flip: true, uv: seamUV, rim: 0.016, rimMat: m => m.mat(CM.RUBBER).color(0.018, 0.018, 0.02), field: paintField });
-  // --- borrachas das janelas (anel preto sobre a borda do recorte) ---
+  // --- gomas perimetrales de las ventanillas (anillo negro sobre el borde del hueco) ---
   const band = (fn, a, b) => (u, v, P) => { const f = fn(P, v); return Math.max(f - b, a - f); };
   mb.mat(CM.RUBBER).color(0.02, 0.02, 0.02);
   carSub(mb, 0.0015, 0.74, -0.39, 0.40, 0.64, 0.012, { field: band(carWinDoor, -0.012, 0.003), uv: plainUV });
@@ -541,7 +541,7 @@ function carBuildBody(mb, gl) {
   // Manilla vertical negra y cerradura
   mb.mat(CM.PLASTIC).color(0.03, 0.03, 0.03);
   carSub(mb, 0.004, -0.30, -0.42, 0.2, 0.37, 0.005, { field: (u, v, P) => carRRect(P[0] + 0.366, P[1] - 0.862, 0.02, 0.055, 0.008), uv: plainUV, rim: 0.004 });
-  // fundo das fendas da grade (palhetas pretas)
+  // fondo de las ranuras de la rejilla (láminas negras)
   mb.mat(CM.GRILLE).color(0.012, 0.012, 0.013);
   carSub(mb, -0.024, 1.86, 1.70, 0.62, 1, 0.012, { field: (u, v, P) => carRRect(P[2], P[1] - 0.694, 0.372, 0.055, 0.005), uv: plainUV });
   // Barra central de calandra en color carrocería
@@ -624,7 +624,7 @@ function carBuildParts(mb, gl) {
   const rPath = carPath([[-1.692, 0], [-1.688, 0.30, 0.15], [-1.674, 0.58, 0.1], [-1.657, 0.70, 0.07], [-1.60, 0.722, 0.05], [-1.49, 0.735, 0.1], [-1.26, 0.751]]);
   const rProf = carPath([[-0.09, 0.572], [0.023, 0.570, 0.004], [0.031, 0.562, 0.004], [0.031, 0.547, 0.004], [0.026, 0.541, 0.004], [0.026, 0.468, 0.003], [0.02, 0.464, 0.003], [0.02, 0.452, 0.003], [0.026, 0.448, 0.003], [0.025, 0.376, 0.014], [0.006, 0.346, 0.008], [-0.07, 0.338]]);
   carBumper(mb, rPath, rProf, -1, (u, v, P) => -(carArchF(P) - 0.004), 124, 42, 0.30 + 0.28 + 0.121, 0.4, 0.572, 0.22);
-  // fundo das entradas de ar dianteiras (palhetas)
+  // fondo de las tomas de aire delanteras (láminas)
   mb.mat(CM.GRILLE, 1).color(0.008, 0.008, 0.009);
   mb.quad(1.862, 0.33, 0.62, 1.862, 0.33, 0, 1.862, 0.425, 0, 1.862, 0.425, 0.62);
   mb.quad(1.876, 0.522, 0.23, 1.876, 0.522, 0, 1.876, 0.552, 0, 1.876, 0.552, 0.23);
@@ -672,7 +672,7 @@ function carBuildParts(mb, gl) {
     mb.mat(CM.REFLECTOR, 2).color(0.6, 0.6, 0.6); mb.cyl(0, 0.022, 0, 0.0105, 0.029, 0.007, 12, false, true);   // Capuchón plateado antideslumbrante
     mb.pop(); mb.pop();
   }
-  // ================= retrovisores externos: carcaça retangular, braço sanfonado, base na porta =================
+  // ================= retrovisores exteriores: carcasa rectangular, brazo articulado, base en la puerta =================
   mb.mat(CM.PLASTIC).color(0.013, 0.013, 0.014);
   mb.push(m4translate(m4(), 0.566, 1.004, 0.905)); mb.push(m4rotY(m4(), 0.14));
   mb.rbox(0, 0, 0, 0.078, 0.108, 0.185, 0.024, 5);
@@ -689,15 +689,15 @@ function carBuildParts(mb, gl) {
   mb.mat(CM.INTERIOR).color(0.05, 0.05, 0.055);
   mb.quad(-0.86, 0.235, 0.72, 0.85, 0.235, 0.72, 0.85, 0.235, 0, -0.86, 0.235, 0);
   mb.quad(-1.33, 0.235, 0.5, -0.86, 0.235, 0.5, -0.86, 0.235, 0, -1.33, 0.235, 0);   // ao lado das rodas traseiras o carpete é estreito (o plano inteiro atravessava a calota: risco fino horizontal)
-  mb.quad(-1.63, 0.45, 0.72, -1.33, 0.45, 0.72, -1.33, 0.45, 0, -1.63, 0.45, 0);                         // assoalho do porta-malas (acima do fundo elevado)                       // assoalho (carpete)
+  mb.quad(-1.63, 0.45, 0.72, -1.33, 0.45, 0.72, -1.33, 0.45, 0, -1.63, 0.45, 0);                         // piso del maletero (sobre fondo elevado)                       // piso del habitáculo (moqueta)
   mb.quad(0.82, 0.2, 0, 0.82, 0.2, 0.72, 0.82, 0.93, 0.72, 0.82, 0.93, 0);                               // parede corta-fogo
   mb.mat(CM.INTERIOR, 3).color(0.045, 0.045, 0.05);
   mb.rbox(0.60, 0.80, 0.34, 0.40, 0.22, 0.70, 0.05, 4);                                                  // painel
   mb.rbox(0.45, 0.52, 0.05, 0.3, 0.34, 0.12, 0.03, 2);                                                   // console
   mb.mat(CM.INTERIOR, 3).color(0.075, 0.075, 0.082); mb.rbox(0.62, 0.915, 0.34, 0.34, 0.024, 0.69, 0.01, 2);              // tampo do painel (mais claro)
-  mb.mat(CM.GRILLE).color(0.02, 0.02, 0.022);                                                                              // saídas de ar (palhetas)
+  mb.mat(CM.GRILLE).color(0.02, 0.02, 0.022);                                                                              // salidas de ventilación (láminas)
   mb.box(0.397, 0.862, 0.615, 0.008, 0.045, 0.1); mb.box(0.397, 0.862, 0.09, 0.008, 0.045, 0.1);
-  mb.mat(CM.INTERIOR, 3).color(0.03, 0.03, 0.034); mb.rbox(0.396, 0.775, 0.34, 0.012, 0.085, 0.3, 0.005, 2);               // tampa do porta-luvas / rádio
+  mb.mat(CM.INTERIOR, 3).color(0.03, 0.03, 0.034); mb.rbox(0.396, 0.775, 0.34, 0.012, 0.085, 0.3, 0.005, 2);               // tapa de la guantera y consola de radio
   // banco dianteiro
   const seat = (x, z, w, color) => {
     mb.mat(CM.INTERIOR, 4).color(color[0], color[1], color[2]);
@@ -716,7 +716,7 @@ function carBuildParts(mb, gl) {
   mb.rbox(-0.93, 0.45, 0.31, 0.46, 0.15, 0.62, 0.055, 4);
   mb.push(m4translate(m4(), -1.16, 0.5, 0.31)); mb.push(m4rotZ(m4(), 0.36)); mb.rbox(0, 0.25, 0, 0.12, 0.52, 0.62, 0.05, 4); mb.pop(); mb.pop();
   mb.mat(CM.INTERIOR).color(0.04, 0.04, 0.045); mb.box(-1.40, 0.925, 0.3, 0.28, 0.02, 0.6);
-  // ================= rack de teto (pés) =================
+  // ================= baca portaequipajes de techo (soportes) =================
   mb.mat(CM.STEEL).color(0.03, 0.03, 0.032);
   for (const xb of [CRK.x0, CRK.x1]) {
     const st = carStation(xb);
@@ -740,7 +740,7 @@ function carBuildParts(mb, gl) {
   mb.mat(CM.INTERIOR, 3).color(0.04, 0.04, 0.045);
   mb.tube([[0.36, 0.875, -0.36], [0.56, 0.80, -0.36]], 0.03, 10);
   mb.rbox(0.47, 0.925, -0.36, 0.2, 0.07, 0.32, 0.03, 3);        // capela dos instrumentos
-  // retrovisor interno, alavanca de câmbio, freio de mão
+  // retrovisor interior, palanca de cambios y freno de mano
   mb.rbox(0.23, 1.29, 0, 0.025, 0.055, 0.2, 0.012, 2); mb.tube([[0.24, 1.29, 0], [0.2, 1.35, 0]], 0.008, 6);
   mb.tube([[0.2, 0.42, 0.0], [0.17, 0.6, 0.0]], 0.01, 6); mb.rbox(0.168, 0.62, 0, 0.045, 0.045, 0.045, 0.02, 3);
   mb.rbox(-0.12, 0.40, 0, 0.3, 0.05, 0.04, 0.015, 2);
@@ -753,7 +753,7 @@ function carBuildParts(mb, gl) {
     mb.rbox(0.085, 0.50, 0, 0.17, 0.1, 0.44, 0.045, 3);                // ombros
     mb.pop(); mb.pop();
     mb.rbox(0.02, 0.535, zd, 0.44, 0.13, 0.34, 0.06, 3);               // coxas
-    for (const sg of [-1, 1]) mb.tube([[-0.26, 0.97, zd + sg * 0.2], [-0.02, 0.86, zd + sg * 0.215], [0.275, 0.93, -0.36 + sg * 0.165]], 0.043, 8);   // braços
+    for (const sg of [-1, 1]) mb.tube([[-0.26, 0.97, zd + sg * 0.2], [-0.02, 0.86, zd + sg * 0.215], [0.275, 0.93, -0.36 + sg * 0.165]], 0.043, 8);   // brazos articulados
     mb.mat(CM.INTERIOR, 3).color(0.02, 0.02, 0.022);
     for (const sg of [-1, 1]) mb.rbox(0.285, 0.935, -0.36 + sg * 0.17, 0.085, 0.07, 0.075, 0.03, 2);   // luvas
     mb.rbox(-0.275, 1.035, zd, 0.1, 0.07, 0.11, 0.03, 2);              // pescoço
@@ -766,7 +766,7 @@ function carBuildParts(mb, gl) {
     mb.mat(CM.GLOSS, 1).color(0.01, 0.011, 0.014);
     mb.rbox(-0.2, 1.178, zd, 0.13, 0.08, 0.233, 0.034, 5);        // viseira: faixa escura que envolve a frente e os lados do casco
   }
-  // emblema dianteiro: cinco barras cromadas inclinadas sobrepostas ao centro da grade (ocupam a altura das duas fendas)
+  // emblema frontal: cinco barras cromadas inclinadas sobre el centro de la rejilla (cubren dos ranuras)
   {
     const y = 0.694, x = carTopX(0, y, false), xu = carTopX(0, y + 0.02, false), sl = (xu - x) / 0.02, l = Math.hypot(1, sl);
     const B = m4basis(m4(), 0, 0, -1, sl / l, 1 / l, 0, 1 / l, -sl / l, 0, x + 0.002, y, 0);
@@ -807,7 +807,7 @@ function carLadder(mb) {
 }
 function carWipers(mb) {
   const wip = (zp, z1, xe0, lift) => {
-    // braço do pivô até o meio da palheta; palheta deitada na base do para-brisa
+    // brazo desde el pivote al centro de la escobilla; escobilla apoyada en la base del parabrisas
     const P = (z, xe) => { const zz = z / 0.72, x = xe + carBulge(xe) * (1 - zz * zz); return [x, carYtop(x, z) + 0.016, z]; };
     mb.mat(CM.RUBBER).color(0.015, 0.015, 0.015);
     const zm = (zp + z1) / 2, a = P(zp, 0.69), m = P(zm + (z1 - zp) * 0.1, xe0 - lift * 0.5);
@@ -926,7 +926,7 @@ function carBuildWheel(mb, mbBlur) {
   mb.mat(CM.STEEL, 1).color(0.035, 0.035, 0.038);
   mb.lathe([[0.058, 0.168], [0.062, 0.171], [0.064, 0.168], [0.062, 0.164], [0.04, 0.16], [0.03, 0.13], [0.03, 0.0]], 40);
   mb.lathe([[-0.02, 0.0], [-0.02, 0.1], [-0.05, 0.158], [-0.06, 0.166], [-0.058, 0.168]], 32);
-  // calota prateada com 14 rasgos radiais
+  // tapacubos plateado con 14 ranuras radiales
   mb.mat(CM.HUBCAP).color(0.62, 0.63, 0.65);
   const NS = 16, prof = r => { const t = r / 0.166; return 0.0715 - 0.021 * t * t - 0.004 * smooth(0.028, 0.036, r) + 0.004 * smooth(0.06, 0.09, r) - 0.004 * smooth(0.15, 0.166, r); };
   mb.patch((u, v, o) => { const a = u * TAU, r = v * 0.1665; o[0] = prof(r); o[1] = r * Math.cos(a); o[2] = r * Math.sin(a); }, 0, 1.003, 0.0, 1, {   // 1.003: sobrepõe a emenda angular (sem fresta)
@@ -986,7 +986,7 @@ const CAR = {
     set.add(mb.upload(), CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
     if (typeof carBuildWheel === 'function') {
       const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
-      for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de borrão: só no passe principal
+      for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de desenfoque rotacional: solo en el pase principal
     }
     if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); CAR.tris += s.ni / 3; set.add(s.upload(), CAR.slotSteer, 3); }
     const tex = typeof carAtlas === 'function' ? carAtlas() : mkTex(4, 4, 'rgba8unorm-srgb');

@@ -12,8 +12,8 @@ const VEG_L1 = 38.0;
 // Distancias de transición escaladas por zoom.
 fn vegZoom() -> f32 { return clamp(F.post.y * 2.0, 0.3, 1.25); }
 // troca malha → impostor: cada árvore tem o seu limiar dentro da faixa [D0, D1] e uma janela pontilhada curta (5 m),
-// então em qualquer instante poucas árvores estão em transição (sem "tela" de pontilhado em faixas inteiras da mata)
-// (troca seca, sem faixa pontilhada: mesmo com ruído por pixel, uma copa meio malha/meio impostor aparece como tela de pontos
+// en cada instante solo pocos árboles transicionan (evitando un tramado simultáneo en toda la masa boscosa)
+// (conmutación neta sin bandas tramadas: se evita que una copa híbrida malla/impostor degrade la estética visual
 // contra o céu onde as duas silhuetas não coincidem; uma árvore por vez trocando a ~100 m não se percebe)
 fn vegFade(dEff: f32, seed: f32, d0: f32, d1: f32) -> f32 { let a = mix(d0, d1, fract(seed * 7.31 + 0.13)); return step(a, dEff); }
 // Oscilación de viento en árbol: base, vector relativo al suelo,
@@ -40,7 +40,7 @@ fn vegCover(a: f32, thr: f32) -> f32 { return sat((a - thr) / clamp(fwidth(a), 0
 fn vegTint(seed: f32) -> vec3f {
   let a = fract(seed * 13.37 + 0.21); let b = fract(seed * 5.71 + 0.63); let l = fract(seed * 29.3 + 0.4);
   var c = mix(vec3f(0.72, 0.76, 0.62), vec3f(1.18, 1.0, 0.54), a * a * (3.0 - 2.0 * a));   // garrafa ↔ oliva-amarelado
-  c = mix(c, vec3f(0.64, 0.68, 0.56), smoothstep(0.74, 0.92, b));                           // copas bem escuras (~20%)
+  c = mix(c, vec3f(0.64, 0.68, 0.56), smoothstep(0.74, 0.92, b));                           // copas muy umbrías (~20%)
   c = mix(c, vec3f(1.3, 1.06, 0.56), smoothstep(0.11, 0.03, b) * 0.7);                    // amareladas (~8%)
   c = mix(c, vec3f(1.55, 0.74, 0.42), smoothstep(0.972, 0.995, a) * 0.8);                  // secas/avermelhadas (raras)
   return c * (0.8 + 0.42 * l);
@@ -60,7 +60,7 @@ fn vegShadowCull(base: vec3f, h: f32) -> bool {
   let m = (h * 0.75 + 5.0) * inv;
   return abs(lp.x) > 1.0 + m || abs(lp.y) > 1.0 + m || lp.z > 1.02 || lp.z < -0.08;
 }
-// nas cascatas 0 e 1 só as árvores perto da região visível usam a malha; as mais distantes na direção do sol
+// en cascadas 0 y 1 solo los árboles próximos al frustum usan malla; los lejanos proyectan desde impostores
 // (cuja sombra já chega difusa) usam o cartão
 fn vegShadowMesh(base: vec3f, fade: f32) -> bool {
   let slot = P.camPos.w; if (slot > 2.5 || fade >= 0.5) { return false; }
@@ -126,7 +126,7 @@ fn vert(in: VIn) -> VSOut {
   o.wpos = wp; o.pwpos = pp; o.uv = in.uv;
   o.mat = in.mat.x | (in.mat.y << 8u) | (in.mat.z << 16u) | (in.mat.w << 24u);
   let tint = vegTintA(in.i1.z, in.i1.w);
-  // de perto, a camada de folhas individuais cobre os cartões: eles viram o miolo sombreado da copa
+  // en proximidad, las hojas individuales cubren los quads: estos forman el núcleo sombreado de la copa
   let inner = select(1.0, mix(0.78, 1.0, smoothstep(VEG_L0 * 0.8, VEG_L1 * 1.5, d)), !under && in.i1.w != 3.0);
   o.col = vec4f(in.col.rgb * select(vec3f(1.0), tint * inner, in.mat.x == 1u), in.col.a);
   o.ext = vec4f(fade, in.i1.z, rel.y, d);
@@ -135,7 +135,7 @@ fn vert(in: VIn) -> VSOut {
 fn leafAlpha(uv: vec2f) -> f32 { return textureSample(tLeaf, sLeaf, uv).a; }
 fn surfAlpha(in: V2F) -> f32 {
   if (matId(in.mat) != 1u) { return 1.0; }
-  return leafAlpha(in.uv) * 0.84;   // sombra um pouco mais vazada que a copa vista: buracos de luz pequenos entre as folhas
+  return leafAlpha(in.uv) * 0.84;   // sombra ligeramente calada: pequeños intersticios de luz entre hojas
 }
 fn surf(in: V2F, ff: bool) -> Surface {
   let nz = vegNoise(in.pos.xy);
@@ -148,42 +148,42 @@ fn surf(in: V2F, ff: bool) -> Surface {
   var s = surfDefault(normalize(in.nrm));
   if (matId(in.mat) == 1u) {
     let t = textureSample(tLeaf, sLeaf, in.uv);
-    keep *= vegCover(t.a, 0.5);   // limiar um pouco alto: copa mais vazada (galhos e céu aparecem entre os tufos)
-    // cartão a poucos metros da lente (textura ampliada demais): some aos poucos; as folhas individuais ficam
+    keep *= vegCover(t.a, 0.5);   // umbral elevado: copa más aireada (ramas y cielo visibles entre follaje)
+    // quad próximo a la lente: se desvanece gradualmente preservando las hojas individuales
     if (in.ext.w < VEG_D0) { keep *= sat((dcam - 3.0) / 5.0); }
     if (keep <= nz) { discard; }
     let ao = in.col.a;
-    // luz dentro da copa: a normal de volume da copa, inclinada pelo plano do próprio cartão e por um relevo fino de folhas,
+    // iluminación volumétrica en copa: normal volumétrica modulada por el plano del quad y microrrelieve foliar
     // para cada tufo pegar o sol de um jeito (massas claras e escuras em vez de mancha chapada)
     var geo = normalize(cross(dpdx(in.wpos), dpdy(in.wpos))); if (dot(geo, s.normal) < 0.0) { geo = -geo; }
     let dn = textureSample(tNoise, sLin, in.uv * 3.0 + in.ext.y * 13.0).rg - 0.5;
     let lum0 = dot(t.rgb, vec3f(0.3, 0.6, 0.1));
     s.normal = normalize(mix(s.normal, geo, 0.2) + vec3f(dn.x, (lum0 - 0.25) * 0.5, dn.y) * 0.26);
-    // folhas do lado de lá da copa (normal de volume apontando para longe de quem olha): o que se vê é o verso, que não recebe
-    // o sol de frente — só a luz que atravessa. Vira a normal para o observador (senão a contraluz enche a copa de cartões claros).
+    // hojas en cara opuesta de la copa (normal orientada lejos de la cámara): se aprecia el envés foliar
+    // no expuesto al sol directo — solo luz transmitida. Se invierte la normal para coherencia a contraluz.
     let Vd = normalize(F.camPos.xyz - in.wpos); let nvd = dot(s.normal, Vd);
     if (nvd < 0.0) { s.normal = normalize(s.normal - Vd * (nvd * 1.7)); }
-    // miolo da copa mais escuro (sombra própria que as cascatas distantes não resolvem), pontas mais claras
-    // verde de mata, escuro e pouco saturado (o tom vem da tinta da árvore/espécie); variação folha a folha na escala do tufo
+    // núcleo interior más umbrío (auto-sombra volumétrica), periferia más luminosa
+    // verde forestal denso de baja saturación (tono por especie de árbol); variaciones a escala de mata
     // (ruído celular): tufos claros e escuros lado a lado dão leitura de folhagem a média distância, em vez de mancha lisa
     var lc = t.rgb * in.col.rgb * vec3f(0.57, 0.64, 0.33);   // verde natural, saturação moderada
     let cell = textureSample(tNoise, sLin, in.uv * 1.6 + in.ext.y * 7.0).b; let cell2 = textureSample(tNoise, sLin, in.uv * 0.55 + in.ext.y * 3.0).r;
     lc *= (0.74 + 0.5 * cell) * (0.78 + 0.44 * cell2);   // variação contínua (sem degrau: degraus liam como copa posterizada)
     lc = mix(lc, lc * vec3f(1.2, 1.1, 0.72), smoothstep(0.62, 0.9, cell2) * ao * 0.4);   // pontas ao sol puxam para o verde-amarelado
-    // miolo da copa: verde-escuro, nunca preto (no mínimo ~60% do albedo das pontas; o resto do escurecimento vem da oclusão)
+    // núcleo de la copa: verde umbrío no nulo (~60% del albedo exterior; resto modulado por oclusión)
     s.albedo = lc * mix(0.62, 1.0, ao * ao);
-    // de perto os cartões são o miolo sombreado sob as folhas individuais
+    // a corta distancia los quads forman el interior sombrío bajo las hojas geométricas
     let nearK = smoothstep(VEG_L0 * 0.8, VEG_L1 * 1.5, in.ext.w);
-    // translucidez: a folha de fora da copa atravessada pelo sol fica verde-viva (contraluz com cor, sem silhueta preta)
+    // translucidez (subsurface): hojas perimetrales atravesadas por el sol adquieren tono verde vivo a contraluz
     // (o passe de luz devolve ~1,7 × sss do sol de frente: ~20% atravessa)
     s.sss = (0.26 + 0.12 * sat(-nvd * 2.0)) * (0.12 + 0.88 * ao * ao) * mix(0.45, 1.0, nearK);
-    // contraluz: olhando para o lado do sol, as folhas de fora da copa (atravessadas pela luz) ficam verde-amareladas
+    // contraluz: mirando hacia el sol, las hojas periféricas adquieren reflejo verde-dorado
     let back = smoothstep(0.15, 0.8, dot(-Vd, F.sunDir.xyz)) * ao * ao;
     s.albedo = mix(s.albedo, s.albedo * vec3f(1.28, 1.22, 0.66), back * 0.7);
-    // luz atravessando a borda da copa: brilho verde-amarelado nas folhas de fora e do alto quando se olha contra o sol
-    // (o mapa de sombras deixaria a copa inteira na própria sombra; radiância = albedo × emissive × 16 ≈ 25% do sol direto)
+    // dispersión luminosa periférica: resplandor dorado en hojas exteriores contra la fuente solar
+    // (evita auto-oclusión excesiva; radiancia = albedo × emissive × 16 ≈ 25% de la luz solar directa)
     s.emissive = 0.05 * smoothstep(0.35, 0.9, dot(-Vd, F.sunDir.xyz)) * ao * ao * ao * smoothstep(1.5, 5.0, in.ext.z);
-    // brilho pontual: parte das folhas é lustrosa (cera) e pega o sol; o resto é fosco
+    // brillo especular: cutícula cerosa brillante en ciertas hojas; el resto mate
     s.rough = mix(0.95, 0.7, smoothstep(0.7, 0.85, cell) * ao); s.ao = max(ao, 0.58) * mix(0.88, 1.0, nearK);
     // face de trás da folha: um pouco mais clara e fosca
     if (!ff) { s.albedo *= vec3f(1.06, 1.08, 0.94); s.rough = 0.98; }
@@ -208,7 +208,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     // sulco escuro (h0 baixo) × crista clara: contraste forte para o relevo aparecer também na sombra
     let ridge = smoothstep(0.28, 0.72, h0);
     var k = mix(1.0, mix(0.16, 1.45, ridge), 0.5 + 0.5 * depth) * (0.6 + 0.8 * wr.x);
-    // veios verticais finos e escurecimento junto ao chão (umidade/sujeira)
+    // vetas verticales estilizadas y oscurecimiento basal junto al suelo (humedad y tierra)
     let vein = textureSample(tNoise, sLin, in.uv * vec2f(1.9, 0.05)).g;
     k *= mix(0.68, 1.14, smoothstep(0.35, 0.62, vein)) * mix(0.5, 1.0, smoothstep(0.0, 1.8, in.ext.z));
     if (bt == 2u) { k *= 0.72 + 0.28 * smoothstep(0.08, 0.2, abs(fract(in.uv.y * 2.6) - 0.5)); }
@@ -228,7 +228,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
 `;
 WGSL["veg_leaf"] = `// Vegetação — camada de folhas individuais (só de perto): um quad por folha; contorno e nervuras calculados no shader
 // a partir de (u ao longo da folha, v através), então a borda fica nítida em qualquer ampliação (sem textura borrada).
-// Com a distância (corrigida pelo zoom) cada folha encolhe até a base e some: sem pontilhado e sem troca brusca.
+// Con la distancia cada hoja se repliega hacia su peciolo y se desvanece sin saltos bruscos.
 #include veg_common
 struct VIn { @location(0) pos: vec3f, @location(1) off: vec4f, @location(2) nrm: vec4f, @location(3) uvx: vec4u, @location(4) col: vec4f, @location(5) i0: vec4f, @location(6) i1: vec4f }
 fn vert(in: VIn) -> VSOut {
@@ -238,7 +238,7 @@ fn vert(in: VIn) -> VSOut {
   let lb = (in.pos - in.off.xyz * 0.6) * s;                                   // base da folha (espaço da árvore)
   let relb = vec3f(lb.x * c - lb.z * sn, lb.y, lb.x * sn + lb.z * c);
   let dl = distance(base + relb, F.camPos.xyz) * zoom;
-  // cada folha some a uma distância própria (fase alta = some antes): a copa rareia aos poucos, de 23 m a 61 m
+  // cada hoja se desvanece a una distancia individual (fase alta = mayor cercanía): copa gradual de 23 a 61 m
   let rk = mix(1.6, 0.6, f32(in.uvx.z) / 255.0);
   let k = 1.0 - smoothstep(VEG_L0 * rk, VEG_L1 * rk, dl);
   let lp = (in.pos - in.off.xyz * (0.6 * (1.0 - k))) * s;
@@ -273,7 +273,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
   let dcam = distance(in.wpos, F.camPos.xyz);
   if (dcam < 3.2 && vegNoise(in.pos.xy) >= sat((dcam - 1.0) / 2.2)) { discard; }
   var s = surfDefault(normalize(in.nrm));
-  // verso da folha (normal apontando para longe do observador): vira para ele; o sol por trás só entra como translucidez
+  // envés de la hoja: orientado hacia la cámara; la luz posterior incide únicamente como dispersión subsuperficial
   let Vd = normalize(F.camPos.xyz - in.wpos); let nvd = dot(s.normal, Vd);
   if (nvd < 0.0) { s.normal = normalize(s.normal - Vd * (nvd * 1.7)); }
   let ao = in.col.a; let near = sat(1.0 - in.ext.w / 16.0);
@@ -284,13 +284,13 @@ fn surf(in: V2F, ff: bool) -> Surface {
   // verde mais escuro junto à nervura e à base, pontas e bordas um pouco mais claras
   var alb = vec3f(0.062, 0.076, 0.029) * in.col.rgb * (0.78 + 0.34 * u) * (0.9 + 0.16 * sat(abs(v) / max(w, 0.05)));
   alb = mix(alb, alb * vec3f(1.55, 1.5, 1.25) + 0.004, max(mid, veins));
-  // algumas folhas lustrosas (brilho do sol), a maioria fosca; translucidez nas folhas de fora
+  // hojas con cutícula brillante y mayoría mate; translucidez en hojas periféricas
   s.rough = mix(0.92, 0.66, step(0.78, fract(in.col.a * 37.3 + in.ext.y * 11.1))); s.ao = max(ao, 0.5);
   s.sss = (0.3 + 0.12 * sat(-nvd * 2.0)) * (0.12 + 0.88 * ao * ao);
   let back = smoothstep(0.15, 0.8, dot(-Vd, F.sunDir.xyz)) * ao * ao;   // contraluz: folha atravessada pelo sol, verde-amarelada
   alb = mix(alb, alb * vec3f(1.16, 1.12, 0.78), back * 0.6);
   s.emissive = 0.05 * smoothstep(0.35, 0.9, dot(-Vd, F.sunDir.xyz)) * ao * ao * ao * smoothstep(1.5, 5.0, in.ext.z);   // luz atravessando (ver veg_tree)
-  if (!ff) { alb = alb * vec3f(1.06, 1.08, 0.95) + 0.002; s.rough = 0.92; }   // verso: mais claro e fosco
+  if (!ff) { alb = alb * vec3f(1.06, 1.08, 0.95) + 0.002; s.rough = 0.92; }   // envés: ligeramente más claro y difuso
   s.albedo = alb * (0.7 + 0.3 * ao);
   return s;
 }
@@ -332,7 +332,7 @@ fn vert(in: VIn) -> VSOut {
   let cx = f32(in.vi & 1u) * 2.0 - 1.0; let cy = f32(in.vi >> 1u);
   var wp = base + right * (cx * dim.x * s) + vec3f(0.0, cy * dim.y * s, 0.0);
 #ifdef PASS_SHADOW
-  wp -= vec3f(F.sunDir.x, 0.0, F.sunDir.z) * (dim.x * s * 0.55);   // afasta do sol: a própria copa não se sombreia inteira
+  wp -= vec3f(F.sunDir.x, 0.0, F.sunDir.z) * (dim.x * s * 0.55);   // sesgo solar: evita auto-sombra excesiva en la copa
 #endif
   if (kill) { wp = base; }
   // quadro do atlas: ângulo da direção câmera→árvore no espaço local da árvore
@@ -352,7 +352,7 @@ fn impLayers(in: V2F) -> vec2i {
 }
 fn surfAlpha(in: V2F) -> f32 {
   let L = impLayers(in);
-  // sombra da copa com recorte de folhagem: o alfa do atlas é furado por ruído celular (buracos de luz pequenos e variados, borda
+  // sombra de copa con silueta foliar: canal alfa horadado por ruido celular (claros de luz interfoliares)
   // desfiada) em vez da silhueta maciça do cartão. Uma amostra só, com o amostrador simples (este passe tem muita sobreposição).
   let a = textureSampleBias(tImpA, sImp, in.uv, select(L.x, L.y, in.nrm.z > 0.5), 0.3).a + 0.06;
   let n = textureSampleLevel(tNoise, sImp, in.uv * 6.0 + f32(L.x) * 0.37, 0.0).b;
@@ -368,22 +368,22 @@ fn surf(in: V2F, ff: bool) -> Surface {
   // ampliado, o atlas borrado vira mancha: quebra a silhueta e o tom com ruído na escala de folha
   let dn = textureSample(tNoise, sLin, in.uv * 7.0 + f32(L.x) * 0.37);
   let dn2 = textureSample(tNoise, sLin, in.uv * 19.0 + f32(L.x) * 0.11);
-  // ao longe os mips afinam a copa: compensa o limiar
+  // a gran distancia los mipmaps estilizan la copa: compensación de umbral alfa
   let thr = 0.5 - 0.22 * smoothstep(120.0, 600.0, in.ext.y);
   let aa = a.a + (dn.r * 0.6 + dn2.g * 0.4 - 0.5) * 0.5 * mag * smoothstep(0.05, 0.4, a.a) * (1.0 - smoothstep(0.75, 1.0, a.a));
   if (vegCover(aa, thr) * in.ext.x <= nz) { discard; }
   let nt = mix(textureSample(tImpN, sImp, in.uv, L.x), textureSample(tImpN, sImp, in.uv, L.y), t);
   var nl = nt.xyz * 2.0 - 1.0; let c = in.nrm.x; let sn = in.nrm.y;
   nl += vec3f(dn.g - 0.5, dn2.r - 0.5, dn.b - 0.5) * (0.2 + 0.3 * mag) * nt.a;
-  // normais mais lisas ao longe (copa como volume, sem ruído de folha a folha)
+  // normales suavizadas a distancia (tratamiento de copa como volumen continuo)
   let far = smoothstep(90.0, 450.0, in.ext.y);
   nl = normalize(mix(nl, vec3f(nl.x * 0.5, abs(nl.y) * 0.5 + 0.6, nl.z * 0.5), far * 0.7));
   var s = surfDefault(normalize(vec3f(nl.x * c - nl.z * sn, nl.y, nl.x * sn + nl.z * c)));
-  // como na malha: normal que aponta para longe do observador vira para ele (verso da folha não recebe sol de frente)
+  // inversión de normal en envés foliar contra observador para coherencia en iluminación
   let Vd = normalize(F.camPos.xyz - in.wpos); let nvd = dot(s.normal, Vd);
   if (nvd < 0.0) { s.normal = normalize(s.normal - Vd * (nvd * 1.7)); }
   // mesmo tom da malha (ver veg_tree.wgsl), com variação de massa clara/escura na escala de tufo
-  // 0,69 ≈ média das modulações de tufo da malha (ruído celular × miolo escuro), para as duas cores médias coincidirem
+  // 0,69 ≈ modulación media de follaje en malla (ruido celular × núcleo sombrío) para paridad de tono
   var lc = a.rgb * mix(vec3f(0.8), in.col.rgb * vec3f(0.57, 0.64, 0.33) * 0.74, nt.a);
   // tufos claros e escuros (mesma ideia da malha), que somem ao longe
   let tuft = (0.66 + 0.68 * smoothstep(0.25, 0.8, dn.b)) * (0.8 + 0.4 * dn2.r);
@@ -394,7 +394,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
   s.sss = 0.24 * nt.a * mix(0.3, 1.0, edge) * mix(1.0, 0.4, far);
   let back = smoothstep(0.15, 0.8, dot(-Vd, F.sunDir.xyz)) * edge * nt.a * (1.0 - 0.6 * far);
   s.albedo = mix(s.albedo, s.albedo * vec3f(1.28, 1.22, 0.66), back * 0.7);
-  s.emissive = 0.04 * back;   // luz atravessando a borda da copa (como na malha)
+  s.emissive = 0.04 * back;   // dispersión subsuperficial en contorno de copa
   s.rough = mix(0.9, 0.95, nt.a) + 0.04 * far; s.ao = mix(1.0, 0.8, far * (1.0 - edge));
   return s;
 }
@@ -433,7 +433,7 @@ fn vert(in: VIn) -> VSOut {
   let forest = textureSampleLevel(tForest, sClamp, (xz - F.wm.xy + 1.0) / (vec2f(textureDimensions(tForest)) * 2.0), 0.0).r;
   let patchN = textureSampleLevel(tNoise, sLin, xz * 0.013, 0.0).rg;
   var ok = wmIn(xz) && dEdge > 1.5 && z.g < 0.485 && z.a < 0.48 && h2.y > forest * 0.75;
-  // altura: aparada junto à pista; alta e em tufos no rústico (e mais rala/baixa sob a mata)
+  // altura: segada junto a la cinta asfáltica; crecida y en matas en terreno rústico y sotobosque
   let clump = smoothstep(0.25, 0.7, patchN.x) * 0.8 + 0.35;
   // (a aparada cresce um pouco com a distância: a 40–70 m a lâmina ainda tem 3–5 pixels de altura e dá relevo ao gramado)
   var ht = mix((0.07 + 0.075 * h2.x) * (1.0 + 0.35 * sat(d / 22.0) + 0.9 * sat((d - 24.0) / 40.0)), (0.34 + 0.5 * h2.x * h2.x + 0.25 * h.y) * clump, tall);

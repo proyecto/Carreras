@@ -2,7 +2,7 @@
 // ---- 45_game.js
 // Lógica de juego: entradas, simulación a paso fijo, cámaras y pose del coche.
 const GS = {
-  held: 0, keys: 0, prevKeys: 0, cam: 0, replay: null, replayOn: false, ai: false, tick60: 0, acc: 0, sub: 0, alpha: 1, cut: true,
+  held: 0, keys: 0, prevKeys: 0, rivalKeys: 0, cam: 0, replay: null, replayOn: false, ai: false, tick60: 0, acc: 0, sub: 0, alpha: 1, cut: true,
   body: m4(), tmp: m4(), tmp2: m4(), ground: m4(), spin: new Float32Array(4), susp: new Float32Array(4),
   cx: 0, cy: 0, cz: 0, yaw: 0, steer: 0, speed: 0,                 // Estado interpolado para render
   chaseYaw: 0, chaseY: 0, chaseInit: false, hoodPos: new Float32Array(6),
@@ -10,11 +10,138 @@ const GS = {
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
 };
+const GS_RIVAL = {
+  body: m4(), tmp: m4(), ground: m4(),
+  spin: new Float32Array(4), susp: new Float32Array(4),
+  cx: 0, cy: 0, cz: 0, yaw: 0, steer: 0, speed: 0,
+};
 // Cronómetro: LAP[0] tiempo inicio de vuelta actual, [1] última vuelta, [2] mejor vuelta, [3] estado
 const LAP = new Float64Array(4);
 // Entradas Gamepad API: acelerador, freno y dirección analógicos con zona muerta
 const PADV = new Float64Array(3);
-const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V };
+
+const DEFAULT_CONTROLS = {
+  accel: ['KeyW', 'ArrowUp'],
+  brake: ['KeyS', 'ArrowDown'],
+  left: ['KeyA', 'ArrowLeft'],
+  right: ['KeyD', 'ArrowRight'],
+  handbrake: ['Space', ''],
+  camera: ['KeyC', ''],
+  lookBack: ['KeyV', ''],
+  reset: ['KeyR', ''],
+  mute: ['KeyM', ''],
+  stats: ['KeyH', ''],
+};
+
+const ACTION_BITMASKS = {
+  accel: K_W,
+  brake: K_S,
+  left: K_A,
+  right: K_D,
+  handbrake: K_SPACE,
+  camera: K_C,
+  lookBack: K_V,
+  reset: K_R,
+};
+
+const KEYMAP = {};
+
+const CONTROLS = {
+  keys: JSON.parse(JSON.stringify(DEFAULT_CONTROLS)),
+  STORAGE_KEY: 'carreras_controls_v2',
+
+  init() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(this.STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          for (const act in DEFAULT_CONTROLS) {
+            if (Array.isArray(parsed[act])) {
+              this.keys[act] = [parsed[act][0] || '', parsed[act][1] || ''];
+            }
+          }
+        }
+      }
+    } catch (e) { }
+    this.apply();
+  },
+
+  save() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.keys));
+      }
+    } catch (e) { }
+    this.apply();
+  },
+
+  reset() {
+    this.keys = JSON.parse(JSON.stringify(DEFAULT_CONTROLS));
+    this.save();
+  },
+
+  apply() {
+    for (const k in KEYMAP) delete KEYMAP[k];
+    for (const act in ACTION_BITMASKS) {
+      const mask = ACTION_BITMASKS[act];
+      const list = this.keys[act];
+      if (list) {
+        for (const code of list) {
+          if (code) KEYMAP[code] = mask;
+        }
+      }
+    }
+  },
+
+  setKey(action, slot, code) {
+    if (!this.keys[action]) return;
+    if (code) {
+      // Si la tecla ya estaba asignada a otra acción o ranura, la liberamos
+      for (const act in this.keys) {
+        for (let i = 0; i < this.keys[act].length; i++) {
+          if (this.keys[act][i] === code) {
+            this.keys[act][i] = '';
+          }
+        }
+      }
+    }
+    this.keys[action][slot] = code || '';
+    this.save();
+  },
+
+  isKey(action, code) {
+    const list = this.keys[action];
+    return list ? list.includes(code) : false;
+  },
+
+  formatKey(code) {
+    if (!code) return '—';
+    if (code.startsWith('Key')) return code.slice(3).toUpperCase();
+    if (code.startsWith('Digit')) return code.slice(5);
+    if (code === 'Space') return 'Espacio';
+    if (code === 'ArrowUp') return '↑';
+    if (code === 'ArrowDown') return '↓';
+    if (code === 'ArrowLeft') return '←';
+    if (code === 'ArrowRight') return '→';
+    if (code === 'Escape') return 'Esc';
+    if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift';
+    if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl';
+    if (code === 'AltLeft' || code === 'AltRight') return 'Alt';
+    if (code === 'Tab') return 'Tab';
+    if (code === 'Enter') return 'Enter';
+    if (code === 'Backspace') return 'Backspace';
+    return code;
+  }
+};
+CONTROLS.init();
+
+if (typeof window !== 'undefined') {
+  window.CONTROLS = CONTROLS;
+  window.KEYMAP = KEYMAP;
+  window.DEFAULT_CONTROLS = DEFAULT_CONTROLS;
+}
+
 function onKeyDown(e) {
   if (GAME.ui && typeof UI !== 'undefined' && (UI.st === ST.INICIO || UI.st === ST.PAUSA || UI.st === ST.RESULT)) return;
   const k = KEYMAP[e.code]; if (k) { GS.held |= k; e.preventDefault(); }
@@ -48,6 +175,114 @@ const CARP = {
   },
 };
 const carObj = () => (CAR || CARP);
+const rivalObj = () => ((typeof CARS !== 'undefined' && CARS.rival) ? CARS.rival : CAR_RIVAL);
+
+// Coche rival de competición GT3 (#7) controlado por la IA
+const CAR_RIVAL = {
+  wheelR: VP.R,
+  hubs: [[VP.L / 2, VP.R, -0.72], [VP.L / 2, VP.R, 0.72], [-VP.L / 2, VP.R, -0.72], [-VP.L / 2, VP.R, 0.72]],
+  slotBody: 0,
+  slotWheel: [0, 0, 0, 0],
+  _t: m4(),
+  _u: m4(),
+  inp: new Float64Array(2),
+  built: false,
+
+  build() {
+    if (this.built) return;
+    if (typeof R === 'undefined' || !R.drawables || typeof MeshBuilder === 'undefined') return;
+    const fam = (R.families && R.families.test) || (typeof mkFamily === 'function' ? mkFamily('test', { src: 'mat_test' }) : null);
+    if (!fam) return;
+    const set = new MeshSet(fam);
+    R.drawables.push(set);
+
+    this.slotBody = objSlot();
+    for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
+
+    // Construcción del chasis GT3 del rival #7:
+    // Amarillo competición y Negro Fibra de Carbono con acentos rojos
+    let mb = new MeshBuilder();
+    // Chasis principal (Amarillo competición con laca multicapa mat=2)
+    mb.mat(2).color(0.96, 0.78, 0.08);
+    mb.rbox(0.08, 0.54, 0, 3.90, 0.50, 1.68, 0.10, 4);
+    mb.rbox(-0.32, 1.05, 0, 2.05, 0.52, 1.36, 0.12, 4);
+    mb.rbox(1.25, 0.58, 0, 1.10, 0.22, 1.58, 0.08, 4);
+
+    // Parabrisas y ventanas tintadas oscuras (mat=1)
+    mb.mat(1).color(0.10, 0.12, 0.14);
+    mb.box(-0.15, 1.08, 0, 1.85, 0.44, 1.38);
+
+    // Splitter frontal, difusor y faldones aerodinámicos (Negro carbono mat=0)
+    mb.mat(0).color(0.08, 0.08, 0.09);
+    mb.box(2.02, 0.22, 0, 0.42, 0.05, 1.84);
+    mb.box(-1.95, 0.28, 0, 0.40, 0.14, 1.76);
+    mb.box(0, 0.24, -0.84, 2.70, 0.06, 0.12);
+    mb.box(0, 0.24, 0.84, 2.70, 0.06, 0.12);
+
+    // Alerón trasero GT3 biplano de competición
+    mb.mat(0).color(0.12, 0.12, 0.13);
+    mb.box(-1.75, 1.18, -0.58, 0.08, 0.38, 0.05);
+    mb.box(-1.75, 1.18, 0.58, 0.08, 0.38, 0.05);
+    mb.box(-1.78, 1.38, 0, 0.46, 0.05, 1.82);
+    mb.mat(2).color(0.85, 0.12, 0.12); // Placas terminales rojas
+    mb.box(-1.78, 1.38, -0.92, 0.50, 0.24, 0.03);
+    mb.box(-1.78, 1.38, 0.92, 0.50, 0.24, 0.03);
+
+    // Faros delanteros LED (mat=3)
+    mb.mat(3).color(1.0, 0.95, 0.75);
+    mb.box(1.92, 0.62, -0.62, 0.12, 0.10, 0.28);
+    mb.box(1.92, 0.62, 0.62, 0.12, 0.10, 0.28);
+
+    // Luces traseras LED rojas (mat=3)
+    mb.mat(3).color(1.0, 0.05, 0.05);
+    mb.box(-1.96, 0.68, -0.58, 0.08, 0.08, 0.36);
+    mb.box(-1.96, 0.68, 0.58, 0.08, 0.08, 0.36);
+
+    // Dorsal blanco #7 en el techo
+    mb.mat(1).color(1.0, 1.0, 1.0);
+    mb.box(-0.35, 1.34, 0, 0.60, 0.02, 0.60);
+
+    set.add(mb.upload(), this.slotBody, 3);
+
+    // Ruedas de aleación ligera GT
+    mb = new MeshBuilder();
+    mb.mat(0).color(0.04, 0.04, 0.04);
+    mb.push(m4rotX(m4(), PI / 2));
+    mb.cyl(0, -0.14, 0, VP.R, 0.28, VP.R, 24, true, true);
+    mb.pop();
+    mb.mat(1).color(0.18, 0.18, 0.20);
+    mb.push(m4rotX(m4(), PI / 2));
+    mb.cyl(0, -0.145, 0, VP.R * 0.72, 0.29, VP.R * 0.72, 16, true, true);
+    mb.pop();
+    mb.mat(1).color(0.55, 0.55, 0.58);
+    mb.push(m4rotX(m4(), PI / 2));
+    mb.cyl(0, 0, 0, VP.R * 0.58, 0.04, VP.R * 0.58, 16, true, true);
+    mb.pop();
+
+    const wm = mb.upload();
+    for (let i = 0; i < 4; i++) set.add(wm, this.slotWheel[i], 3);
+
+    this.built = true;
+  },
+
+  place(body, spin, susp) {
+    const steer = this.inp[0];
+    objPrev(this.slotBody).set(objModel(this.slotBody));
+    objModel(this.slotBody).set(body);
+    for (let i = 0; i < 4; i++) {
+      const h = this.hubs[i], m = objModel(this.slotWheel[i]);
+      objPrev(this.slotWheel[i]).set(m);
+      m4translate(this._t, h[0], h[1] + (susp ? susp[i] : 0), h[2]);
+      m4mul(this._t, body, this._t);
+      if (i < 2) {
+        m4rotY(this._u, -steer);
+        m4mul(this._t, this._t, this._u);
+      }
+      m4rotZ(this._u, -spin[i]);
+      m4mul(m, this._t, this._u);
+    }
+  }
+};
 
 function gameInit() {
   addEventListener('keydown', onKeyDown); addEventListener('keyup', onKeyUp); addEventListener('blur', onBlur);
@@ -120,28 +355,42 @@ async function gamePrewarm() {
 }
 function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0, VEH, VIN);
+  if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+    const VR = VEH_RIVAL; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
+    vehicleReset(TRK.L + TRK.startS - 8.0, TRK.startD + 3.2, 0, VEH_RIVAL, VIN_RIVAL);
+  }
+  GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // Paso de física a 120 Hz; lectura de entradas a 60 Hz
 function gameStep() {
+  const t = GS.tick60 / 60;
   if ((GS.sub & 1) === 0) {
-    const t = GS.tick60 / 60; let k;
+    let k;
     if (GS.replayOn && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
-    else if (GS.ai) k = t < 0.5 ? 0 : aiKeys(t);
+    else if (GS.ai) k = t < 0.5 ? 0 : aiKeys(t, VEH);
     else { k = GS.held; if (GS.padKeys) k = padMerge(k); }
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // Mirar hacia atrás ejecuta corte instantáneo de cámara
     if (edge & K_C) { GS.cam = (GS.cam + 1) % 3; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // Restablece el coche al centro de la pista
-      const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0); GS.cut = true; GS.chaseInit = false;
+      const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0, VEH, VIN); GS.cut = true; GS.chaseInit = false;
+    }
+    // Entradas IA del rival (muestreadas a 60 Hz)
+    if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+      GS.rivalKeys = t < 0.5 ? 0 : aiKeys(t, VEH_RIVAL);
     }
   }
   GS.sub++;
-  vehicleStep(GS.keys);
+  vehicleStep(GS.keys, VEH, VIN);
+  if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+    vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
+    vehicleCarCollide(VEH, VEH_RIVAL);
+  }
   if (VEH.laps !== GS.lapSeen) lapCross();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
 }
@@ -161,6 +410,9 @@ function lapCross() {
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
     if (LAP[3] === 1) { const lt = t - LAP[0]; LAP[1] = lt; if (!GS.replayOn && (LAP[2] === 0 || lt < LAP[2])) { LAP[2] = lt; GS.lapNew = true; } }
     LAP[0] = t; LAP[3] = 1; GS.lapMax = V.laps;
+    if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
+      Patterns.EventBusSingleton.emit('lap:completed', { laps: V.laps, lapTime: LAP[1], bestLap: LAP[2] });
+    }
   }
   GS.lapSeen = V.laps;
 }
@@ -204,6 +456,34 @@ function gamePose() {
   C.inp[0] = GS.steer; C.inp[1] = GS.steer * 14; C.place(B, GS.spin, GS.susp);
   const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
+
+  // Pose e interpolación del rival IA
+  const CR = rivalObj();
+  if (GAME.rivalEnabled !== false && CR && CR.built && typeof VEH_RIVAL !== 'undefined') {
+    const VR = VEH_RIVAL, PR = VP;
+    const xr = VR.px + (VR.x - VR.px) * al, zr = VR.pz + (VR.z - VR.pz) * al, yr = VR.py + (VR.y - VR.py) * al;
+    let dyr = VR.yaw - VR.pyaw; if (dyr > PI) dyr -= TAU; else if (dyr < -PI) dyr += TAU; const yawr = VR.pyaw + dyr * al;
+    const gpr = VR.pgPitch + (VR.gPitch - VR.pgPitch) * al, grr = VR.pgRoll + (VR.gRoll - VR.pgRoll) * al, rollr = VR.proll + (VR.roll - VR.proll) * al, pitchr = VR.ppitch + (VR.pitch - VR.ppitch) * al, heaver = VR.pheave + (VR.heave - VR.pheave) * al;
+    const cr = Math.cos(yawr), sr = Math.sin(yawr), oxr = -(PR.L / 2 - PR.a);
+    GS_RIVAL.cx = xr + cr * oxr; GS_RIVAL.cz = zr + sr * oxr; GS_RIVAL.cy = yr; GS_RIVAL.yaw = yawr; GS_RIVAL.steer = VR.psteer + (VR.steer - VR.psteer) * al; GS_RIVAL.speed = Math.sqrt(VR.vx * VR.vx + VR.vy * VR.vy);
+    const BR = GS_RIVAL.body, TR = GS_RIVAL.tmp, GR0 = GS_RIVAL.ground;
+    GR0[0] = cr; GR0[1] = 0; GR0[2] = sr; GR0[3] = 0; GR0[4] = 0; GR0[5] = 1; GR0[6] = 0; GR0[7] = 0; GR0[8] = -sr; GR0[9] = 0; GR0[10] = cr; GR0[11] = 0; GR0[12] = GS_RIVAL.cx; GR0[13] = GS_RIVAL.cy; GR0[14] = GS_RIVAL.cz; GR0[15] = 1;
+    ROTQ[0] = gpr; rotZQ(TR); m4mul(GR0, GR0, TR); ROTQ[0] = -grr; rotXQ(TR); m4mul(GR0, GR0, TR);
+    m4ident(TR); TR[13] = 0.18 + heaver; m4mul(BR, GR0, TR);
+    ROTQ[0] = -pitchr; rotZQ(TR); m4mul(BR, BR, TR); ROTQ[0] = -rollr; rotXQ(TR); m4mul(BR, BR, TR);
+    m4ident(TR); TR[13] = -0.18; m4mul(BR, BR, TR);
+    for (let i = 0; i < 4; i++) {
+      const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
+      let su = VR.wy[i] + CR.wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
+      GS_RIVAL.susp[i] = su; GS_RIVAL.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
+    }
+    if (!CR.inp) CR.inp = new Float64Array(2);
+    CR.inp[0] = GS_RIVAL.steer; CR.inp[1] = GS_RIVAL.steer * 14; CR.place(BR, GS_RIVAL.spin, GS_RIVAL.susp);
+    const bpR = objParams(CR.slotBody), kr = GS.rivalKeys;
+    bpR[0] = ((kr & K_S) && VR.gear !== 0) || ((kr & K_W) && VR.gear === 0) ? 1 : 0; bpR[1] = VR.gear === 0 ? 1 : 0; bpR[2] = 1;
+    for (let i = 0; i < 4; i++) { const w = VR.omega[i]; objParams(CR.slotWheel[i])[0] = w < 0 ? -w : w; }
+  }
+
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
   // Ruedas: transformaciones anteriores para motion blur coherente sin dispersión angular
   if (C.slotWheel[0] !== C.slotBody) { const D2 = GS.tmp2; m4mul(D2, objPrev(C.slotBody), T); for (let i = 0; i < 4; i++) m4mul(objPrev(C.slotWheel[i]), D2, objModel(C.slotWheel[i])); }
@@ -258,6 +538,13 @@ function gameCamera() {
 BUILD.push(async () => {
   if (GAME.mode === 'test' || GAME.mode === 'car') return;
   if (!CAR) CARP.build();
+  if (GAME.rivalEnabled !== false) {
+    const rCar = rivalObj();
+    if (rCar && typeof rCar.build === 'function') {
+      rCar.build();
+      rCar.built = true;
+    }
+  }
   GAME.init = gameInit; GAME.tick = gameTick; GAME.prewarm = gamePrewarm;
 });
 

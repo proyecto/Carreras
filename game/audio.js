@@ -84,7 +84,7 @@ function sndCore(sr) {
   }
   function chunk(m) {
     const fl = ctl[0] | 0, view = (fl >> 2) & 3, on = (fl & 3) === 1 ? 1 : 0, mg0 = st[MG];
-    if (!on && mg0 < 2e-4) { st[MG] = 0; oL.fill(0); oR.fill(0); return; }   // pausa ou mudo: saída exatamente zero, estado congelado
+    if (!on && mg0 < 2e-4) { st[MG] = 0; oL.fill(0); oR.fill(0); return; }   // pausa o silencio: salida exactamente a cero y estado congelado
     const mg1 = mg0 + (on - mg0) * K8 * 1.6; st[MG] = mg1;
     noise(wA); noise(wB);
     // ---- controles suavizados

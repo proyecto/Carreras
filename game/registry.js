@@ -18,9 +18,11 @@ function loadSelection() {
     return {};
   }
 }
-function saveSelection(carId, trackId) {
+function saveSelection(carId, trackId, extra = {}) {
   try {
-    localStorage.setItem(SEL_KEY, JSON.stringify({ car: carId, track: trackId }));
+    const cur = loadSelection();
+    const merged = Object.assign({}, cur, { car: carId, track: trackId }, extra);
+    localStorage.setItem(SEL_KEY, JSON.stringify(merged));
   } catch (e) { /* almacenamiento local no disponible */ }
 }
 
@@ -28,6 +30,7 @@ const CARS = {
   list: [],
   byId: {},
   active: null,
+  rival: null,
 
   register(def) {
     if (!def || !def.id) throw new Error('Coche inválido: falta el campo id.');
@@ -48,6 +51,11 @@ const CARS = {
     this.active = this.get(id);
     CAR = this.active;
     return this.active;
+  },
+
+  selectRival(id) {
+    this.rival = (id && this.byId[id]) || null;
+    return this.rival;
   },
 };
 

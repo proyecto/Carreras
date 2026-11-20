@@ -8,6 +8,7 @@ const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V 
 // Entradas analógicas del mando: VIN[0] acelerador 0..1, VIN[1] freno 0..1, VIN[2] dirección -1..1.
 // Registro digital de entradas idéntico para teclado y vueltas guiadas.
 const VIN = new Float64Array(3);
+const VIN_RIVAL = new Float64Array(3);
 const VP = {
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
   mu: 1.42, B: 9.5, C: 1.42, driveF: 1.0,
@@ -17,20 +18,26 @@ const VP = {
   torqueBase: 180, torquePeak: 118, torqueDrop: 110, torquePeakStart: 0.6, torquePeakSpan: 5.4, torqueDropRpm: 6.0,
   shiftUpRpm: 6250, shiftDownRpm: 5350, revLimitRpm: 6500, maxRpm: 6700, idleRpm: 900,
 };
-const VEH = {
-  x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // Posición del CG en el plano, orientación, velocidades locales (longitudinal, lateral) y guiñada
-  steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
-  ax: 0, ay: 0,                                              // Aceleraciones filtradas en chasis
-  roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
-  y: 0, gPitch: 0, gRoll: 0,                                 // Altura e inclinación del suelo bajo el coche (filtradas)
-  spin: new Float32Array(4), omega: new Float32Array(4), susp: new Float32Array(4),
-  slip: new Float32Array(4),                                 // Intensidad de derrape por rueda 0..1 (humo y marcas de neumático)
-  wx: new Float32Array(4), wy: new Float32Array(4), wz: new Float32Array(4), wzone: new Uint8Array(4), whint: new Int32Array(4).fill(-1),
-  fz: new Float32Array(4), hint: -1, s: 0, d: 0, zone: 0, lapS: 0, lastS: 0, laps: 0, maxOff: 0, offCount: 0, hits: 0, time: 0, steps: 0,
-  ctl: new Float32Array(2),                                  // Salida de audio: acelerador y freno efectivos del último paso
-  // Estado anterior para interpolación de render
-  px: 0, pz: 0, pyaw: 0, py: 0, proll: 0, ppitch: 0, pheave: 0, pgPitch: 0, pgRoll: 0, psteer: 0, pspin: new Float32Array(4), psusp: new Float32Array(4),
-};
+
+function createVehicleState() {
+  return {
+    x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // Posición del CG en el plano, orientación, velocidades locales (longitudinal, lateral) y guiñada
+    steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
+    ax: 0, ay: 0,                                              // Aceleraciones filtradas en chasis
+    roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
+    y: 0, gPitch: 0, gRoll: 0,                                 // Altura e inclinación del suelo bajo el coche (filtradas)
+    spin: new Float32Array(4), omega: new Float32Array(4), susp: new Float32Array(4),
+    slip: new Float32Array(4),                                 // Intensidad de derrape por rueda 0..1 (humo y marcas de neumático)
+    wx: new Float32Array(4), wy: new Float32Array(4), wz: new Float32Array(4), wzone: new Uint8Array(4), whint: new Int32Array(4).fill(-1),
+    fz: new Float32Array(4), hint: -1, s: 0, d: 0, zone: 0, lapS: 0, lastS: 0, laps: 0, maxOff: 0, offCount: 0, hits: 0, time: 0, steps: 0,
+    ctl: new Float32Array(2),                                  // Salida de audio: acelerador y freno efectivos del último paso
+    // Estado anterior para interpolación de render
+    px: 0, pz: 0, pyaw: 0, py: 0, proll: 0, ppitch: 0, pheave: 0, pgPitch: 0, pgRoll: 0, psteer: 0, pspin: new Float32Array(4), psusp: new Float32Array(4),
+  };
+}
+
+const VEH = createVehicleState();
+const VEH_RIVAL = createVehicleState();
 const _vl = new Float64Array(4), _vp = new Float64Array(5);
 // Posiciones locales de las ruedas (x avance, z anchura): FL, FR, RL, RR
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
@@ -53,8 +60,8 @@ function engineTorque(rpm) { // Curva de par motor (N·m) a partir de VP
 // Consulta de cota de suelo sin boxing: entrada _gq[0]=x, _gq[1]=z; salida _gq[8]=altura; devuelve tipo de zona.
 // wi = índice de rueda (-1 para el centro de gravedad)
 const _gq = new Float64Array(12);
-function groundQ(wi) {
-  const q = _gq, V = VEH;
+function groundQ(wi, veh = VEH) {
+  const q = _gq, V = veh;
   trackLocateQ(wi >= 0 ? V.whint[wi] : V.hint, q);
   if (q[3] > 90 || q[3] < -90) trackLocateQ(-1, q);
   const i0 = q[4] | 0, f = q[5], d = q[3], ad = d < 0 ? -d : d, i1 = (i0 + 1) % TRK.N;
@@ -71,59 +78,59 @@ function groundQ(wi) {
   q[8] = y; return zone;
 }
 // Versión de conveniencia para pruebas y utilidades
-function groundAt(x, z, wi) { _gq[0] = x; _gq[1] = z; _vl[3] = groundQ(wi); return _gq[8]; }
+function groundAt(x, z, wi, veh = VEH) { _gq[0] = x; _gq[1] = z; _vl[3] = groundQ(wi, veh); return _gq[8]; }
 const ZMU = [1.0, 0.96, 0.76, 0.60, 0.50, 0.95, 0.90], ZDRAG = [0, 0.005, 0.025, 0.12, 0.08, 0, 0];
 
-function vehicleReset(s, d, heading) {
-  const V = VEH; trackPos(s, d, _vp);
+function vehicleReset(s, d, heading, veh = VEH, vin = VIN) {
+  const V = veh; trackPos(s, d, _vp);
   V.x = _vp[0]; V.z = _vp[2]; V.yaw = Math.atan2(_vp[4], _vp[3]) + (heading || 0);
   V.vx = V.vy = V.r = 0; V.steer = 0; V.rpm = 900; V.gear = 1; V.ax = V.ay = 0; V.roll = V.rollV = V.pitch = V.pitchV = V.heave = V.heaveV = 0;
   V.hint = -1; V.whint.fill(-1); V.omega.fill(0); V.slip.fill(0);
-  VIN[0] = 0; VIN[1] = 0; VIN[2] = 0;
-  _gq[0] = V.x; _gq[1] = V.z; groundQ(-1); V.y = _gq[8]; V.gPitch = 0; V.gRoll = 0; V.lastS = V.s;
-  for (let k = 0; k < 6; k++) vehicleGround(1);
-  vehicleSavePrev();
+  vin[0] = 0; vin[1] = 0; vin[2] = 0;
+  _gq[0] = V.x; _gq[1] = V.z; groundQ(-1, V); V.y = _gq[8]; V.gPitch = 0; V.gRoll = 0; V.lastS = V.s;
+  for (let k = 0; k < 6; k++) vehicleGround(1, V);
+  vehicleSavePrev(V);
 }
-function vehicleSavePrev() {
-  const V = VEH; V.px = V.x; V.pz = V.z; V.pyaw = V.yaw; V.py = V.y; V.proll = V.roll; V.ppitch = V.pitch; V.pheave = V.heave; V.pgPitch = V.gPitch; V.pgRoll = V.gRoll; V.psteer = V.steer;
+function vehicleSavePrev(veh = VEH) {
+  const V = veh; V.px = V.x; V.pz = V.z; V.pyaw = V.yaw; V.py = V.y; V.proll = V.roll; V.ppitch = V.pitch; V.pheave = V.heave; V.pgPitch = V.gPitch; V.pgRoll = V.gRoll; V.psteer = V.steer;
   V.pspin.set(V.spin); V.psusp.set(V.susp);
 }
 // Muestrea cota de suelo en las 4 ruedas; actualiza balanceo y cabeceo del chasis
-function vehicleGround(k) {
-  const V = VEH, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
+function vehicleGround(k, veh = VEH) {
+  const V = veh, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   for (let i = 0; i < 4; i++) {
     const wx = V.x + c * WLX[i] - s * WLZ[i], wz = V.z + s * WLX[i] + c * WLZ[i];
-    V.wx[i] = wx; V.wz[i] = wz; _gq[0] = wx; _gq[1] = wz; V.wzone[i] = groundQ(i); V.wy[i] = _gq[8];
+    V.wx[i] = wx; V.wz[i] = wz; _gq[0] = wx; _gq[1] = wz; V.wzone[i] = groundQ(i, V); V.wy[i] = _gq[8];
   }
   const yF = (V.wy[0] + V.wy[1]) / 2, yR = (V.wy[2] + V.wy[3]) / 2, yL = (V.wy[0] + V.wy[2]) / 2, yRt = (V.wy[1] + V.wy[3]) / 2;
   const gy = (yF * VP.b + yR * VP.a) / VP.L, gp = Math.atan2(yF - yR, VP.L), gr = Math.atan2(yRt - yL, VP.tw);
   V.y += (gy - V.y) * k; V.gPitch += (gp - V.gPitch) * k; V.gRoll += (gr - V.gRoll) * k;
-  _gq[0] = V.x; _gq[1] = V.z; V.zone = groundQ(-1);
+  _gq[0] = V.x; _gq[1] = V.z; V.zone = groundQ(-1, V);
 }
-function vehicleStep(keys) {
-  const V = VEH, P = VP, dt = PHYS_DT, g = 9.81;
-  vehicleSavePrev();
+function vehicleStep(keys, veh = VEH, vin = VIN) {
+  const V = veh, P = VP, dt = PHYS_DT, g = 9.81;
+  vehicleSavePrev(V);
   // Entrada progressiva analógica/digital:
   // Teclado: rampa progressiva con ataque suave y retorno rápido para acelerador y freno
   if (!(keys & K_PAD)) {
     const tgtThr = (keys & K_W) ? 1.0 : 0.0;
     const tgtBrk = (keys & K_S) ? 1.0 : 0.0;
-    const thrRate = (tgtThr > VIN[0] ? 3.2 : 8.0) * dt;
-    VIN[0] += Math.min(thrRate, Math.max(-thrRate, tgtThr - VIN[0]));
-    const brkRate = (tgtBrk > VIN[1] ? 3.6 : 10.0) * dt;
-    VIN[1] += Math.min(brkRate, Math.max(-brkRate, tgtBrk - VIN[1]));
+    const thrRate = (tgtThr > vin[0] ? 3.2 : 8.0) * dt;
+    vin[0] += Math.min(thrRate, Math.max(-thrRate, tgtThr - vin[0]));
+    const brkRate = (tgtBrk > vin[1] ? 3.6 : 10.0) * dt;
+    vin[1] += Math.min(brkRate, Math.max(-brkRate, tgtBrk - vin[1]));
   }
-  const thr = VIN[0], brk = VIN[1], hand = (keys & K_SPACE) ? 1 : 0;
+  const thr = vin[0], brk = vin[1], hand = (keys & K_SPACE) ? 1 : 0;
   const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
   // --- dirección digital progresiva con sensibilidad a la velocidad y respuesta no lineal
   if (!(keys & K_PADS)) {
     const rawSteer = ((keys & K_D) ? 1.0 : 0.0) - ((keys & K_A) ? 1.0 : 0.0);
     let sInRate = 3.2;
     if (rawSteer === 0) sInRate = 4.8;
-    else if (Math.sign(rawSteer) !== Math.sign(VIN[2]) && VIN[2] !== 0) sInRate = 5.5;
-    VIN[2] += Math.min(sInRate * dt, Math.max(-sInRate * dt, rawSteer - VIN[2]));
+    else if (Math.sign(rawSteer) !== Math.sign(vin[2]) && vin[2] !== 0) sInRate = 5.5;
+    vin[2] += Math.min(sInRate * dt, Math.max(-sInRate * dt, rawSteer - vin[2]));
   }
-  const sIn = VIN[2];
+  const sIn = vin[2];
   const sInProg = (keys & K_PADS) ? sIn : (Math.sign(sIn) * Math.pow(Math.abs(sIn), 1.25));
   const sMax = Math.min(0.60, Math.max(0.024, 0.60 / (1 + speed * 0.08 + speed * speed * 0.0028)));
   // teclado: dirección digital progresiva; control: volante sigue la palanca
@@ -227,8 +234,8 @@ function vehicleStep(keys) {
   const c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   V.x += (V.vx * c - V.vy * s) * dt; V.z += (V.vx * s + V.vy * c) * dt; V.yaw += V.r * dt;
   // Contacto con suelo y colisión con barreras
-  vehicleGround(0.35);
-  vehicleCollide();
+  vehicleGround(0.35, V);
+  vehicleCollide(V);
   // Cinemática de la carrocería sobre la suspensión: balanceo lateral, hundimiento en frenada y cabeceo
   const kR = 78, cR = 9.5; const rollT = Math.min(0.062, Math.max(-0.062, V.ay * 0.0058)), pitchT = Math.min(0.03, Math.max(-0.03, -V.ax * (V.ax < 0 ? 0.0034 : 0.003)));
   V.rollV += ((rollT - V.roll) * kR - V.rollV * cR) * dt; V.roll += V.rollV * dt;
@@ -245,9 +252,10 @@ function vehicleStep(keys) {
   let off = 0; for (let i = 0; i < 4; i++) if (V.wzone[i] !== ZONE.ASPHALT && V.wzone[i] !== ZONE.KERB && V.wzone[i] !== ZONE.PIT) off++;
   if (off > 0) V.offCount++;
 }
+
 // colisão com as barreiras laterais: testa os 4 cantos, empurra de volta e reflete a velocidade
-function vehicleCollide() {
-  const V = VEH, P = VP, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
+function vehicleCollide(veh = VEH) {
+  const V = veh, P = VP, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   for (let k = 0; k < 4; k++) {
     const lx = k < 2 ? P.front : -P.rear, lz = (k & 1) ? P.halfW : -P.halfW;
     const cx = V.x + c * lx - s * lz, cz = V.z + s * lx + c * lz;
@@ -267,4 +275,79 @@ function vehicleCollide() {
       }
     }
   }
+}
+
+// Colisión física precisa entre dos vehículos en pista (modelo elasto-plástico de doble círculo axial)
+function vehicleCarCollide(v1, v2) {
+  if (!v1 || !v2) return;
+  const dx = v2.x - v1.x, dz = v2.z - v1.z;
+  const distSq = dx * dx + dz * dz;
+  if (distSq > 32 || distSq < 1e-6) return; // Distancia mayor a ~5.6m: no hay contacto posible
+
+  const c1 = Math.cos(v1.yaw), s1 = Math.sin(v1.yaw);
+  const c2 = Math.cos(v2.yaw), s2 = Math.sin(v2.yaw);
+  const rCol = 0.96; // Radio de cada esfera/círculo de colisión
+  const dCol = rCol * 2;
+  const offsets = [1.05, -1.05]; // Centros aproximados de los ejes delantero y trasero
+
+  for (let i = 0; i < 2; i++) {
+    const o1 = offsets[i];
+    const x1 = v1.x + c1 * o1, z1 = v1.z + s1 * o1;
+    for (let j = 0; j < 2; j++) {
+      const o2 = offsets[j];
+      const x2 = v2.x + c2 * o2, z2 = v2.z + s2 * o2;
+      const cx = x2 - x1, cz = z2 - z1;
+      const cDistSq = cx * cx + cz * cz;
+      if (cDistSq < dCol * dCol && cDistSq > 1e-4) {
+        const dist = Math.sqrt(cDistSq);
+        const pen = dCol - dist;
+        const nx = cx / dist, nz = cz / dist;
+
+        // Separación posicional directa (50% cada vehículo para evitar solapamiento)
+        v1.x -= nx * pen * 0.5; v1.z -= nz * pen * 0.5;
+        v2.x += nx * pen * 0.5; v2.z += nz * pen * 0.5;
+
+        // Velocidades en el mundo de cada punto de impacto
+        const wvx1 = v1.vx * c1 - v1.vy * s1 - v1.r * (s1 * o1);
+        const wvz1 = v1.vx * s1 + v1.vy * c1 + v1.r * (c1 * o1);
+        const wvx2 = v2.vx * c2 - v2.vy * s2 - v2.r * (s2 * o2);
+        const wvz2 = v2.vx * s2 + v2.vy * c2 + v2.r * (c2 * o2);
+
+        // Velocidad relativa normal
+        const relVn = (wvx2 - wvx1) * nx + (wvz2 - wvz1) * nz;
+        if (relVn < 0) { // Se están acercando
+          const rest = 0.22; // Coeficiente de restitución (impacto de chapa GT)
+          const impulse = -(1 + rest) * relVn * 0.5;
+
+          const impX = nx * impulse, impZ = nz * impulse;
+          // Impulso lineal
+          const v1x = (wvx1 - impX), v1z = (wvz1 - impZ);
+          const v2x = (wvx2 + impX), v2z = (wvz2 + impZ);
+
+          v1.vx = v1x * c1 + v1z * s1; v1.vy = -v1x * s1 + v1z * c1;
+          v2.vx = v2x * c2 + v2z * s2; v2.vy = -v2x * s2 + v2z * c2;
+
+          // Par de guiñada por el punto excéntrico de colisión
+          const torq1 = (c1 * o1 * nz - s1 * o1 * nx) * impulse;
+          const torq2 = (c2 * o2 * nz - s2 * o2 * nx) * impulse;
+          v1.r -= torq1 * 0.001;
+          v2.r += torq2 * 0.001;
+
+          v1.hits++; v2.hits++;
+          if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
+            Patterns.EventBusSingleton.emit('collision:vehicle', { impulse, relVn });
+          }
+        }
+      }
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.VEH = VEH;
+  window.VEH_RIVAL = VEH_RIVAL;
+  window.VIN = VIN;
+  window.VIN_RIVAL = VIN_RIVAL;
+  window.createVehicleState = createVehicleState;
+  window.vehicleCarCollide = vehicleCarCollide;
 }

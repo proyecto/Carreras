@@ -1,8 +1,8 @@
 'use strict';
 // ---- 33_veg_a_atlas.js
 // Vegetación — atlas de follaje procedural generado por canvas 2D con mipmaps de cobertura alfa.
-// 8 ladrilhos (4x2): 0 ramo de folhas largas | 1 ramo denso de folhas pequenas | 2 folha de palmeira | 3 fronde de samambaia
-//                            4 folha palmada grande  | 5 tufo de capim               | 6 ramo ralo         | 7 folhas grandes brilhantes (arbusto)
+// 8 celdas de textura (4x2): 0 rama de hojas anchas | 1 rama densa de hojas pequeñas | 2 hoja de palmera | 3 fronda de helecho
+//                            4 hoja palmada grande   | 5 mata de hierba             | 6 rama dispersa     | 7 hojas grandes brillantes (arbusto)
 const VEG_TS = 1024, VEG_TW = 4, VEG_TH = 2;   // Baldosas de 1024x1024 (diseño vectorial sobre canvas 2D)
 function vegAtlasBuild() {
   const TS = VEG_TS, W = TS * VEG_TW, H = TS * VEG_TH;
@@ -28,7 +28,7 @@ function vegAtlasBuild() {
   };
   const stem = (x0, y0, x1, y1, w, h, l) => { g.strokeStyle = hsl(h || 30, 28, l || 20); g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); };
   const tile = (i, fn) => { g.save(); g.beginPath(); g.rect((i % VEG_TW) * TS + 3, Math.floor(i / VEG_TW) * TS + 3, TS - 6, TS - 6); g.clip(); g.translate((i % VEG_TW) * TS, Math.floor(i / VEG_TW) * TS); g.scale(TS / 512, TS / 512); fn(); g.restore(); };
-  // galho recursivo com folhas alternadas pequenas. ang = direção (rad, -PI/2 = para cima)
+  // rama recursiva con hojas alternas pequeñas. ang = dirección (rad, -PI/2 = hacia arriba)
   const twig = (x, y, ang, len, depth, P) => {
     const n = Math.max(2, Math.round(len / P.step)); let px = x, py = y, a = ang;
     for (let i = 1; i <= n; i++) {
@@ -42,14 +42,14 @@ function vegAtlasBuild() {
       for (let q = 0; q < P.perNode; q++) {
         if (rnd() > P.leafP) continue;
         const s2 = q % 2 ? -side : side, L = P.leafL * rr(0.7, 1.2);
-        const dk = rnd() < 0.32 ? -10 : 0;   // parte das folhas em sombra (camada de trás)
+        const dk = rnd() < 0.32 ? -10 : 0;   // parte de las hojas en sombra (capa posterior)
         leaf(px, py, a + s2 * rr(0.55, 1.2) + (P.droop || 0) * 0.5 * Math.cos(a), L, L * P.leafW * rr(0.85, 1.15), P.hue + rr(-10, 9) + (rnd() < 0.06 ? -30 : 0), P.sat + rr(-8, 8), P.lig + rr(-5, 6) + dk, P.tipk);
       }
     }
     leaf(px, py, a + rr(-0.2, 0.2), P.leafL * 1.05, P.leafL * P.leafW, P.hue + rr(-8, 8), P.sat, P.lig + rr(-3, 6), P.tipk);
   };
   // massa de folhagem em leque a partir da base: 3 camadas (fundo escuro e cheio → frente clara e rala) dão profundidade
-  // e uma silhueta irregular mas cheia (sem "estrela" de galho solto).
+  // y una silueta irregular pero compacta (sin ramas desnudas en estrella).
   const cluster = (P, nTw, fan, lenMin, lenMax) => {
     for (let layer = 0; layer < 3; layer++) {
       const Q = Object.assign({}, P, { lig: P.lig + [-12, -3, 6][layer], sat: P.sat + [-8, 0, 4][layer], leafP: P.leafP * [0.9, 0.85, 0.7][layer], hue: P.hue + [6, 0, -4][layer] });
@@ -59,9 +59,9 @@ function vegAtlasBuild() {
       }
     }
   };
-  // 0: massa de folhas largas
+  // 0: masa de hojas anchas
   tile(0, () => cluster({ depth: 2, step: 13, stemW: 1.5, branchP: 0.55, leafL: 20, leafW: 0.42, perNode: 3, leafP: 0.8, hue: 96, sat: 36, lig: 22, tipk: 0.66 }, 6, 2.5, 330, 455));
-  // 1: massa densa de folhas pequenas
+  // 1: masa densa de hojas menudas
   tile(1, () => cluster({ depth: 2, step: 10.5, stemW: 1.2, branchP: 0.5, leafL: 14.5, leafW: 0.42, perNode: 3, leafP: 0.8, hue: 102, sat: 35, lig: 20, tipk: 0.62 }, 7, 2.6, 330, 460));
   // 2: folha de palmeira (ráquis de baixo para cima, folíolos longos e caídos)
   tile(2, () => {
@@ -99,7 +99,7 @@ function vegAtlasBuild() {
       }
     }
   });
-  // 4: roseta de folhas palmadas (lóbulos finos), várias folhas pequenas em pecíolos, em duas camadas
+  // 4: roseta de hojas palmadas (lóbulos finos), hojas pequeñas en pecíolos en dos capas
   tile(4, () => {
     const pal = (cx, cy, R, rot, dl) => {
       stem(256, 506, cx, cy, 3, 55, 24 + dl);
@@ -110,7 +110,7 @@ function vegAtlasBuild() {
       pal(256 + Math.cos(a) * r0, 504 + Math.sin(a) * r0, rr(62, 92), a + rr(-0.5, 0.5), layer ? 3 : -7);
     }
   });
-  // 5: faixa de capim (lâminas finas enraizadas ao longo de toda a largura, alturas bem variadas, pontas curvas, algumas
+  // 5: franja de hierba (briznas finas enraizadas en toda la anchura, alturas variadas, puntas curvadas, algunas
   //    secas cor de palha e algumas com espiga). Qualquer janela horizontal do ladrilho é uma touceira — sem forma de leque.
   tile(5, () => {
     const blade = (x0, L, w, a, bend, dry, lig) => {
@@ -131,7 +131,7 @@ function vegAtlasBuild() {
   });
   // 6: masa más dispersa de hojas estrechas y colgantes
   tile(6, () => cluster({ depth: 2, step: 15, stemW: 1.3, branchP: 0.5, leafL: 25, leafW: 0.19, perNode: 3, leafP: 0.66, hue: 88, sat: 27, lig: 25, tipk: 0.58, droop: 1 }, 5, 2.3, 330, 450));
-  // 7: folhas grandes brilhantes em leque (arbusto)
+  // 7: hojas grandes y brillantes en abanico (arbusto)
   tile(7, () => {
     for (let k = 0; k < 44; k++) {
       const a = -PI / 2 + rr(-1.15, 1.15), r0 = rr(20, 300) * (1 - Math.abs(a + PI / 2) * 0.3), x = 256 + Math.cos(a) * r0, y = 500 + Math.sin(a) * r0, L = rr(80, 140);
@@ -193,10 +193,10 @@ function vegAtlasBuild() {
 }
 
 // ---- 33_veg_b_trees.js
-// Vegetación — generación procedural de mallas (árvores, palmeira, arbusto, samambaia, capim).
-// Formato do vértice (VLAYOUT): normal.w = peso de balanço do galho | mat = (id: 0 casca / 1 folha, fase, tipo de casca, peso de tremor) | cor.a = AO
-const VEG_NT = 6, VEG_NA = 9;   // arquétipos com impostor (árvores + arbusto grande) / total (com sub-bosque)
-// Camada de folhas individuais (só de perto): um quad por folha, forma e nervuras analíticas no shader (nítidas em qualquer escala).
+// Vegetación — generación procedimental de mallas (árboles, palmera, arbusto, helecho, hierba).
+// Formato de vértice (VLAYOUT): normal.w = oscilación de la rama | mat = (id: 0 corteza / 1 hoja, fase, tipo de corteza, temblor) | color.a = AO
+const VEG_NT = 6, VEG_NA = 9;   // arquetipos con impostor (árboles + arbusto grande) / total (con sotobosque)
+// Capa de hojas individuales (visión cercana): un quad por hoja, silueta y nervaduras analíticas en el shader.
 // Vértice (32 bytes): pos f32x3 | off snorm16x4 (canto - base da folha, em 0,6 m; w = peso de balanço) | normal snorm8x4 (w = tremor)
 //                     | uint8x4 (u, v, fase, AO) | unorm8x4 (tinta rgb, tipo de folha)
 const VEG_LEAF_LAYOUT = { arrayStride: 32, attributes: [
@@ -224,8 +224,8 @@ class VegLeafBuf {
   }
   upload() {
     const n = this.n, idx = new Uint32Array(n * 6);
-    // reordena por fase crescente: o shader faz as folhas de fase alta sumirem mais perto, então para um bloco distante
-    // basta desenhar o começo do buffer (densidade de folhas cai com a distância sem custo e sem estalo)
+    // reordena por fase creciente: el shader hace desvanecer las hojas de fase alta a menor distancia; para un bloque lejano
+    // basta dibujar el inicio del buffer (la densidad foliar disminuye con la distancia sin coste de CPU ni artefactos visuales)
     const ord = new Uint32Array(n); for (let i = 0; i < n; i++) ord[i] = i;
     const ph = this.u8, key = i => ph[i * 4 * 32 + 26]; ord.sort((a, b) => key(a) - key(b));
     const src = new Uint8Array(this.buf.slice(0, n * 4 * 32)), dst = new Uint8Array(this.buf);
@@ -287,7 +287,7 @@ function vegGenTree(P, seed) {
   const bc = VEG_BARK[P.bark]; mb.color(bc[0], bc[1], bc[2], 1);
   vegTube(mb, tp, i => tR(i / nT), P.trunkRad || 8, 0, 0.12, P.bark, 0);
   const top = tAt(1), C = { c: [top[0] * 0.6, H * (P.crown0 + (1 - P.crown0) * 0.6) + P.card * 0.3, top[2] * 0.6], r: H * P.bLen[0] * 0.9 + P.card, h: H + P.card, tint: [1, 1, 1] };
-  let BT = [1, 1, 1];   // tom do galho atual
+  let BT = [1, 1, 1];   // tono de la rama actual
   const newBT = () => { const y = rnd(); BT = y < 0.16 ? [1.14, 1.08, 0.84] : y > 0.86 ? [0.84, 0.9, 0.88] : [rr(0.93, 1.07), rr(0.95, 1.05), rr(0.86, 1.0)]; };
   const cards = (b, d, n, w, sz) => {
     for (let q = 0; q < n; q++) {
@@ -310,7 +310,7 @@ function vegGenTree(P, seed) {
         let nl = _vn([out[0] * 0.5 + rq(-0.5, 0.5), 0.8 + out[1] * 0.3 + rq(-0.3, 0.3), out[2] * 0.5 + rq(-0.5, 0.5)]);
         const sd = _vn(_vx(ax, nl)); nl = _vx(sd, ax);
         const ll = P.leafL * rq(0.72, 1.25), lj = rq(0.9, 1.1);
-        const tn = [C.tint[0] * lj, C.tint[1] * lj, C.tint[2] * rq(0.92, 1.06)];   // a folha segue o tom do seu galho (variação sutil, em massas)
+        const tn = [C.tint[0] * lj, C.tint[1] * lj, C.tint[2] * rq(0.92, 1.06)];   // la hoja hereda el tono de su rama (variación sutil en masa foliar)
         LB.add(lb, ax, sd, nl, ll, ll * (P.leafAsp || 0.42) * 0.5, Math.min(1, w + 0.1), Math.floor(rl() * 255), ao, tn, P.leafType || 0);
       }
     }
@@ -365,7 +365,7 @@ function vegGenPalm(seed) {
   }
   return mb;
 }
-// sub-bosque: kind 0 arbusto, 1 samambaia, 2 touceira de capim
+// sotobosque: kind 0 arbusto, 1 helecho, 2 mata de hierba
 function vegGenUnder(kind, seed) {
   const mb = new MeshBuilder(512), rnd = mkRng(seed), rr = (a, b) => a + (b - a) * rnd();
   const n = kind === 0 ? 18 : kind === 1 ? 11 : 15;
@@ -414,7 +414,7 @@ function vegArchetypes() {
   A.push(vegGenTree({ H: 23, r0: 0.3, lean: 0.015, wob: 0.2, crown0: 0.6, nB: 9, bLen: [0.24, 0.13], bAng: [22, 66], upCurve: 1.3, sub: 3, tipCards: 10, subCards: 10, midCards: 3, topCards: 12, card: 0.873, scat: 0.85, aspect: 0.95, droop: 0.2, tiles: [6, 0, 6], bark: 1, flare: 0.3, leafN: 13, leafL: 0.175, leafAsp: 0.2, leafType: 2, leafDroop: 0.75 }, 37));
   // 3: palmeira
   A.push(vegGenPalm(41));
-  // 4: arvoreta de sub-bosque (rosetas de folhas palmadas, tronco fino)
+  // 4: arbolillo de sotobosque (rosetas de hojas palmadas, tronco estilizado)
   A.push(vegGenTree({ H: 6, r0: 0.09, lean: 0.06, wob: 0.15, crown0: 0.55, nB: 5, bLen: [0.4, 0.25], bAng: [35, 70], upCurve: 1.4, sub: 0, tipCards: 13, subCards: 0, midCards: 0, topCards: 13, card: 0.703, scat: 0.6, aspect: 0.98, droop: 0.2, spread: 1.1, tiles: [4], bark: 1, flare: 0.25, trunkRad: 6, brRad: 4, leafN: 8, leafL: 0.21, leafAsp: 0.3, leafType: 2 }, 53));
   // 5: arbusto grande / muda
   A.push(vegGenBush(59));
@@ -423,7 +423,7 @@ function vegArchetypes() {
 }
 
 // ---- 33_veg_c_sys.js
-// Vegetação — distribuição das instâncias, impostores assados na inicialização e desenho (malha perto, impostor longe).
+// Vegetación — distribución de instancias, impostores precomputados en inicialización y renderizado (malla cercana, impostor lejano).
 const VEG = {
   on: true, onMesh: true, onLeaf: true, onImp: true, onShadow: true, onGrass: true, onCube: true,
   CELL: 64, SUP: 256, NC: 52, NS: 13, x0: 0, z0: 0, n: 0, nTrees: 0,
@@ -439,7 +439,7 @@ function vegPlace() {
     const cx = Math.floor((x - V.x0) / V.CELL), cz = Math.floor((z - V.z0) / V.CELL); if (cx < 0 || cz < 0 || cx >= V.NC || cz >= V.NC) return;
     if (n >= cap) { cap *= 2; const d2 = new Float32Array(cap * 8); d2.set(data); data = d2; const k2 = new Uint32Array(cap); k2.set(keys); keys = k2; }
     const o = n * 8; data[o] = x; data[o + 1] = y; data[o + 2] = z; data[o + 3] = s; data[o + 4] = Math.cos(rot); data[o + 5] = Math.sin(rot); data[o + 6] = seed; data[o + 7] = arch;
-    const s16 = (Math.floor((z - V.z0) / 16) & 3) * 4 + (Math.floor((x - V.x0) / 16) & 3);   // subcélula de 16 m dentro da célula (folhas individuais)
+    const s16 = (Math.floor((z - V.z0) / 16) & 3) * 4 + (Math.floor((x - V.x0) / 16) & 3);   // subcelda de 16 m dentro de la celda (hojas individuales)
     keys[n++] = ((((cz >> 2) * V.NS + (cx >> 2)) * 16 + (cz & 3) * 4 + (cx & 3)) * VEG_NA + arch) * 16 + s16;
   };
   // câmeras de TV (lente longa): nada de copa perto da torre nem nas linhas de visada entre a câmera e o trecho de pista
@@ -462,7 +462,7 @@ function vegPlace() {
   };
   const loc0 = new Float64Array(4);
   const inHF = (x, z) => x > HF.x0 + 1 && z > HF.z0 + 1 && x < HF.x0 + HF.w - 2 && z < HF.z0 + HF.h - 2;
-  // árvores: grade com tremor; densidade pela mata; mais ralas e maiores ao longe
+  // árboles: retícula con perturbación; densidad según masa boscosa; más dispersos y corpulentos a lo lejos
   const g = 5.6, ng = Math.floor(2 * half / g);
   for (let gz = 0; gz < ng; gz++) for (let gx = 0; gx < ng; gx++) {
     const x = V.x0 + (gx + rnd()) * g, z = V.z0 + (gz + rnd()) * g, r1 = rnd(), r2 = rnd(), r3 = rnd(), r4 = rnd(), r5 = rnd();
@@ -478,7 +478,7 @@ function vegPlace() {
     const y = (inHF(x, z) ? hfAt(x, z) : terrainH(x, z)) - lerp(0.25, 1.6, far);
     push(x, y, z, lerp(0.68, 1.38, r4 * r4 * (3 - 2 * r4)) * (1 + far * 0.3), r5 * TAU, rnd(), arch);
   }
-  // arbustos grandes e mudas (arquétipo 5, com impostor): enchem o sub-bosque, a borda da mata e as encostas/clareiras,
+  // arbustos grandes y matorrales (arquetipo 5, con impostor): pueblan el sotobosque, los linderos del bosque y los claros,
   // Colinas con relieve y vegetación variada para evitar aspecto plano
   const gb = 3.3, nb = Math.floor(2 * half / gb);
   for (let gz = 0; gz < nb; gz++) for (let gx = 0; gx < nb; gx++) {
@@ -502,7 +502,7 @@ function vegPlace() {
     push(x, y, z, lerp(0.5, 1.4 + 0.6 * smooth(0.3, 0.9, f), Math.pow(r2, 1.6)), r3 * TAU, rnd(), 5);   // dentro da mata, mudas mais altas
   }
   V.nTrees = n;
-  // sub-bosque perto do circuito (só é visto de perto): arbustos na borda da mata, samambaias dentro, touceiras de capim no rústico
+  // sotobosque próximo a la pista (inspección cercana): arbustos en los lindes, helechos en el interior y matas de hierba rústica
   const loc = new Float64Array(4), gu = 1.9;
   for (let z0 = HF.z0 + 2; z0 < HF.z0 + HF.h - 3; z0 += gu) for (let x0 = HF.x0 + 2; x0 < HF.x0 + HF.w - 3; x0 += gu) {
     const x = x0 + rnd() * gu, z = z0 + rnd() * gu, r1 = rnd(), r2 = rnd(), r3 = rnd();
@@ -538,7 +538,7 @@ function vegPlace() {
   for (let c = 0; c < nCell; c++) if (cn[c]) V.cellY[c] /= cn[c];
   for (let s = 0; s < nSup; s++) if (V.supCount[s]) V.supY[s] /= V.supCount[s];
   V.instBuf = mkBuf(inst.byteLength, BU.V, inst);
-  // cópia das árvores ordenada do sol para longe (por supercélula), só para os cartões nos passes de sombra:
+  // copia de árboles ordenada desde la posición del sol hacia el fondo (por supercelda), para los quads en los pases de sombra:
   // com o sol baixo as copas se empilham em espaço de luz; desenhar da frente para trás deixa o teste de profundidade descartar o resto
   const sx = R.sun[0], sz = R.sun[2], sup = new Uint32Array(n), s2 = new Float64Array(n);
   let m = 0;
@@ -605,7 +605,7 @@ const vegDrawable = {
     if (kind === KIND.GBUF) { st.meshDraws = 0; st.impDraws = 0; st.meshInst = 0; st.meshTris = 0; st.leafDraws = 0; st.leafInst = 0; st.leafTris = 0; }
     // LOD por tamanho na tela: com lente longa (câmera de TV) as distâncias de troca crescem na mesma proporção do zoom
     let zoom = Math.tan(R.cam.fovy * 0.5) * 2; zoom = zoom < 0.3 ? 0.3 : zoom > 1.25 ? 1.25 : zoom; V.zoom = zoom;
-    // --- malhas (perto) ---
+    // --- mallas poligonales (cercanas) ---
     const pm = V.famTree.pipe[kind];
     if (pm && V.onMesh && (kind === KIND.GBUF || (shadow && ctx.cascade < 2))) {
       pass.setPipeline(pm); pass.setBindGroup(3, V.bgTree); pass.setVertexBuffer(1, V.instBuf);
@@ -627,7 +627,7 @@ const vegDrawable = {
         }
       }
     }
-    // --- folhas individuais (bem perto): por subcélula de 16 m ---
+    // --- hojas individuales (muy cercanas): por subcelda de 16 m ---
     const pl = V.famLeaf.pipe[kind];
     if (pl && V.onMesh && V.onLeaf && kind === KIND.GBUF) {
       pass.setPipeline(pl); pass.setVertexBuffer(1, V.instBuf);
@@ -640,7 +640,7 @@ const vegDrawable = {
           const mx = V.x0 + sx * S16, mz = V.z0 + sz * S16;
           const ex = camx < mx ? mx - camx : camx > mx + S16 ? camx - mx - S16 : 0, ez = camz < mz ? mz - camz : camz > mz + S16 ? camz - mz - S16 : 0;
           const d2 = ex * ex + ez * ez; if (d2 > rl * rl) continue;
-          // fração das folhas ainda visível a essa distância (ver veg_leaf.wgsl: as de fase alta somem antes)
+          // fracción foliar aún visible a esta distancia (en el shader de hoja, las de fase alta se atenúan antes)
           let fr = 1.6 - Math.sqrt(d2) * zoom / 38; if (fr <= 0.02) continue; if (fr > 1) fr = 1;
           if (!(SQ[0] = mx + 8, SQ[1] = V.cellY[c] + 10, SQ[2] = mz + 8, SQ[3] = 28, sphereQ(ctx.planes, ctx.nPlanes))) continue;
           if (!set) { pass.setVertexBuffer(0, m.vb); pass.setIndexBuffer(m.ib, 'uint32'); set = true; }
@@ -649,7 +649,7 @@ const vegDrawable = {
         }
       }
     }
-    // --- impostores (longe), em anéis de supercélulas: da frente para trás ---
+    // --- impostores billboard (lejanos), en anillos de superceldas: de frente hacia atrás ---
     const pi = V.famImp.pipe[kind]; if (!pi || !V.onImp) return;
     pass.setPipeline(pi); pass.setBindGroup(3, V.bgImp);
     if (shadow) {
@@ -701,14 +701,14 @@ queueMicrotask(() => BUILD.push(async () => {
 }));
 
 // ---- 33_veg_d_grass.js
-// Vegetação — grama em anéis (GPU). Culling por bloco na CPU, sem alocação por quadro.
+// Vegetación — hierba en anillos concéntricos (GPU). Culling por bloque en CPU con cero asignaciones por fotograma.
 const GRASS = {
   // anel: célula (m), células por bloco, blocos por lado, segmentos, [entra0, entra1, sai0, sai1] em DISTÂNCIA EFETIVA
   // (distância à câmera × zoom da lente: 1 m efetivo = o que a câmera de perseguição vê a 1 m), largura base, anel anterior
   // (o anel aparece onde o anterior não cobre: fora da área dele ou além do seu alcance).
-  // Os anéis são centrados no PONTO DE INTERESSE: perto da câmera nas câmeras de perseguição/capô, no carro nas câmeras de TV
+  // Los anillos se centran en el PUNTO DE INTERÉS: junto a la cámara en persecución/capó, o sobre el coche en cámaras de TV
   // (a lente longa enquadra um gramado a 30–400 m da câmera: é lá que as lâminas precisam existir).
-  // K = 0: anel de tufos (cartão com a textura de capim do atlas: dezenas de lâminas finas por cartão)
+  // K = 0: anillo de matas de hierba (quad con textura de hierba del atlas: decenas de briznas finas por quad)
   rings: [
     { cell: 0.075, bs: 36, B: 10, K: 3, q: [-1, -0.5, 7.2, 11.2], w: 0.0095, prev: -1 },   // primeiro plano: lâminas finas e densas (178/m²)
     { cell: 0.13, bs: 40, B: 12, K: 2, q: [7.5, 10.5, 26, 31.5], w: 0.017, prev: 0 },      // lâminas (59/m²), aparada e alta

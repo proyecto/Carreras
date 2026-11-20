@@ -4,9 +4,9 @@
 const Q = new URLSearchParams(location.search);
 const BUILD = [];           // constructores de escena registrados por los demás módulos: async fn(), ejecutados en orden por main()
 const GAME = { ready: false, mode: Q.get('scene') || 'game', capture: Q.has('cap'), tick: null, init: null, minFrameMs: 0, gpuWorstMs: 0, ui: false };
-// Jogo aberto por uma pessoa (tela de início, painel, som) × ferramenta (captura, poses, teste, medição): as ferramentas de
+// Modo interactivo de usuario (menú de inicio, paneles, audio) frente a herramientas (benchmarks, poses, pruebas automatizadas):
 // trabalho/ usam ?cap, ?perf, ?replay ou rodam num navegador automatizado, e para elas nada muda — sem menu, sem painel.
-// ?ui=1 força o jogo completo (é como os testes de menu, entrada e som o abrem); ?ui=0 força o modo de ferramenta.
+// ?ui=1 fuerza el juego completo interactivo; ?ui=0 fuerza el modo de herramienta desatendida.
 GAME.ui = Q.has('ui') ? Q.get('ui') !== '0' : !(Q.has('cap') || Q.has('perf') || Q.has('replay') || Q.has('auto') || Q.has('scene') || navigator.webdriver);
 // Tiempo en vector tipado (escritura por frame sin asignaciones en heap): RT[0] = tiempo acumulado (s), RT[1] = dt renderizado, RT[2] = dt solicitado al juego
 const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real del último frame (ms), para estadísticas

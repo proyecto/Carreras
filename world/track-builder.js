@@ -269,7 +269,7 @@ function naturalH(x, z) {
   const hills = rn * rn * 120 * smooth(380, 1700, r);
   return und + hills;
 }
-// altura do terreno com o corredor da pista embutido. Usada para preencher o campo de alturas e a malha do terreno.
+// cota del terreno con el trazado de pista integrado. Empleada para rellenar el campo de alturas y la malla del terreno.
 const _th = new Float64Array(4);
 function terrainH(x, z) {
   const nat = naturalH(x, z);
@@ -295,7 +295,7 @@ function terrainH(x, z) {
   // brita levemente rebaixada; relevo natural entra depois das barreiras
   const w = smooth(hw + 16, OUT, dmin);
   h = lerp(h, nat, w * w * (3 - 2 * w) * 0.999);
-  // sob o asfalto o terreno fica abaixo da faixa
+  // bajo el asfalto el terreno se mantiene por debajo del firme
   h -= 0.3 * (1 - smooth(hw + 0.2, hw + 2.2, dmin));
   return h;
 }
@@ -345,7 +345,7 @@ function zoneAtQ(q) {
   const ba = left ? TRK.barL : TRK.barR, bar = ba[i0] + (ba[i1] - ba[i0]) * f;
   return ad < bar + 1.5 ? ZONE.GRASS : ZONE.ROUGH;
 }
-// densidade de mata 0..1 no ponto do mundo (0 = sem árvores). Clareiras em volta da pista, boxes e arquibancada.
+// densidad de vegetación 0..1 en el punto del mundo (0 = sin árboles). Claros despejados alrededor de pista, boxes y gradas.
 const _fz = new Float64Array(4);
 function forestAt(x, z) {
   let m = 1;
@@ -360,14 +360,14 @@ function forestAt(x, z) {
   }
   // Claro alrededor de las torres de cámara de TV (el follaje no debe tapar la lente)
   if (typeof WORLD !== 'undefined' && WORLD.tvCams) for (let i = 0; i < WORLD.tvCams.length; i++) { const c = WORLD.tvCams[i], dx = x - c.x, dz = z - c.z, d2 = dx * dx + dz * dz; if (d2 < 15 * 15) return 0; }
-  // clareiras naturais de baixa frequência (mais abertas dentro do circuito)
+  // claros naturales de baja frecuencia (más abiertos en el interior del circuito)
   const n = fbm(x * 0.0085 + 11.3, z * 0.0085 - 5.2, 3);
   return m * smooth(0.36, 0.5, n + 0.16);
 }
 
 // ---- 11_worldmap.js
 // Mapas do mundo na GPU (em volta do circuito): altura (r32float, 1 m/texel) e zonas (rgba8, 0,5 m/texel).
-// zona: R = distância à borda do asfalto ([-8,+24] m → 0..1) | G = brita (distância assinada à borda, ±8 m; >0.5 = dentro)
+// zona: R = distancia al borde del asfalto ([-8,+24] m → 0..1) | G = grava (distancia con signo al borde, ±8 m; >0.5 = interior)
 //       B = grama alta/rústica 0..1 (0 = aparada junto à pista) | A = piso de concreto/boxes (distância assinada ±8 m; >0.5 = dentro)
 const WM = { height: null, zone: null, x0: 0, z0: 0, sx: 1, sz: 1, zw: 0, zh: 0, zdata: null };
 function worldMapBuild() {

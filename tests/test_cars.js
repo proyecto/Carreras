@@ -45,8 +45,8 @@ function runCarsTestSuite() {
 
   const carList = ctx.window.CAR_LIST || [];
   const carManifest = ctx.window.CAR_MANIFEST || [];
-  assert(carList.length === 11, `Se esperan 11 coches en CAR_LIST, se encontraron ${carList.length}`);
-  assert(carManifest.length === 11, `Se esperan 11 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);
+  assert(carList.length === 13, `Se esperan 13 coches en CAR_LIST, se encontraron ${carList.length}`);
+  assert(carManifest.length === 13, `Se esperan 13 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);
   for (const m of carManifest) {
     assert(typeof m.id === 'string' && m.id.length > 0, `[manifest] ID válido: ${m.id}`);
     assert(typeof m.file === 'string' && m.file.endsWith('.js'), `[manifest] Archivo JS válido: ${m.file}`);

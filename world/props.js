@@ -252,7 +252,7 @@ function propsBuild() {
   // matriz local→mundo em (s,d): X = tangente, Y = cima, Z = direita; yaw extra opcional
   const frame = (s, d, yaw, yOff) => { const p = P(s, d); let tx = p[3], tz = p[4]; if (yaw) { const c = Math.cos(yaw), sn = Math.sin(yaw), a = tx * c - tz * sn, b = tx * sn + tz * c; tx = a; tz = b; } return m4basis(m4(), tx, 0, tz, 0, 1, 0, -tz, 0, tx, p[0], p[1] + (yOff || 0), p[2]); };
   const col = (m, r, g, b, a) => m.color(r, g, b, a === undefined ? 1 : a);
-  // placa do atlas: canto inferior esquerdo p, vetor "direita" r (comprimento = largura), altura h, nome da região
+  // cartel del atlas: esquina inferior izquierda p, vector "derecha" r (longitud = anchura), altura h, nombre de región
   // fade = distância de sumiço pontilhado / 4 m (0 = nunca some)
   const sign = (m, px, py, pz, rx, ry, rz, h, name, fade) => {
     const r = REG[name]; m.mat(7, 0, 0, fade || 0); col(m, 1, 1, 1);
@@ -260,7 +260,7 @@ function propsBuild() {
   };
 
   // ================= guard-rails =================
-  // afastamento da barreira por lado e amostra (NaN = sem guard-rail ali)
+  // separación de la barrera por lado y muestra (NaN = sin guardarraíl en ese punto)
   const d1At = sr => { const e = sat(Math.min((sr - pit.s0) / 45, (pit.s1 - sr) / 45)); return lerp(hw + 4.5, pit.laneD1, e) + 0.8; };
   const railD = (side, i) => {
     const sr = srOf(i);
@@ -303,7 +303,7 @@ function propsBuild() {
           mb.pop();
         }
         S1.add(mb, j0, 3, 162);
-        // terminal arredondado ("nariz") onde o guard-rail começa ou termina de verdade
+        // terminal redondeado ("nariz") donde el guardarraíl comienza o termina físicamente
         const t0 = mb.ni; mb.mat(1, 0, 0, 110); col(mb, 1, 1, 1);
         if (!hadPrev) { const p = path[0]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
         if (!joinNext) { const p = path[path.length - 1]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
@@ -457,7 +457,7 @@ function propsBuild() {
     if (nameReg) md.quad(s - hwB - 0.07, yB - 0.1, dL + 0.3, s - hwB - 0.07, yB - 0.1, dR - 0.3, s - hwB - 0.07, yT + 0.1, dR - 0.3, s - hwB - 0.07, yT + 0.1, dL + 0.3, r[0], r[3], r[2], r[1]);
     if (nameReg) md.quad(s + hwB + 0.07, yB - 0.1, dR - 0.3, s + hwB + 0.07, yB - 0.1, dL + 0.3, s + hwB + 0.07, yT + 0.1, dL + 0.3, s + hwB + 0.07, yT + 0.1, dR - 0.3, r[0], r[3], r[2], r[1]);
     if (lights) {
-      // painel de luzes de largada, voltado para o grid
+      // panel de semáforos de salida, orientado hacia la parrilla de salida
       mb.mat(2, 153, 51); col(mb, 0.03, 0.03, 0.035); Bx(mb, s - hwB - 0.45, s - hwB - 0.2, 5.0, 5.75, -2.6, 2.6);
       for (const d of [-2.6, 2.6]) mb.tube([[s - hwB - 0.32, 5.7, d * 0.9], [s - hwB, yB, d * 0.9]], 0.03, 4);
       // carcaça com viseira e moldura clara; lâmpadas vermelhas acesas (emissivas)
@@ -472,7 +472,7 @@ function propsBuild() {
     }
     if (lights) { mb.mat(2, 128, 128); col(mb, 0.08, 0.08, 0.09); Bx(mb, s - 0.08, s + 0.08, yT, yT + 1.1, -1.28, -1.12); Bx(mb, s - 0.16, s + 0.16, yT + 1.1, yT + 1.4, -1.36, -1.04); }
     if (local) return;
-    toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 3, 900); S2.add(md, k0, 5, 1500);   // a faixa (lona vazada) não lança sombra: só a treliça risca o asfalto
+    toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 3, 900); S2.add(md, k0, 5, 1500);   // la pancarta (lona microperforada) no proyecta sombra: solo la celosía marca el asfalto
   };
   gantry(0, -7.7, 7.05, 'name', true);
 

@@ -3,9 +3,103 @@
 // Interfaz de usuario interactiva (GAME.ui): inicio, pausa, benchmark, repetición guiada,
 // poses fijas y soporte para gamepad.
 
-const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
-const UI = { st: ST.INICIO, back: ST.JOGO, el: null, stage: null, tag: null, res: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, selCar: '', selTrack: '' };
+const ST = { INICIO: 0, JUEGO: 1, JOGO: 1, PAUSA: 2, BENCH: 3, REPLAY: 4, FITA: 4, RESULT: 5, POSE: 6 };
+const UI = {
+  st: ST.INICIO, back: ST.JOGO, el: null, stage: null, tag: null, res: null,
+  b0: null, b1: null, bOpt: null, bOptBack: null, bResetControls: null,
+  pMain: null, pOpt: null, listeningKey: null,
+  bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, selCar: '', selTrack: '',
+  selRival: true, selRivalCar: ''
+};
 const $ = id => document.getElementById(id);
+
+const CONTROL_ACTIONS = [
+  { id: 'accel', labelKey: 'action_accel' },
+  { id: 'brake', labelKey: 'action_brake' },
+  { id: 'left', labelKey: 'action_left' },
+  { id: 'right', labelKey: 'action_right' },
+  { id: 'handbrake', labelKey: 'action_handbrake' },
+  { id: 'camera', labelKey: 'action_camera' },
+  { id: 'lookBack', labelKey: 'action_look_back' },
+  { id: 'reset', labelKey: 'action_reset' },
+  { id: 'mute', labelKey: 'action_mute' },
+  { id: 'stats', labelKey: 'action_stats' },
+];
+
+function uiShowOptions(show) {
+  if (typeof UI !== 'undefined' && UI.listeningKey) {
+    UI.listeningKey = null;
+  }
+  const pMain = (typeof UI !== 'undefined' && UI.pMain) || document.getElementById('panel-main');
+  const pOpt = (typeof UI !== 'undefined' && UI.pOpt) || document.getElementById('panel-options');
+  if (pMain) pMain.style.display = show ? 'none' : 'block';
+  if (pOpt) pOpt.style.display = show ? 'block' : 'none';
+
+  if (show) {
+    uiRenderControls();
+    const bBack = (typeof UI !== 'undefined' && UI.bOptBack) || document.getElementById('b-opt-back');
+    if (bBack) bBack.focus();
+  } else {
+    const b0 = (typeof UI !== 'undefined' && UI.b0) || document.getElementById('b0');
+    if (b0) b0.focus();
+  }
+}
+
+function uiRenderControls() {
+  const container = document.getElementById('controls-config');
+  const ctrlMgr = (typeof CONTROLS !== 'undefined') ? CONTROLS : (typeof window !== 'undefined' ? window.CONTROLS : null);
+  if (!container || !ctrlMgr || !ctrlMgr.keys) return;
+  container.innerHTML = '';
+
+  for (const act of CONTROL_ACTIONS) {
+    const row = document.createElement('div');
+    row.className = 'ctrl-config-row';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'ctrl-config-label';
+    lbl.textContent = (typeof I18N !== 'undefined') ? I18N.t(act.labelKey) : act.id;
+    row.appendChild(lbl);
+
+    const keysDiv = document.createElement('div');
+    keysDiv.className = 'ctrl-config-keys';
+
+    const keys = ctrlMgr.keys[act.id] || ['', ''];
+    for (let slot = 0; slot < 2; slot++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'key-btn';
+      const isListening = (typeof UI !== 'undefined') && UI.listeningKey && UI.listeningKey.action === act.id && UI.listeningKey.slot === slot;
+      if (isListening) {
+        btn.classList.add('listening');
+        btn.textContent = (typeof I18N !== 'undefined') ? I18N.t('press_key') : '…';
+      } else {
+        const code = keys[slot];
+        btn.textContent = ctrlMgr.formatKey(code);
+        if (!code) btn.classList.add('empty');
+      }
+
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof UI === 'undefined') return;
+        if (UI.listeningKey && UI.listeningKey.action === act.id && UI.listeningKey.slot === slot) {
+          UI.listeningKey = null;
+        } else {
+          UI.listeningKey = { action: act.id, slot: slot, btnEl: btn };
+        }
+        uiRenderControls();
+      };
+      keysDiv.appendChild(btn);
+    }
+
+    row.appendChild(keysDiv);
+    container.appendChild(row);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.uiShowOptions = uiShowOptions;
+  window.uiRenderControls = uiRenderControls;
+}
 function uiStorageKey(trk) {
   const t = trk || TRACKS.active;
   return (t && t.storageKey) || ('melhor-' + (t ? t.id : 'default'));
@@ -16,31 +110,131 @@ function uiFmtLap(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s + '.' + (c < 10 ? '0' : '') + c;
 }
 function uiSelectionChanged() {
-  return (CARS.active && UI.selCar !== CARS.active.id) || (TRACKS.active && UI.selTrack !== TRACKS.active.id);
+  const carChanged = !!(CARS.active && UI.selCar !== CARS.active.id);
+  const trkChanged = !!(TRACKS.active && UI.selTrack !== TRACKS.active.id);
+  const rivalCurrent = (typeof GAME !== 'undefined' && typeof GAME.rivalEnabled !== 'undefined')
+    ? (GAME.rivalEnabled !== false)
+    : true;
+  const rivalChanged = (UI.selRival !== rivalCurrent);
+  const rivalCarCurrent = (CARS.rival ? CARS.rival.id : ((typeof window !== 'undefined' && window.__rivalCarId) || ''));
+  const rivalCarChanged = (UI.selRival && UI.selRivalCar && rivalCarCurrent && UI.selRivalCar !== rivalCarCurrent);
+  return carChanged || trkChanged || rivalChanged || rivalCarChanged;
 }
 function uiUpdatePrimaryBtn() {
   if (!UI.b0) return;
-  if (UI.st === ST.INICIO) {
-    UI.b0.textContent = (typeof I18N !== 'undefined') ? I18N.t('btn_start') : 'Start';
-  } else if (UI.st === ST.RESULT) {
-    UI.b0.textContent = (typeof I18N !== 'undefined') ? I18N.t('btn_resume_driving') : 'Resume driving';
+  if (uiSelectionChanged()) {
+    UI.b0.textContent = (typeof I18N !== 'undefined') ? (I18N.t('btn_apply_race') || 'Apply & Race') : 'Apply & Race';
   } else {
-    if (uiSelectionChanged()) {
+    if (UI.st === ST.INICIO) {
       UI.b0.textContent = (typeof I18N !== 'undefined') ? I18N.t('btn_start') : 'Start';
+    } else if (UI.st === ST.RESULT) {
+      UI.b0.textContent = (typeof I18N !== 'undefined') ? I18N.t('btn_resume_driving') : 'Resume driving';
     } else {
       UI.b0.textContent = (typeof I18N !== 'undefined') ? I18N.t('btn_continue') : 'Continue';
     }
   }
 }
 function uiApplySelection(startDirectly = true) {
-  saveSelection(UI.selCar, UI.selTrack);
+  saveSelection(UI.selCar, UI.selTrack, { rival: UI.selRival, rivalCar: UI.selRivalCar });
   if (typeof setMsg === 'function') setMsg((typeof I18N !== 'undefined') ? I18N.t('loading') : 'Loading…');
   if (UI.el) UI.el.style.display = 'none';
   const p = new URLSearchParams(location.search);
   p.set('car', UI.selCar);
   p.set('track', UI.selTrack);
+  p.set('rival', UI.selRival ? '1' : '0');
+  if (UI.selRival && UI.selRivalCar) p.set('rivalCar', UI.selRivalCar);
+  else p.delete('rivalCar');
   if (startDirectly) p.set('play', '1');
   location.search = '?' + p.toString();
+}
+
+function uiToggleRival() {
+  UI.selRival = !UI.selRival;
+  if (UI.selRival && !UI.selRivalCar) {
+    uiRerollRival(false);
+  }
+  uiUpdateRivalDOM();
+  uiUpdatePrimaryBtn();
+}
+
+function uiRerollRival(applyChanged = true) {
+  const manifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
+  const pool = manifest.filter(c => c.id !== UI.selCar);
+  if (pool.length === 0) return;
+  const candidates = pool.filter(c => c.id !== UI.selRivalCar);
+  const pickFrom = candidates.length > 0 ? candidates : pool;
+  const picked = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+  UI.selRivalCar = picked.id;
+  uiUpdateRivalDOM();
+  if (applyChanged) uiUpdatePrimaryBtn();
+}
+
+function uiUpdateRivalDOM() {
+  const enabled = !!UI.selRival;
+  const manifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
+  let rivalCar = manifest.find(c => c.id === UI.selRivalCar);
+  if (!rivalCar && CARS.rival) rivalCar = CARS.rival;
+  if (!rivalCar && manifest.length > 0) {
+    const pool = manifest.filter(c => c.id !== UI.selCar);
+    rivalCar = pool[0] || manifest[0];
+    if (rivalCar) UI.selRivalCar = rivalCar.id;
+  }
+
+  const rivalName = rivalCar ? ((typeof I18N !== 'undefined') ? I18N.carName(rivalCar) : rivalCar.name) : '';
+  const rivalSpecs = rivalCar ? ((typeof I18N !== 'undefined') ? I18N.carSpecs(rivalCar) : (rivalCar.specs || rivalCar.subtitle || '')) : '';
+
+  // 1. Botón y textos del panel principal
+  const btnMain = $('btn-toggle-rival');
+  const txtMain = $('rival-toggle-text');
+  const subMain = $('rival-panel-model');
+  if (btnMain) {
+    btnMain.classList.toggle('is-active', enabled);
+    btnMain.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    const icon = btnMain.querySelector('.rival-icon');
+    if (icon) icon.textContent = enabled ? '🏁' : '⏱️';
+  }
+  if (txtMain) {
+    txtMain.textContent = (typeof I18N !== 'undefined')
+      ? I18N.t(enabled ? 'rival_btn_enabled' : 'rival_btn_disabled')
+      : (enabled ? 'Rival: Activado' : 'Rival: Desactivado');
+  }
+  if (subMain) {
+    subMain.textContent = enabled
+      ? ((typeof I18N !== 'undefined') ? I18N.t('rival_model_label', { name: rivalName }) : `Rival actual: ${rivalName}`)
+      : ((typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre');
+  }
+
+  // 2. Botón y textos de la pantalla de Opciones
+  const btnOpt = $('b-opt-rival');
+  const txtOpt = $('opt-rival-text');
+  const optName = $('opt-rival-car-name');
+  const optSpecs = $('opt-rival-car-specs');
+  const btnReroll = $('b-opt-reroll-rival');
+
+  if (btnOpt) {
+    btnOpt.classList.toggle('is-active', enabled);
+    btnOpt.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    const icon = btnOpt.querySelector('.rival-icon');
+    if (icon) icon.textContent = enabled ? '🏁' : '⏱️';
+  }
+  if (txtOpt) {
+    txtOpt.textContent = (typeof I18N !== 'undefined')
+      ? I18N.t(enabled ? 'rival_btn_enabled' : 'rival_btn_disabled')
+      : (enabled ? 'Rival: Activado' : 'Rival: Desactivado');
+  }
+  if (optName) {
+    optName.textContent = enabled
+      ? rivalName
+      : ((typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre');
+  }
+  if (optSpecs) {
+    optSpecs.textContent = enabled
+      ? rivalSpecs
+      : '';
+  }
+  if (btnReroll) {
+    btnReroll.style.display = enabled ? 'inline-block' : 'none';
+  }
 }
 function uiSyncFallbackClass(container) {
   if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('selector(:has(*))')) return;
@@ -117,6 +311,18 @@ function uiBuildSelectors() {
 }
 function uiInit() {
   UI.el = $('ui'); UI.stage = $('stage'); UI.tag = $('tag'); UI.res = $('res'); UI.b0 = $('b0'); UI.b1 = $('b1');
+  UI.pMain = $('panel-main'); UI.pOpt = $('panel-options');
+  UI.bOpt = $('b-opt'); UI.bOptBack = $('b-opt-back'); UI.bResetControls = $('b-reset-controls');
+
+  if (UI.bOpt) UI.bOpt.onclick = () => uiShowOptions(true);
+  if (UI.bOptBack) UI.bOptBack.onclick = () => uiShowOptions(false);
+  if (UI.bResetControls) {
+    UI.bResetControls.onclick = () => {
+      if (typeof CONTROLS !== 'undefined') CONTROLS.reset();
+      uiRenderControls();
+    };
+  }
+
   // Conectar botones de idioma
   const langBtns = document.querySelectorAll('.lang-btn');
   for (const b of langBtns) {
@@ -136,7 +342,15 @@ function uiInit() {
     if (sub) sub.textContent = ((typeof I18N !== 'undefined') ? I18N.carSub(car) : (car.subtitle || car.name)) + ' · ' + trkNm;
     document.title = carNm + ' — ' + trkNm;
   }
+  const saved = (typeof loadSelection === 'function') ? loadSelection() : {};
+  UI.selRival = (typeof GAME !== 'undefined' && typeof GAME.rivalEnabled !== 'undefined')
+    ? (GAME.rivalEnabled !== false)
+    : ((typeof window !== 'undefined' && typeof window.__rivalEnabled !== 'undefined')
+      ? window.__rivalEnabled
+      : (saved.rival !== false));
+  UI.selRivalCar = (CARS.rival ? CARS.rival.id : ((typeof window !== 'undefined' && window.__rivalCarId) || saved.rivalCar || ''));
   uiBuildSelectors();
+  uiUpdateRivalDOM();
   hudInit(); uiWarmup();
   try { const b = +localStorage.getItem(uiStorageKey()); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   UI.b0.onclick = () => {
@@ -165,10 +379,17 @@ function uiInit() {
 }
 // Cambio de estado: muestra/oculta menús, HUD y pausa sonido
 function uiSet(st) {
+  if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
+    Patterns.EventBusSingleton.emit('state:changed', { to: st });
+  }
   const menu = st === ST.INICIO || st === ST.PAUSA || st === ST.RESULT;
   UI.st = st; UI.el.style.display = menu ? 'flex' : 'none'; UI.el.className = st === ST.INICIO ? 'ini' : '';
   if (UI.stage) UI.stage.inert = menu;
-  if (menu) uiBuildSelectors();
+  if (menu) {
+    uiShowOptions(false);
+    uiBuildSelectors();
+    uiUpdateRivalDOM();
+  }
   uiUpdatePrimaryBtn();
   UI.b1.style.display = (st === ST.INICIO || !GS.replay) ? 'none' : '';
   UI.b1.textContent = st === ST.RESULT ? ((typeof I18N !== 'undefined') ? I18N.t('btn_repeat_bench') : 'Rerun benchmark') : ((typeof I18N !== 'undefined') ? I18N.t('btn_bench') : 'Benchmark');
@@ -191,8 +412,34 @@ function uiPose(i) { if (!POSES[i]) return; if (UI.st === ST.BENCH) benchStop();
 function uiKey(e) {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   const c = e.code, st = UI.st;
-  if (c === 'KeyM') { sndMute(!SND.mute); return; }
-  if (c === 'KeyH') { UI.stats = !UI.stats; hudStats(UI.stats); if (st !== ST.BENCH) perfAttach(UI.stats, 12); return; }
+
+  // Si estamos esperando una pulsación para reasignar tecla
+  if (UI.listeningKey) {
+    if (c === 'Escape') {
+      UI.listeningKey = null;
+    } else {
+      if (typeof CONTROLS !== 'undefined') {
+        CONTROLS.setKey(UI.listeningKey.action, UI.listeningKey.slot, c);
+      }
+      UI.listeningKey = null;
+    }
+    uiRenderControls();
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+
+  // Si el panel de opciones está visible
+  if (UI.pOpt && UI.pOpt.style.display !== 'none') {
+    if (c === 'Escape') {
+      uiShowOptions(false);
+      e.preventDefault();
+    }
+    return;
+  }
+
+  if (typeof CONTROLS !== 'undefined' && CONTROLS.isKey('mute', c)) { sndMute(!SND.mute); return; }
+  if (typeof CONTROLS !== 'undefined' && CONTROLS.isKey('stats', c)) { UI.stats = !UI.stats; hudStats(UI.stats); if (st !== ST.BENCH) perfAttach(UI.stats, 12); return; }
   if (st === ST.INICIO) return;                                   // En pantalla de inicio el botón inicia el juego y audio
   if (c === 'Escape') { if (st === ST.JOGO || st === ST.FITA || st === ST.BENCH) uiPause(); else uiResume(); e.preventDefault(); }
   else if (c === 'KeyB') benchStart();
@@ -292,4 +539,10 @@ function uiAfter() {
   }
   if (HUD.stats) hudStatsFrame();
   sndFrame();
+}
+
+if (typeof window !== 'undefined') {
+  window.uiToggleRival = uiToggleRival;
+  window.uiRerollRival = uiRerollRival;
+  window.uiUpdateRivalDOM = uiUpdateRivalDOM;
 }

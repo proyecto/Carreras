@@ -38,12 +38,34 @@ function aiBuild() {
 }
 const _ai = new Float64Array(5);
 // Determina las entradas de control en función del estado actual del vehículo
-function aiKeys(t) {
-  const V = VEH, N = TRK.N, ds = TRK.ds; let keys = 0;
+function aiKeys(t, veh = VEH) {
+  const V = veh, N = TRK.N, ds = TRK.ds; let keys = 0;
   const speed = Math.hypot(V.vx, V.vy), i0 = ((Math.floor(V.s / ds) % N) + N) % N;
   // Punto de mira sobre la trazada por delante
   const Ld = 4.5 + speed * 0.3, ia = (i0 + Math.round(Ld / ds)) % N;
-  trackPos(ia * ds, AI.line[ia], _ai);
+  let targetD = AI.line[ia];
+
+  // Si este vehículo es el rival y el jugador está cerca por delante:
+  if (veh !== VEH && typeof VEH !== 'undefined') {
+    let sDiff = VEH.s - V.s;
+    if (sDiff < -TRK.L * 0.5) sDiff += TRK.L;
+    else if (sDiff > TRK.L * 0.5) sDiff -= TRK.L;
+
+    // Si el jugador está entre 0.8m y 24m por delante
+    if (sDiff > 0.8 && sDiff < 24) {
+      // Si el jugador va por la trazada ideal, el rival busca el hueco por el lado contrario
+      const pD = VEH.d;
+      const side = (pD > targetD) ? -1.8 : 1.8;
+      targetD = clamp(targetD + side, -TRK.hw + 2.0, TRK.hw - 2.0);
+
+      // Si está muy cerca (< 5.5m) y el rival va más rápido, modula acelerador/freno
+      if (sDiff < 5.5 && speed > Math.hypot(VEH.vx, VEH.vy) + 1.2) {
+        keys |= K_S;
+      }
+    }
+  }
+
+  trackPos(ia * ds, targetD, _ai);
   const dx = _ai[0] - V.x, dz = _ai[2] - V.z, c = Math.cos(V.yaw), s = Math.sin(V.yaw);
   const lx = dx * c + dz * s, lz = -dx * s + dz * c, eta = Math.atan2(lz, lx);
   let want = Math.atan(2 * VP.L * Math.sin(eta) / Math.hypot(lx, lz));
@@ -53,9 +75,10 @@ function aiKeys(t) {
   // Velocidad objetivo anticipada para iniciar frenada
   let vT = 1e9; for (let q = 0; q < 6; q++) vT = Math.min(vT, AI.vt[(i0 + q * 2) % N]);
   const sc = AI.script;
-  if (speed < vT - 0.3) keys |= K_W; else if (speed > vT + 1.2) keys |= K_S;
-  else if (speed < vT + 0.3 && (V.steps & 1)) keys |= K_W;
+  if (speed < vT - 0.3) { if (!(keys & K_S)) keys |= K_W; }
+  else if (speed > vT + 1.2) keys |= K_S;
+  else if (speed < vT + 0.3 && (V.steps & 1)) { if (!(keys & K_S)) keys |= K_W; }
   // Secuencia: eventos temporizados (freno de mano, cambios de cámara)
-  if (sc) for (let i = 0; i < sc.length; i++) { const e = sc[i]; if (t >= e[0] && t < e[1]) { keys |= e[2]; if (e[3]) keys &= ~e[3]; } }
+  if (sc && veh === VEH) for (let i = 0; i < sc.length; i++) { const e = sc[i]; if (t >= e[0] && t < e[1]) { keys |= e[2]; if (e[3]) keys &= ~e[3]; } }
   return keys;
 }
