@@ -36,6 +36,14 @@ fn groundSurf(wpos: vec3f, Ng: vec3f, forest: f32) -> Surface {
   let nD = (textureSample(tNoise, sLin, vec2f(xz.x * 0.6 + xz.y * 0.8, -xz.x * 0.8 + xz.y * 0.6) * 4.7) + textureSample(tNoise, sLin, vec2f(xz.x * 0.966 - xz.y * 0.259, xz.x * 0.259 + xz.y * 0.966) * 3.31 + 0.37)) * 0.5;
   let near = 1.0 - smoothstep(20.0, 110.0, dist);
   let near2 = 1.0 - smoothstep(4.0, 30.0, dist);
+#ifdef URBAN
+  // Suelo urbano de Las Vegas: asfalto oscuro, adoquines y aceras de hormigón (sin vegetación rural)
+  var alb = mix(vec3f(0.082, 0.084, 0.088), vec3f(0.13, 0.132, 0.136), nA.r * 0.7 + nB.g * 0.3) * (0.85 + 0.3 * nC.r);
+  var rough = 0.62;
+  var grad = (nC.rg - 0.5) * 0.5 * near;
+  var ao = 0.88 + 0.12 * nC.r;
+  var sss = 0.0;
+#else
   // ---- Césped ----
   var g = mix(COL_GRASS_ROOT * 1.7, COL_GRASS, 0.3 + 0.7 * nC.r);
   g *= 0.78 + 0.44 * nB.r;
@@ -75,6 +83,7 @@ fn groundSurf(wpos: vec3f, Ng: vec3f, forest: f32) -> Surface {
   let dirt = max(dirtE * 0.85, bald);
   let dcol = COL_DIRT * (0.65 + 0.7 * nC.g) * (0.85 + 0.3 * nD.a);
   alb = mix(alb, dcol, dirt); sss *= 1.0 - dirt;
+#endif
   // ---- Sotobosque y copas distantes ----
   let fo = smoothstep(0.2, 0.6, forest);
   if (fo > 0.0) {
@@ -269,7 +278,11 @@ fn asphaltSurf(in: V2F) -> Surface {
   {
     let eN = abs(d) - TRK_HW + 0.1 + (n2.g - 0.5) * 0.34 + (n3.r - 0.5) * 0.12 + (n1.a - 0.5) * 0.16;
     let dirt = smoothstep(-0.05, 0.03, eN);
+#ifdef URBAN
+    let dcol = mix(vec3f(0.065, 0.068, 0.072), vec3f(0.12, 0.122, 0.125), smoothstep(0.02, 0.12, eN) * (0.4 + 0.6 * n3.g)) * (0.7 + 0.6 * n4.g);
+#else
     let dcol = mix(vec3f(0.085, 0.068, 0.045), COL_GRASS * 0.9, smoothstep(0.02, 0.12, eN) * (0.4 + 0.6 * n3.g)) * (0.7 + 0.6 * n4.g);
+#endif
     alb = mix(alb, dcol, dirt * 0.9); rough = mix(rough, 0.95, dirt);
   }
   // ---- pintura ----

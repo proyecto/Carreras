@@ -2,15 +2,68 @@
 // ---- 90_main.js
 // Inicialización, bucle principal y API de captura.
 const msgEl = document.getElementById('msg');
+const loadingBarEl = document.getElementById('loading-bar');
+const loadingProgressBarEl = document.getElementById('loading-progressbar');
+const loadingStatusEl = document.getElementById('loading-status');
+const loadingPercentEl = document.getElementById('loading-percent');
+const loadingCarTrackEl = document.getElementById('loading-car-track');
+
+let _currentLoadingPercent = 0;
+
+function setLoadingProgress(percent, statusKey, fallbackText) {
+  if (percent !== undefined && percent !== null) {
+    _currentLoadingPercent = Math.min(100, Math.max(0, percent));
+    if (loadingBarEl) loadingBarEl.style.width = _currentLoadingPercent + '%';
+    if (loadingProgressBarEl) loadingProgressBarEl.setAttribute('aria-valuenow', String(Math.round(_currentLoadingPercent)));
+    if (loadingPercentEl) loadingPercentEl.textContent = Math.round(_currentLoadingPercent) + '%';
+  }
+  let txt = fallbackText || statusKey || '';
+  if (statusKey && typeof I18N !== 'undefined') {
+    txt = I18N.t(statusKey, null) || fallbackText || statusKey;
+  }
+  if (loadingStatusEl && txt) {
+    loadingStatusEl.textContent = txt;
+  }
+}
+
+function updateLoadingHeader(carName, trackName) {
+  if (!loadingCarTrackEl) return;
+  if (carName && trackName) {
+    loadingCarTrackEl.textContent = `${carName} · ${trackName}`;
+  } else if (carName) {
+    loadingCarTrackEl.textContent = carName;
+  }
+}
+
 const setMsg = t => {
   if (!msgEl) return;
   if (!t) {
+    setLoadingProgress(100, 'loading_ready', '¡Listo!');
     msgEl.classList.add('hidden');
-    setTimeout(() => { if (msgEl.classList.contains('hidden')) msgEl.style.display = 'none'; }, 260);
+    setTimeout(() => {
+      if (msgEl.classList.contains('hidden')) {
+        msgEl.style.display = 'none';
+      }
+    }, 350);
   } else {
     msgEl.style.display = 'flex';
     msgEl.classList.remove('hidden');
-    msgEl.textContent = t;
+    if (typeof t === 'string' && t.startsWith('Error:')) {
+      if (loadingStatusEl) loadingStatusEl.textContent = t;
+      if (loadingBarEl) loadingBarEl.style.background = '#e62020';
+      const box = msgEl.querySelector('.loading-box');
+      if (box) {
+        let errEl = box.querySelector('.loading-error');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.className = 'loading-error';
+          box.appendChild(errEl);
+        }
+        errEl.textContent = t;
+      }
+    } else {
+      setLoadingProgress(_currentLoadingPercent, null, t);
+    }
   }
 };
 // Suelo de pruebas (asfalto) para modos de visualización aislada: ?scene=test, ?scene=car
@@ -56,6 +109,12 @@ async function main() {
     const activeCar = CARS.select(Q.get('car') || saved.car);
     const activeTrack = TRACKS.select(Q.get('track') || saved.track);
 
+    if (activeCar && activeTrack) {
+      updateLoadingHeader(activeCar.name, activeTrack.name);
+    }
+    setLoadingProgress(5, 'loading_init_gpu', 'Inicializando WebGPU…');
+    await new Promise(r => setTimeout(r, 16));
+
     // Configuración del rival IA: habilitado por defecto salvo indicación expresa
     const rivalParam = (typeof Q !== 'undefined') ? Q.get('rival') : null;
     const rivalEnabled = rivalParam !== null
@@ -79,16 +138,21 @@ async function main() {
     }
 
     applyCarPhysics(activeCar);
-    const initialLoadingText = (typeof I18N !== 'undefined') ? I18N.t('loading') : 'Loading…';
-    setMsg(initialLoadingText);
+
+    setLoadingProgress(15, 'loading_init_gpu', 'Inicializando WebGPU…');
     await gpuInit();
-    await new Promise(r => setTimeout(r));
+    await new Promise(r => setTimeout(r, 16));
+
+    setLoadingProgress(30, 'loading_build_track', 'Generando trazado y relieve…');
     trackBuild(activeTrack); heightFieldBuild(); worldMapBuild(); aiBuild();   // aiBuild define TRK.line (trazada ideal) antes de los constructores de escena
     rendererInit();
     await skyInit();
-    await new Promise(r => setTimeout(r));
+    await new Promise(r => setTimeout(r, 16));
+
     if (GAME.mode === 'test') buildTestScene();
     if (GAME.mode === 'placeholder') { buildPlaceholderWorld(); GAME.init = () => { const p = trackPos(40, 0, new Float64Array(5)); setCamera(p[0] - 12, p[1] + 3, p[2] + 4, p[0] + 30, p[1] + 1, p[2], 0.9); R.cube.pos.set([p[0], p[1] + 1.2, p[2]]); }; }
+
+    setLoadingProgress(45, 'loading_build_car', 'Construyendo bólido y rival…');
     // Construye el coche activo antes del resto de la escena
     if (activeCar && typeof activeCar.build === 'function') {
       activeCar.build();
@@ -98,16 +162,31 @@ async function main() {
         window.__car = activeCar;
       }
     }
-    for (const b of BUILD) await b();
+    await new Promise(r => setTimeout(r, 16));
+
+    setLoadingProgress(55, 'loading_build_world', 'Construyendo pista, vegetación y entorno…');
+    const nBuild = BUILD.length;
+    for (let i = 0; i < nBuild; i++) {
+      await BUILD[i]();
+      const p = 55 + Math.round(((i + 1) / Math.max(1, nBuild)) * 22);
+      setLoadingProgress(p, 'loading_build_world', 'Construyendo pista, vegetación y entorno…');
+      await new Promise(r => setTimeout(r, 16));
+    }
     await Promise.all(R.pending);
     if (G.lastErr) throw new Error(G.lastErr);
+
+    setLoadingProgress(80, 'loading_shadows', 'Generando mapas de sombras estáticas…');
     perfInit();
     renderStaticShadow();
     if (GAME.init) GAME.init();
     else { setCamera(6, 2.2, 7, 0, 0.6, 0, 0.9); R.cube.pos.set([0, 1.2, 0]); }
+
+    setLoadingProgress(88, 'loading_cubemap', 'Calculando armónicos esféricos y reflejos…');
     // Inicializa el cubemap ambiental y calcula armónicos esféricos solares y de entorno
     for (let k = 0; k < 2; k++) { for (let i = 0; i < 6; i++) renderFrame(); await computeSH(); }
+
     if (GAME.prewarm) {
+      setLoadingProgress(94, 'loading_prewarm', 'Precalentando shaders y calibrando…');
       const worst = await GAME.prewarm(); await computeSH();
       // Cadencia: a 120 Hz solo quedan 8,3 ms por frame. Si la vista más pesada no cabe con holgura, los frames se encolan
       // en la GPU y el tiempo de frame oscila; en ese caso el juego corre estable a 60 fps (un frame cada dos
@@ -116,6 +195,10 @@ async function main() {
     }
     for (let i = 0; i < 8; i++) renderFrame();
     R.cam.first = true;
+
+    setLoadingProgress(100, 'loading_ready', '¡Listo para competir!');
+    await new Promise(r => setTimeout(r, 180));
+
     setMsg(''); const hint = document.getElementById('hint'); if (hint) setTimeout(() => { hint.style.opacity = 0; }, 9000);
     if (GAME.ui) uiInit();
     GAME.ready = true;

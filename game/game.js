@@ -380,15 +380,23 @@ function gameStep() {
     if (edge & K_R) { // Restablece el coche al centro de la pista
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0, VEH, VIN); GS.cut = true; GS.chaseInit = false;
     }
-    // Entradas IA del rival (muestreadas a 60 Hz)
+    // Entradas IA del rival o sincronización multijugador P2P (muestreadas a 60 Hz)
     if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
-      GS.rivalKeys = t < 0.5 ? 0 : aiKeys(t, VEH_RIVAL);
+      if (typeof NET !== 'undefined' && NET.connected) {
+        NET.sendLocalState(VEH);
+      } else {
+        GS.rivalKeys = t < 0.5 ? 0 : aiKeys(t, VEH_RIVAL);
+      }
     }
   }
   GS.sub++;
   vehicleStep(GS.keys, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
-    vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
+    if (typeof NET !== 'undefined' && NET.connected) {
+      NET.updateRemoteVehicle(VEH_RIVAL, PHYS_DT);
+    } else {
+      vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
+    }
     vehicleCarCollide(VEH, VEH_RIVAL);
   }
   if (VEH.laps !== GS.lapSeen) lapCross();

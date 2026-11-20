@@ -45,6 +45,100 @@ function uiShowOptions(show) {
   }
 }
 
+function uiOpenMultiplayer() {
+  uiShowOptions(true);
+  const grp = document.getElementById('opt-group-multiplayer');
+  if (grp) {
+    setTimeout(() => grp.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+  }
+}
+
+function uiNetCreateRoom() {
+  if (typeof NET === 'undefined') return;
+  NET.createRoom();
+  const shareCont = document.getElementById('net-share-container');
+  const shareInput = document.getElementById('net-share-url');
+  if (shareCont && shareInput) {
+    shareCont.style.display = 'flex';
+    const loc = window.location;
+    const url = `${loc.protocol}//${loc.host}${loc.pathname}?room=${NET.roomId}`;
+    shareInput.value = url;
+  }
+}
+
+function uiNetJoinRoom() {
+  if (typeof NET === 'undefined') return;
+  const input = document.getElementById('net-room-input');
+  if (!input || !input.value) return;
+  let code = input.value.trim();
+  if (code.includes('?room=')) {
+    try {
+      const u = new URL(code, window.location.href);
+      code = u.searchParams.get('room') || code;
+    } catch (e) {}
+  }
+  NET.joinRoom(code);
+}
+
+function uiNetCopyLink() {
+  const shareInput = document.getElementById('net-share-url');
+  const copyBtn = document.getElementById('b-copy-link');
+  if (!shareInput) return;
+  shareInput.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareInput.value);
+  } else {
+    document.execCommand('copy');
+  }
+  if (copyBtn) {
+    const orig = copyBtn.textContent;
+    copyBtn.textContent = (typeof I18N !== 'undefined') ? I18N.t('link_copied') : '¡Copiado!';
+    setTimeout(() => { copyBtn.textContent = orig; }, 2000);
+  }
+}
+
+function uiSetupNetworkListeners() {
+  if (typeof NET === 'undefined') return;
+
+  NET.onStatusChange = (state, message) => {
+    const dot = document.getElementById('net-status-dot');
+    const txt = document.getElementById('net-status-text');
+    const pingEl = document.getElementById('net-ping-badge');
+    const rivalBadge = document.getElementById('net-rival-badge');
+
+    if (dot) {
+      dot.className = 'net-status-dot ' + (state === 'connected' ? 'is-connected' : state === 'connecting' || state === 'waiting' ? 'is-connecting' : 'is-idle');
+    }
+    if (txt) {
+      txt.textContent = message;
+    }
+    if (pingEl) {
+      pingEl.style.display = state === 'connected' ? 'inline-block' : 'none';
+      if (state === 'connected') pingEl.textContent = `${NET.ping} ms`;
+    }
+    if (rivalBadge && state === 'connected') {
+      rivalBadge.style.display = 'block';
+    }
+  };
+
+  NET.onRemoteCarSelected = (carId, name) => {
+    const rivalName = document.getElementById('net-rival-name');
+    const rivalCar = document.getElementById('net-rival-car');
+    if (rivalName) rivalName.textContent = name || 'Rival P2P';
+    if (rivalCar) {
+      const carObj = typeof CARS !== 'undefined' ? CARS.get(carId) : null;
+      rivalCar.textContent = carObj ? carObj.name : carId;
+    }
+  };
+
+  setInterval(() => {
+    if (NET && NET.connected) {
+      const pingEl = document.getElementById('net-ping-badge');
+      if (pingEl) pingEl.textContent = `${NET.ping} ms`;
+    }
+  }, 1000);
+}
+
 function uiRenderControls() {
   const container = document.getElementById('controls-config');
   const ctrlMgr = (typeof CONTROLS !== 'undefined') ? CONTROLS : (typeof window !== 'undefined' ? window.CONTROLS : null);
@@ -352,7 +446,9 @@ function uiInit() {
   uiBuildSelectors();
   uiUpdateRivalDOM();
   hudInit(); uiWarmup();
-  try { const b = +localStorage.getItem(uiStorageKey()); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
+  uiSetupNetworkListeners();
+  if (typeof NET !== 'undefined') NET.init();
+  try { const b = +localStorage.getItem(uiStorageKey()); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sin almacenamiento local: mejor vuelta en sesión */ }
   UI.b0.onclick = () => {
     if (uiSelectionChanged()) { uiApplySelection(true); return; }
     if (UI.st === ST.INICIO) { sndStart(); uiDrive(); } else uiResume();

@@ -271,6 +271,11 @@ function hudDrawMinimap() {
     m.textAlign = 'right';
     m.textBaseline = 'top';
     m.fillText(isP1 ? 'POS: P1' : 'POS: P2', W - Math.round(r * 0.18), Math.round(r * 0.18));
+    if (typeof NET !== 'undefined' && NET.connected) {
+      m.font = '600 ' + Math.round(r * 0.09) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = NET.ping < 50 ? '#4ade80' : NET.ping < 120 ? '#facc15' : '#ef4444';
+      m.fillText('🟢 P2P ' + NET.ping + 'ms', W - Math.round(r * 0.18), Math.round(r * 0.33));
+    }
   }
 
   // Distancia recorrida / longitud de vuelta (e.g. 3.2 / 5.1 km)

@@ -14,6 +14,16 @@ window.TRACK_MANIFEST = [
     name: 'Spa-Francorchamps',
     subtitle: 'Circuit de Spa-Francorchamps',
     specs: '7,004 km · 19 curvas · La Source, Eau Rouge, Raidillon, Pouhon & Blanchimont'
+  },
+  {
+    file: 'las-vegas-strip.js',
+    id: 'las-vegas-strip',
+    name: 'Las Vegas Strip',
+    subtitle: 'Las Vegas Strip Circuit · Night GP',
+    specs: '6,20 km · 17 curvas · Carrera Nocturna · The Strip & MSG Sphere',
+    night: true,
+    urban: true,
+    noVegetation: true
   }
 ];
 
@@ -27,7 +37,10 @@ if (typeof TRACKS !== 'undefined') {
       name: item.name,
       subtitle: item.subtitle,
       specs: item.specs,
-      file: item.file
+      file: item.file,
+      night: item.night,
+      urban: item.urban,
+      noVegetation: item.noVegetation
     });
   }
 }

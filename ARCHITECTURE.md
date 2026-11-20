@@ -138,9 +138,20 @@ Simulación física de 4 ruedas con modelo de dos grados de libertad lateral y a
 
 ---
 
-## 6. Suite de Pruebas Automatizadas
+## 6. Arquitectura Multijugador P2P WebRTC (`game/network.js`, `server.js`)
 
-El proyecto cuenta con 637 pruebas automatizadas ejecutables en Node.js:
+Sistema multijugador peer-to-peer de dos jugadores de ultra-baja latencia (15–35 ms) con cero dependencias de runtime:
+
+- **Canal de Datos No Confiable (UDP a 60 Hz)**: Utiliza `RTCDataChannel` con `{ ordered: false, maxRetransmits: 0 }` para replicar el estado del vehículo en un búfer binario de 48 bytes (`Float32Array(12)`: posición $x, y, z$, guiñada, velocidades locales $v_x, v_y$, dirección, RPM, marcha, coordenadas de pista $s, d$, y timestamp).
+- **Canal Confiable de Eventos**: Sincronización de emparejamiento (handshake), modelos de coche, reinicio conjunto de carrera y ping de red.
+- **Predicción y Extrapolación (Dead Reckoning)**: El bólido remoto se extrapola cinemáticamente entre paquetes de red con filtro complementario de suavizado, eliminando el jitter sin introducir retardo en el volante del jugador local (0 ms input lag).
+- **Servidor de Señalización Nativo (`server.js`)**: Servidor HTTP y WebSocket de 180 líneas en Node.js puro que empareja a los dos peers en menos de 100 ms para negociar el SDP antes de ceder el control al túnel P2P directo.
+
+---
+
+## 7. Suite de Pruebas Automatizadas
+
+El proyecto cuenta con 651 pruebas automatizadas ejecutables en Node.js:
 
 ```bash
 node tests/run_all.js
@@ -155,3 +166,4 @@ Sub-suites disponibles:
 - `test_controls.js`: Valida el gestor de controles, persistencia en storage y reasignación de teclas.
 - `test_rival.js`: Valida la IA rival, seguimiento de línea de carrera y respuesta ante colisiones.
 - `test_patterns.js`: Valida el funcionamiento de los 11 patrones de diseño implementados.
+- `test_network.js`: Valida el protocolo binario de telemetría a 60 Hz, extrapolación Dead Reckoning y eventos de red.

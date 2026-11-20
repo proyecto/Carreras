@@ -89,6 +89,15 @@ function runTracksTestSuite() {
       }
     }
 
+    // 5. Verificación de atmósfera y modo nocturno / urbano
+    if (track.night) {
+      assert(track.sun && typeof track.sun === 'object', `[${track.id}] Configuración sun presente en carrera nocturna`);
+      assert(track.sun.night === true, `[${track.id}] sun.night activado para carrera nocturna`);
+      assert(track.sun.elDeg > 0, `[${track.id}] Iluminación deportiva F1 overhead elDeg > 0 para iluminar pista y bólidos (${track.sun.elDeg}°)`);
+      assert(track.urban === true, `[${track.id}] Modo urbano activado`);
+      assert(track.noVegetation === true, `[${track.id}] Supresión de vegetación rural activada`);
+    }
+
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 

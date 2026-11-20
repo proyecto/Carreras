@@ -841,6 +841,228 @@ function propsBuild() {
     S1.add(mb, c0, 3, 220);
   }
 
+  // ---- Circuito urbano: rascacielos continuos, hoteles casino con luces de neón, MSG Sphere y farolas F1 ----
+  if (TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
+    const rnd = mkRng(777);
+    const neonColors = [
+      [1.0, 0.85, 0.25], // Bellagio Gold
+      [0.1, 0.92, 1.0],  // Caesars Cyan
+      [1.0, 0.15, 0.65], // Flamingo Magenta
+      [0.2, 1.0, 0.45],  // Emerald MGM Green
+      [0.75, 0.25, 1.0], // Neon Violet
+      [1.0, 0.55, 0.05]  // Electric Amber
+    ];
+    const winColors = [
+      [1.0, 0.94, 0.78],
+      [0.85, 0.92, 1.0],
+      [1.0, 0.88, 0.65]
+    ];
+
+    // 1. Rascacielos y hoteles casino continuos a ambos lados de la pista (cañón urbano)
+    const stepS = 40;
+    const nSteps = Math.floor(TRK.L / stepS);
+    for (let st = 0; st < nSteps; st++) {
+      const s = st * stepS;
+      for (const side of [-1, 1]) {
+        // En zona de boxes o gradas principales se colocan por detrás
+        const isPit = side > 0 && s > TRK.pit.bldS0 - 20 && s < TRK.pit.bldS1 + 20;
+        const isStand = side < 0 && s > TRK.stand.s0 - 20 && s < TRK.stand.s1 + 20;
+
+        const w = 24.0 + rnd() * 14.0;
+        const depth = 20.0 + rnd() * 10.0;
+        const h = 42.0 + rnd() * 54.0; // 42 m a 96 m de altura
+        const hp = 8.5; // Altura de podio
+        const style = (st * 3 + (side > 0 ? 1 : 0)) % neonColors.length;
+        const nc = neonColors[style];
+        const wc = winColors[st % winColors.length];
+
+        // Retranqueo seguro respecto al borde de pista y marquesina (-4.5 m)
+        const setback = isPit ? TRK.pit.padD1 + 10 : isStand ? -TRK.stand.d1 + 10 : (hw + 7.5 + rnd() * 4.0);
+        let dOffset = setback + depth / 2;
+
+        // Comprobación de seguridad geométrica: los 4 vértices del edificio y la marquesina
+        // deben mantener holgura segura respecto a la calzada en cualquier curva.
+        const corners = [
+          [-w / 2, -depth / 2 - 4.5],
+          [w / 2, -depth / 2 - 4.5],
+          [-w / 2, depth / 2],
+          [w / 2, depth / 2]
+        ];
+
+        let safe = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const dTry = side * dOffset;
+          const pOrigin = P(s, dTry);
+          let tx = pOrigin[3], tz = pOrigin[4];
+          if (side < 0) { tx = -tx; tz = -tz; }
+
+          let minD = 1e9;
+          for (let ci = 0; ci < 4; ci++) {
+            const lx = corners[ci][0], lz = corners[ci][1];
+            const wx = pOrigin[0] + tx * lx - tz * lz;
+            const wz = pOrigin[2] + tz * lx + tx * lz;
+            trackLocate(wx, wz, -1, _loc);
+            const cd = Math.abs(_loc[1]);
+            if (cd < minD) minD = cd;
+          }
+
+          if (minD >= hw + 2.8) {
+            safe = true;
+            break;
+          } else {
+            dOffset += Math.max(hw + 3.2 - minD, 4.0);
+          }
+        }
+        if (!safe) continue;
+
+        const d = side * dOffset;
+        const m = frame(s, d, side < 0 ? PI : 0, 0);
+        const i0 = mb.ni;
+        mb.push(m);
+
+        // Podio / Marquesina de entrada del Casino
+        mb.mat(3); col(mb, 0.48, 0.50, 0.52);
+        Bx(mb, -w / 2, w / 2, 0, hp, -depth / 2, depth / 2);
+
+        // Marquesina saliente de neón sobre la acera
+        mb.mat(2, 120, 140); col(mb, 0.15, 0.16, 0.18);
+        Bx(mb, -w * 0.28, w * 0.28, 4.2, 5.0, -depth / 2 - 4.5, -depth / 2);
+        // Letrero de neón luminoso
+        mb.mat(6, 210, 0); col(mb, nc[0], nc[1], nc[2]);
+        Bx(mb, -w * 0.25, w * 0.25, 5.0, 7.5, -depth / 2 - 4.3, -depth / 2 - 4.0);
+
+        // Cuerpo de la torre del rascacielos (retranqueo de 1,2 m)
+        const wt = w - 2.4, dt = depth - 2.4;
+        mb.mat(5); col(mb, 0.22, 0.25, 0.30); // Vidrio reflectante de fachada
+        Bx(mb, -wt / 2, wt / 2, hp, h, -dt / 2, dt / 2);
+
+        // Franjas de ventanas de hotel iluminadas de noche (mat 6 emisivo)
+        mb.mat(6, 175, 0); col(mb, wc[0], wc[1], wc[2]);
+        const nFloors = Math.floor((h - hp) / 4.2);
+        for (let fl = 0; fl < nFloors; fl++) {
+          if (rnd() < 0.25) continue; // Algunas habitaciones a oscuras
+          const yf = hp + 0.8 + fl * 4.2;
+          Bx(mb, -wt * 0.44, wt * 0.44, yf, yf + 1.8, -dt / 2 - 0.08, -dt / 2 + 0.05);
+        }
+
+        // Tiras verticales de neón en las 4 aristas de la torre (icono de Las Vegas)
+        mb.mat(6, 220, 0); col(mb, nc[0], nc[1], nc[2]);
+        for (const [kx, kz] of [[-wt / 2, -dt / 2], [wt / 2, -dt / 2], [-wt / 2, dt / 2], [wt / 2, dt / 2]]) {
+          Bx(mb, kx - 0.25, kx + 0.25, hp, h + 1.0, kz - 0.25, kz + 0.25);
+        }
+
+        // Remate arquitectónico / Corona iluminada en azotea
+        mb.mat(2, 140, 160); col(mb, 0.82, 0.82, 0.85);
+        Bx(mb, -wt * 0.35, wt * 0.35, h, h + 5.0, -dt * 0.35, dt * 0.35);
+        mb.mat(6, 230, 0); col(mb, nc[0], nc[1], nc[2]);
+        Bx(mb, -wt / 2, wt / 2, h + 0.8, h + 2.0, -dt / 2, dt / 2);
+
+        // Antena / aguja superior en edificios altos
+        if (h > 65.0) {
+          mb.mat(1); col(mb, 1, 1, 1);
+          mb.cyl(0, h + 5.0, 0, 0.5, h + 24.0, 0.08, 8, false, true);
+          // Baliza de aviación roja parpadeante en la cúspide
+          mb.mat(6, 240, 0); col(mb, 1.0, 0.05, 0.05);
+          Bx(mb, -0.3, 0.3, h + 23.5, h + 24.5, -0.3, 0.3);
+        }
+
+        mb.pop();
+        S1.add(mb, i0, 7, 2800);
+      }
+    }
+
+    // 2. MSG Sphere (Esfera icónica de Las Vegas)
+    // Ubicada en el centro del bucle de las curvas T5 a T9
+    const spherePos = (TRK.spec && TRK.spec.spherePos) || [-770.0, 0.0, -1450.0];
+    const sphI0 = mb.ni;
+    const sphR = 44.0;
+    const sphCX = spherePos[0], sphCY = spherePos[1], sphCZ = spherePos[2];
+    const nRings = 16, nSec = 28;
+
+    // Base circular de hormigón
+    mb.mat(3); col(mb, 0.45, 0.46, 0.48);
+    mb.cyl(sphCX, sphCY - 1.0, sphCZ, sphR + 12.0, sphCY + 3.0, sphR + 8.0, 32, true, true);
+
+    // Malla de la Esfera LED
+    mb.mat(6, 220, 0);
+    for (let ring = 0; ring < nRings; ring++) {
+      const phi0 = (ring / nRings) * (PI * 0.52);
+      const phi1 = ((ring + 1) / nRings) * (PI * 0.52);
+      const y0 = sphCY + 3.0 + sphR * Math.sin(phi0);
+      const y1 = sphCY + 3.0 + sphR * Math.sin(phi1);
+      const r0 = sphR * Math.cos(phi0);
+      const r1 = sphR * Math.cos(phi1);
+
+      for (let sec = 0; sec < nSec; sec++) {
+        const theta0 = (sec / nSec) * TAU;
+        const theta1 = ((sec + 1) / nSec) * TAU;
+
+        const x00 = sphCX + r0 * Math.cos(theta0), z00 = sphCZ + r0 * Math.sin(theta0);
+        const x10 = sphCX + r0 * Math.cos(theta1), z10 = sphCZ + r0 * Math.sin(theta1);
+        const x01 = sphCX + r1 * Math.cos(theta0), z01 = sphCZ + r1 * Math.sin(theta0);
+        const x11 = sphCX + r1 * Math.cos(theta1), z11 = sphCZ + r1 * Math.sin(theta1);
+
+        // Patrón psicodélico de colores de neón de Las Vegas para la pantalla exterior
+        const pat = Math.sin(ring * 0.8 + sec * 0.4) * 0.5 + 0.5;
+        const pat2 = Math.cos(ring * 0.5 - sec * 0.6) * 0.5 + 0.5;
+        const sr = lerp(0.1, 1.0, pat);
+        const sg = lerp(0.9, 0.2, pat2);
+        const sb = lerp(1.0, 0.85, pat);
+        col(mb, sr, sg, sb);
+
+        // Quad en la superficie esférica con normales esféricas exactas
+        const ny0 = (y0 - (sphCY + 3.0)) / sphR;
+        const ny1 = (y1 - (sphCY + 3.0)) / sphR;
+        const v0 = mb.v(x00, y0, z00, (x00 - sphCX) / sphR, ny0, (z00 - sphCZ) / sphR, sec / nSec, ring / nRings);
+        const v1 = mb.v(x10, y0, z10, (x10 - sphCX) / sphR, ny0, (z10 - sphCZ) / sphR, (sec + 1) / nSec, ring / nRings);
+        const v2 = mb.v(x11, y1, z11, (x11 - sphCX) / sphR, ny1, (z11 - sphCZ) / sphR, (sec + 1) / nSec, (ring + 1) / nRings);
+        const v3 = mb.v(x01, y1, z01, (x01 - sphCX) / sphR, ny1, (z01 - sphCZ) / sphR, sec / nSec, (ring + 1) / nRings);
+        mb.quadI(v0, v1, v2, v3);
+      }
+    }
+    S1.add(mb, sphI0, 7, 3500);
+
+    // 3. Postes de luz de Gran Premio nocturno (F1 Floodlights) a lo largo de toda la pista
+    const floodStep = 36;
+    const nFloods = Math.floor(TRK.L / floodStep);
+    for (let f = 0; f < nFloods; f++) {
+      const s = f * floodStep;
+      for (const side of [-1, 1]) {
+        const d = side * (hw + 3.2);
+        const m = frame(s, d, side < 0 ? PI : 0, 0);
+        const flI0 = mb.ni;
+        mb.push(m);
+
+        // Poste vertical cónico galvanizado (15,5 m de altura)
+        mb.mat(1); col(mb, 1, 1, 1);
+        mb.cyl(0, 0, 0, 0.18, 15.5, 0.11, 8, false, true);
+
+        // Brazo horizontal hacia la pista
+        mb.mat(2, 128, 128); col(mb, 0.22, 0.22, 0.24);
+        Bx(mb, -0.09, 0.09, 15.1, 15.26, side * -0.1, side * 2.7);
+
+        // Batería de 4 focos LED de alta potencia orientados hacia el asfalto
+        for (let q = 0; q < 4; q++) {
+          const zf = side * (0.6 + q * 0.6);
+          // Carcasa del foco
+          mb.mat(2, 120, 140); col(mb, 0.14, 0.15, 0.17);
+          Bx(mb, -0.28, 0.28, 14.8, 15.1, zf - 0.2, zf + 0.2);
+          // Lente emisiva blanca brillante que baña la pista
+          mb.mat(6, 230, 0); col(mb, 1.0, 0.96, 0.88);
+          Bx(mb, -0.25, 0.25, 14.78, 14.82, zf - 0.18, zf + 0.18);
+        }
+
+        mb.pop();
+        S1.add(mb, flI0, 7, 1800);
+      }
+    }
+
+    // 4. Pasarelas luminosas / Pórticos sobre la pista con publicidad y patrocinio
+    for (const gS of [0, 800, 1750, 3600, 4400, 5300]) {
+      gantry(gS, -(hw + 3.5), hw + 3.5, 'name', true, false);
+    }
+  }
+
   WORLD.stats.tris.props = mb.ni / 3; WORLD.stats.tris.propsDS = md.ni / 3; WORLD.stats.ranges.props = S1.r.length; WORLD.stats.ranges.propsDS = S2.r.length;
   S1.upload(mb); S2.upload(md); SP.upload(mp); R.drawables.push(S1, S2, SP); PROPS.sets = [S1, S2, SP]; WORLD.stats.tris.gente = mp.ni / 3;
 

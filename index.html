@@ -11,7 +11,23 @@
 <body>
   <div id="stage">
     <canvas id="c"></canvas>
-    <div id="msg" data-i18n="loading">loading…</div>
+    <div id="msg" role="status" aria-live="polite">
+      <div class="loading-box">
+        <div class="loading-brand">
+          <span class="loading-title">CARRERAS</span>
+          <span class="loading-badge">WebGPU</span>
+        </div>
+        <div class="loading-info" id="loading-car-track">Cargando simulador…</div>
+        <div class="loading-progress-container" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+          aria-valuenow="0" id="loading-progressbar">
+          <div class="loading-progress-bar" id="loading-bar"></div>
+        </div>
+        <div class="loading-footer">
+          <span class="loading-status" id="loading-status" data-i18n="loading">Cargando…</span>
+          <span class="loading-percent" id="loading-percent">0%</span>
+        </div>
+      </div>
+    </div>
     <div id="hint" data-i18n="hint">W accelerate · S brake/reverse · A/D steer · Space handbrake · C camera · R reset to
       track</div>
     <canvas id="hm"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas>
@@ -51,6 +67,8 @@
 
         <div class="bt">
           <button id="b0" type="button" data-i18n="btn_start">Start</button>
+          <button id="b-multiplayer" type="button" class="btn-multiplayer" onclick="uiOpenMultiplayer()"
+            data-i18n="btn_multiplayer">🌐 Multijugador</button>
           <button id="b1" type="button" data-i18n="btn_bench">Benchmark</button>
           <button id="b-opt" type="button" onclick="uiShowOptions(true)" data-i18n="btn_options">⚙️ Opciones</button>
         </div>
@@ -90,6 +108,55 @@
             </div>
             <button type="button" id="b-opt-reroll-rival" class="btn-subtle" onclick="uiRerollRival()"
               data-i18n="btn_reroll_rival">🎲 Cambiar rival al azar</button>
+          </div>
+        </fieldset>
+
+        <!-- 3. Multijugador P2P en Tiempo Real (2 Jugadores) -->
+        <fieldset class="pick-group options-group" id="opt-group-multiplayer">
+          <legend data-i18n="options_multiplayer_title">🌐 Multijugador P2P en Tiempo Real</legend>
+          <p class="options-hint" data-i18n="options_multiplayer_hint">Compite rueda contra rueda con otro jugador
+            mediante WebRTC directo (latencia 15-35 ms, peer-to-peer sin paso por servidor).</p>
+
+          <div class="net-status-box" id="net-status-box">
+            <div class="net-status-header">
+              <span class="net-status-dot is-idle" id="net-status-dot"></span>
+              <span class="net-status-text" id="net-status-text" data-i18n="net_status_idle">Desconectado (Modo Un
+                Jugador)</span>
+              <span class="net-ping-badge" id="net-ping-badge" style="display:none">0 ms</span>
+            </div>
+            <div class="net-rival-badge" id="net-rival-badge" style="display:none">
+              Rival conectado: <strong id="net-rival-name">Rival P2P</strong> (<span id="net-rival-car">Coche</span>)
+            </div>
+          </div>
+
+          <div class="net-actions-grid">
+            <div class="net-action-card">
+              <h3 data-i18n="net_host_title">Crear Sala (Host)</h3>
+              <p class="net-action-desc" data-i18n="net_host_desc">Genera una sala y comparte el enlace directo con un
+                amigo.</p>
+              <button type="button" id="b-net-create" class="btn-action" onclick="uiNetCreateRoom()"
+                data-i18n="btn_net_create">Crear Sala</button>
+            </div>
+
+            <div class="net-action-card">
+              <h3 data-i18n="net_join_title">Unirse a Sala</h3>
+              <p class="net-action-desc" data-i18n="net_join_desc">Introduce el código de sala compartido por el Host.
+              </p>
+              <div class="net-input-row">
+                <input type="text" id="net-room-input" placeholder="Ej: RACE-742" class="net-input" maxlength="12">
+                <button type="button" id="b-net-join" class="btn-action" onclick="uiNetJoinRoom()"
+                  data-i18n="btn_net_join">Unirse</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="net-share-container" class="net-share-container" style="display:none">
+            <span class="net-share-label" data-i18n="net_share_link">Enlace para compartir con tu amigo:</span>
+            <div class="net-share-row">
+              <input type="text" id="net-share-url" class="net-share-input" readonly>
+              <button type="button" id="b-copy-link" class="btn-subtle" onclick="uiNetCopyLink()"
+                data-i18n="btn_copy_link">📋 Copiar Enlace</button>
+            </div>
           </div>
         </fieldset>
 
@@ -193,35 +260,35 @@
   </div>
 
   <!-- 1. Shaders WGSL -->
-  <script src="shaders/core.js"></script>
-  <script src="shaders/lighting.js"></script>
-  <script src="shaders/post.js"></script>
-  <script src="shaders/world.js"></script>
-  <script src="shaders/vegetation.js"></script>
-  <script src="shaders/glass.js"></script>
+  <script src="shaders/core.js?v=night_v3"></script>
+  <script src="shaders/lighting.js?v=night_v3"></script>
+  <script src="shaders/post.js?v=night_v3"></script>
+  <script src="shaders/world.js?v=night_v3"></script>
+  <script src="shaders/vegetation.js?v=night_v3"></script>
+  <script src="shaders/glass.js?v=night_v3"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js"></script>
-  <script src="engine/gpu.js"></script>
-  <script src="engine/mesh.js"></script>
-  <script src="game/registry.js"></script>
-  <script src="engine/renderer.js"></script>
-  <script src="engine/post.js"></script>
-  <script src="engine/sky.js"></script>
-  <script src="engine/forward.js"></script>
-  <script src="engine/perf.js"></script>
-  <script src="engine/patterns.js"></script>
-  <script src="engine/car-factory.js"></script>
+  <script src="engine/math.js?v=night_v3"></script>
+  <script src="engine/gpu.js?v=night_v3"></script>
+  <script src="engine/mesh.js?v=night_v3"></script>
+  <script src="game/registry.js?v=night_v3"></script>
+  <script src="engine/renderer.js?v=night_v3"></script>
+  <script src="engine/post.js?v=night_v3"></script>
+  <script src="engine/sky.js?v=night_v3"></script>
+  <script src="engine/forward.js?v=night_v3"></script>
+  <script src="engine/perf.js?v=night_v3"></script>
+  <script src="engine/patterns.js?v=night_v3"></script>
+  <script src="engine/car-factory.js?v=night_v3"></script>
 
   <!-- 3. Constructores genéricos del mundo (pista, terreno, entorno, vegetación) -->
-  <script src="world/track-builder.js"></script>
-  <script src="world/track-mesh.js"></script>
-  <script src="world/props.js"></script>
-  <script src="world/vegetation.js"></script>
-  <script src="world/track-glb.js"></script>
+  <script src="world/track-builder.js?v=night_v3"></script>
+  <script src="world/track-mesh.js?v=night_v3"></script>
+  <script src="world/props.js?v=night_v3"></script>
+  <script src="world/vegetation.js?v=night_v3"></script>
+  <script src="world/track-glb.js?v=night_v3"></script>
 
   <!-- 4. Coches (metadatos de selección + carga bajo demanda del coche activo y rival IA) -->
-  <script src="cars/manifest.js?v=5"></script>
+  <script src="cars/manifest.js?v=night_v3"></script>
   <script>
     (() => {
       let carId = null;
@@ -243,7 +310,7 @@
       const manifest = window.CAR_MANIFEST || [];
       const entry = (carId && manifest.find(c => c.id === carId)) || manifest[0];
       if (entry && entry.file) {
-        document.write('<script src="cars/' + entry.file + '"><\/script>');
+        document.write('<script src="cars/' + entry.file + '?v=night_v3"><\/script>');
       }
 
       // Evaluar si el rival está activo (por defecto sí, salvo que rival=0 o saved.rival === false)
@@ -264,27 +331,29 @@
         }
         window.__rivalCarId = chosenRival ? chosenRival.id : null;
         if (chosenRival && chosenRival.file && chosenRival.file !== (entry && entry.file)) {
-          document.write('<script src="cars/' + chosenRival.file + '"><\/script>');
+          document.write('<script src="cars/' + chosenRival.file + '?v=night_v3"><\/script>');
         }
       }
     })();
   </script>
 
   <!-- 5. Circuitos (gestionados desde tracks/manifest.js) -->
-  <script src="tracks/manifest.js?v=5"></script>
-  <script src="tracks/nurburgring-gp.js"></script>
-  <script src="tracks/spa-francorchamps.js"></script>
+  <script src="tracks/manifest.js?v=night_v3"></script>
+  <script src="tracks/nurburgring-gp.js?v=night_v3"></script>
+  <script src="tracks/spa-francorchamps.js?v=night_v3"></script>
+  <script src="tracks/las-vegas-strip.js?v=night_v3"></script>
 
   <!-- 6. Física, IA, efectos, audio, HUD, interfaz y arranque -->
-  <script src="game/i18n.js?v=5"></script>
-  <script src="game/physics.js?v=5"></script>
-  <script src="game/ai.js?v=5"></script>
-  <script src="game/fx.js"></script>
-  <script src="game/game.js?v=5"></script>
-  <script src="game/audio.js"></script>
-  <script src="game/hud.js?v=5"></script>
-  <script src="game/ui.js?v=5"></script>
-  <script src="game/main.js?v=5"></script>
+  <script src="game/i18n.js?v=night_v3"></script>
+  <script src="game/physics.js?v=night_v3"></script>
+  <script src="game/ai.js?v=night_v3"></script>
+  <script src="game/network.js?v=night_v3"></script>
+  <script src="game/fx.js?v=night_v3"></script>
+  <script src="game/game.js?v=night_v3"></script>
+  <script src="game/audio.js?v=night_v3"></script>
+  <script src="game/hud.js?v=night_v3"></script>
+  <script src="game/ui.js?v=night_v3"></script>
+  <script src="game/main.js?v=night_v3"></script>
 </body>
 
 </html>

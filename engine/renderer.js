@@ -227,7 +227,9 @@ function frameUniforms() {
   f.set(c.view, o.view); m4inv(c.tmp, c.view); f.set(c.tmp, o.invView); f.set(c.projJ, o.projJ); m4inv(c.tmp, c.projJ); f.set(c.tmp, o.invProjJ);
   let k = o.camPos; f[k] = c.pos[0]; f[k + 1] = c.pos[1]; f[k + 2] = c.pos[2]; f[k + 3] = RT[0];
   k = o.camFwd; f[k] = c.fwd[0]; f[k + 1] = c.fwd[1]; f[k + 2] = c.fwd[2]; f[k + 3] = c.near;
-  k = o.sunDir; f[k] = R.sun[0]; f[k + 1] = R.sun[1]; f[k + 2] = R.sun[2]; f[k + 3] = 0;
+  const trk = (typeof TRK !== 'undefined' && TRK.spec) || (typeof TRACKS !== 'undefined' && TRACKS.active) || null;
+  const isNight = !!(trk && (trk.night || trk.id === 'las-vegas-strip' || (trk.sun && trk.sun.night)));
+  k = o.sunDir; f[k] = R.sun[0]; f[k + 1] = R.sun[1]; f[k + 2] = R.sun[2]; f[k + 3] = isNight ? 1 : 0;
   k = o.sunCol; f[k] = R.sunCol[0]; f[k + 1] = R.sunCol[1]; f[k + 2] = R.sunCol[2]; f[k + 3] = 1;
   k = o.screen; f[k] = W; f[k + 1] = H; f[k + 2] = 1 / W; f[k + 3] = 1 / H;
   k = o.misc; f[k] = RT[1]; f[k + 1] = R.frameIdx % 64; f[k + 2] = R.exposure; f[k + 3] = R.debug;
@@ -237,9 +239,9 @@ function frameUniforms() {
   k = o.fogCol; f[k] = R.fogCol[0]; f[k + 1] = R.fogCol[1]; f[k + 2] = R.fogCol[2]; f[k + 3] = R.fogCol[3];
   k = o.wind; f[k] = R.wind[0]; f[k + 1] = R.wind[1]; f[k + 2] = R.wind[2]; f[k + 3] = RT[0];
   k = o.wm; f[k] = WM.x0; f[k + 1] = WM.z0; f[k + 2] = WM.sx; f[k + 3] = WM.sz;
-  // Posición del sol en pantalla (UV) para lens flare; z = 1 si está frente a la cámara
+  // Posición del sol en pantalla (UV) para lens flare; z = 1 si está frente a la cámara (desactivado de noche)
   { const m = c.vp, sx = R.sun[0], sy = R.sun[1], sz = R.sun[2], cw = m[3] * sx + m[7] * sy + m[11] * sz;
-    k = o.sunScr; if (cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0; }
+    k = o.sunScr; if (!isNight && cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0; }
   const dtc = RT[1] > 1e-4 ? RT[1] : 1e-4;
   k = o.post; f[k] = (1 / 120) / dtc; f[k + 1] = Math.tan(c.fovy / 2); f[k + 2] = W / H; f[k + 3] = 0;
 }

@@ -49,8 +49,11 @@ class RangeSet {
 }
 // constantes do circuito repassadas aos shaders
 function worldDefs() {
+  const trk = (typeof TRK !== 'undefined' && TRK.spec) || (typeof TRACKS !== 'undefined' && TRACKS.active) || null;
   const p = TRK.pit, f = v => v.toFixed(3);
-  return { TRK_HW: f(TRK.hw), TRK_LEN: f(TRK.L), KERB_WID: f(KERB_W), PIT_S0: f(p.s0), PIT_S1: f(p.s1), PIT_WALL: f(p.wallD), PIT_L0: f(p.laneD0), PIT_L1: f(p.laneD1), PIT_B0: f(p.bldS0), PIT_B1: f(p.bldS1), PIT_BD: f(p.bldD0), CANOPY_A: f(WORLD.canopyStart), CANOPY_B: f(WORLD.canopyEnd) };
+  const d = { TRK_HW: f(TRK.hw), TRK_LEN: f(TRK.L), KERB_WID: f(KERB_W), PIT_S0: f(p.s0), PIT_S1: f(p.s1), PIT_WALL: f(p.wallD), PIT_L0: f(p.laneD0), PIT_L1: f(p.laneD1), PIT_B0: f(p.bldS0), PIT_B1: f(p.bldS1), PIT_BD: f(p.bldD0), CANOPY_A: f(WORLD.canopyStart), CANOPY_B: f(WORLD.canopyEnd) };
+  if (trk && (trk.urban || trk.id === 'las-vegas-strip')) d.URBAN = '1';
+  return d;
 }
 
 // ---------- terreno ----------

@@ -27,22 +27,150 @@ body {
   position: fixed;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: radial-gradient(circle at center, #15181f 0%, #0a0c0f 70%, #020305 100%);
   color: #fff;
-  font-size: 1.35rem;
-  font-weight: 500;
-  letter-spacing: .12em;
-  text-transform: uppercase;
   z-index: 9999;
-  transition: opacity .25s ease;
-  pointer-events: auto
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+  pointer-events: auto;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 #msg.hidden {
   opacity: 0;
-  pointer-events: none
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(90vw, 420px);
+  padding: 32px 28px;
+  background: rgba(18, 22, 28, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(230, 60, 25, 0.14);
+  text-align: center;
+}
+
+.loading-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.loading-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 40%, #ff5233 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.loading-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  background: rgba(255, 82, 51, 0.18);
+  border: 1px solid rgba(255, 82, 51, 0.45);
+  color: #ff6e54;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.loading-info {
+  font-size: 0.86rem;
+  color: #8f9aa8;
+  margin-bottom: 22px;
+  letter-spacing: 0.03em;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loading-progress-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.loading-progress-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #e63920 0%, #ff6b3d 60%, #ffaa40 100%);
+  border-radius: 999px;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(255, 107, 61, 0.7);
+  position: relative;
+}
+
+.loading-progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.loading-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: #8c97a5;
+  letter-spacing: 0.02em;
+}
+
+.loading-status {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
+}
+
+.loading-percent {
+  font-weight: 700;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+}
+
+.loading-error {
+  color: #ff5555;
+  font-size: 0.9rem;
+  margin-top: 14px;
+  background: rgba(255, 60, 60, 0.12);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 80, 80, 0.3);
 }
 
 #hint {
@@ -713,4 +841,203 @@ body {
 .opt-rival-car-specs {
   font-size: .8em;
   color: rgba(230, 235, 245, .7);
+}
+
+/* ==========================================================================
+   ESTILOS MULTIJUGADOR P2P WEBRTC
+   ========================================================================== */
+.btn-multiplayer {
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.45) 0%, rgba(59, 130, 246, 0.35) 100%) !important;
+  border: 1px solid rgba(96, 165, 250, 0.5) !important;
+  color: #bfdbfe !important;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn-multiplayer:hover,
+.btn-multiplayer:focus-visible {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.6) 0%, rgba(96, 165, 250, 0.5) 100%) !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.net-status-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.net-status-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.net-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #64748b;
+  box-shadow: 0 0 6px #64748b;
+  transition: all 0.3s ease;
+}
+
+.net-status-dot.is-idle {
+  background: #64748b;
+  box-shadow: 0 0 6px #64748b;
+}
+
+.net-status-dot.is-connecting {
+  background: #facc15;
+  box-shadow: 0 0 10px #facc15;
+  animation: pulse-dot 1.2s infinite;
+}
+
+.net-status-dot.is-connected {
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.net-status-text {
+  flex: 1;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.net-ping-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.net-rival-badge {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  padding-left: 20px;
+}
+
+.net-rival-badge strong {
+  color: #38bdf8;
+}
+
+.net-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.net-action-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.net-action-card h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.net-action-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.net-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.net-input {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.net-input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.btn-action {
+  background: #0284c7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.net-share-container {
+  margin-top: 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.net-share-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7dd3fc;
+}
+
+.net-share-row {
+  display: flex;
+  gap: 8px;
+}
+
+.net-share-input {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-family: monospace;
 }

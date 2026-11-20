@@ -82,9 +82,11 @@ fn agx(c: vec3f) -> vec3f {
 fn tone(c: vec3f) -> vec3f { return agx(c); }
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
   let p = vec2i(in.pos.xy); let dim = vec2i(F.screen.xy) - 1;
-  // Exposición automática adaptativa
-  let lavg = clamp(textureLoad(tExp, vec2i(0), 0).r, 0.02, 3.0);
-  let ex = F.misc.z * 0.094 * pow(0.16 / lavg, 0.5) / 0.16;
+  let isNight = F.sunDir.w > 0.5;
+  // Exposición automática adaptativa calibrada según día / noche
+  let targetKey = select(0.16, 0.048, isNight);
+  let lavg = clamp(textureLoad(tExp, vec2i(0), 0).r, 0.015, 3.0);
+  let ex = F.misc.z * 0.094 * pow(targetKey / lavg, 0.5) / 0.16;
   var c = textureLoad(tCol, p, 0).rgb;
   // Enfoque adaptativo con 4 vecinos
   let n = textureLoad(tCol, clamp(p + vec2i(0, -1), vec2i(0), dim), 0).rgb + textureLoad(tCol, clamp(p + vec2i(0, 1), vec2i(0), dim), 0).rgb
@@ -93,9 +95,9 @@ fn tone(c: vec3f) -> vec3f { return agx(c); }
   let lc = lum(c); let ln = lum(n) * 0.25;
   let sharp = clamp((lc - ln) * 0.8, -0.3 * lc, 0.4 * lc);
   c = c * (1.0 + sharp / max(lc, 1e-4));
-  c = mix(c, bl, 0.055);
-  // Lens flare solar: halo y destellos proporcionales a visibilidad del disco solar
-  if (F.sunScr.z > 0.5 && F.sunScr.x > -0.3 && F.sunScr.x < 1.3 && F.sunScr.y > -0.3 && F.sunScr.y < 1.3) {
+  c = mix(c, bl, select(0.055, 0.085, isNight));
+  // Lens flare solar: halo y destellos proporcionales a visibilidad del disco solar (desactivado de noche)
+  if (!isNight && F.sunScr.z > 0.5 && F.sunScr.x > -0.3 && F.sunScr.x < 1.3 && F.sunScr.y > -0.3 && F.sunScr.y < 1.3) {
     var vis = 0.0;
     for (var i = 0; i < 6; i++) {
       let a = f32(i) * 1.0472; let q = F.sunScr.xy + vec2f(cos(a), sin(a) * F.post.z) * 0.006 * f32(1 + (i & 1));
@@ -111,10 +113,12 @@ fn tone(c: vec3f) -> vec3f { return agx(c); }
     }
   }
   // Viñeteado óptico
-  let q = (in.uv - 0.5) * vec2f(F.post.z / 1.7778, 1.0); let vg = 1.0 - smoothstep(0.35, 1.25, length(q) * 1.45) * 0.42;
-  // Balance de blancos
-  let sc = F.sunCol.rgb / lum(F.sunCol.rgb);
-  c *= pow(sc, vec3f(-0.5));
+  let q = (in.uv - 0.5) * vec2f(F.post.z / 1.7778, 1.0); let vg = 1.0 - smoothstep(0.35, 1.25, length(q) * 1.45) * select(0.42, 0.50, isNight);
+  // Balance de blancos (no invertir tonalidad azul fría en carreras nocturnas)
+  if (!isNight) {
+    let sc = F.sunCol.rgb / lum(F.sunCol.rgb);
+    c *= pow(sc, vec3f(-0.5));
+  }
   c *= ex * vg;
   var o = tone(c);
   // Grano sutil y dithering triangular

@@ -92,6 +92,26 @@ fn cloudDens(p: vec3f, h: f32, fine: bool) -> f32 {
 fn altOf(p: vec3f) -> f32 { return length(p + vec3f(0.0, RP, 0.0)) - RP; }
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
   let d = skyDirFromUV(in.uv); let sun = U.sun.xyz; let alt = 40.0;
+  if (U.sun.w < -0.5) {
+    // Cielo nocturno de Gran Premio: bóveda azul marino profundo, luna, estrellas y resplandor urbano en el horizonte
+    let ndy = sat(d.y);
+    var nightSky = mix(vec3f(0.0022, 0.0028, 0.0062), vec3f(0.0005, 0.0007, 0.0016), pow(ndy, 0.5));
+    // Resplandor urbano de Las Vegas en el horizonte
+    nightSky += vec3f(0.016, 0.009, 0.026) * pow(1.0 - ndy, 8.0);
+    // Campo de estrellas titilantes
+    let starSeed = fract(sin(dot(floor(d * 420.0), vec3f(12.9898, 78.233, 45.164))) * 43758.5453);
+    if (starSeed > 0.992 && d.y > 0.04) {
+      let twinkle = sin(starSeed * 628.0) * 0.35 + 0.65;
+      nightSky += vec3f(2.6, 2.8, 3.2) * pow((starSeed - 0.992) / 0.008, 2.2) * twinkle;
+    }
+    // Luna en el cielo nocturno
+    let moonDir = normalize(vec3f(0.35, 0.65, 0.67));
+    let cosMoon = dot(d, moonDir);
+    let moonDisc = smoothstep(0.9985, 0.9994, cosMoon);
+    let moonHalo = pow(sat(cosMoon), 160.0) * 0.45 + pow(sat(cosMoon), 24.0) * 0.04;
+    nightSky += vec3f(3.2, 3.4, 3.8) * moonDisc + vec3f(0.18, 0.22, 0.35) * moonHalo;
+    return vec4f(nightSky, 0.0);
+  }
   let full = atmosphere(d, sun, alt, 1e9);
   var col = full.rgb; var Tc = 1.0;
   if (d.y > 0.004) {
@@ -155,10 +175,13 @@ fn skyColor(d: vec3f) -> vec3f {
   // Gradientes explícitos para evitar costuras de atan2 en u = ±0.5
   let s = textureSampleLevel(tSky, sSky, uv, 0.0);
   var c = s.rgb;
-  let cs = dot(d, F.sunDir.xyz);
-  // Disco solar con oscurecimiento hacia el limbo + halo
-  let disc = smoothstep(0.99987, 0.99993, cs);
-  c += F.sunCol.rgb * (disc * 420.0 + pow(sat(cs), 900.0) * 6.0 + pow(sat(cs), 90.0) * 0.5) * s.a;
+  let isNight = F.sunDir.w > 0.5;
+  if (!isNight) {
+    let cs = dot(d, F.sunDir.xyz);
+    // Disco solar con oscurecimiento hacia el limbo + halo (solo de día)
+    let disc = smoothstep(0.99987, 0.99993, cs);
+    c += F.sunCol.rgb * (disc * 420.0 + pow(sat(cs), 900.0) * 6.0 + pow(sat(cs), 90.0) * 0.5) * s.a;
+  }
   return c;
 }
 `;
@@ -177,8 +200,11 @@ struct CP { inv: mat4x4f }
   let d = normalize(w.xyz / w.w - w0.xyz / w0.w);
   let uv = skyUV(d);
   var c = textureSampleLevel(tSky, sSky, uv, 0.0).rgb;
-  // Bajo el horizonte: color medio del terreno
-  c = mix(c, vec3f(0.035, 0.05, 0.02) * F.sunCol.rgb * 0.6 + vec3f(0.01, 0.014, 0.02), smoothstep(0.0, -0.05, d.y));
+  // Bajo el horizonte: color medio del terreno (ciudad iluminada de noche o campo de día)
+  let isNight = F.sunDir.w > 0.5;
+  let groundNight = vec3f(0.004, 0.005, 0.008) * F.sunCol.rgb + vec3f(0.002, 0.0025, 0.0035);
+  let groundDay = vec3f(0.035, 0.05, 0.02) * F.sunCol.rgb * 0.6 + vec3f(0.01, 0.014, 0.02);
+  c = mix(c, select(groundDay, groundNight, isNight), smoothstep(0.0, -0.05, d.y));
   return vec4f(c, 1.0);
 }
 `;
@@ -467,12 +493,16 @@ struct LOut { @location(0) col: vec4f }
   let wpFar = worldAt(in.uv, max(d, 1e-6));
   let V = normalize(F.camPos.xyz - wpFar);
   var o: LOut;
+  let isNight = F.sunDir.w > 0.5;
   if (d <= 0.0) {
     var c = skyColor(-V);
-    // Rayos crepusculares en niebla
-    let hs = textureSampleLevel(tHalf, sClamp, in.uv, 0.0);
-    let Tn = exp(-fogOD(F.camPos.xyz, -V, VOL_DIST));
-    c = c * mix(1.0, Tn, 0.0) - fogSunCol(-V) * (1.0 - Tn) * (1.0 - hs.g) * 0.85;
+    if (!isNight) {
+      // Rayos crepusculares en niebla (solo de día)
+      let hs = textureSampleLevel(tHalf, sClamp, in.uv, 0.0);
+      let Tn = exp(-fogOD(F.camPos.xyz, -V, VOL_DIST));
+      let fogScatter = fogSunCol(-V) * (1.0 - Tn) * (1.0 - hs.g) * 0.85;
+      c = max(c * Tn - fogScatter, c * 0.4);
+    }
     o.col = vec4f(max(c, vec3f(0.0)), 1.0); return o;
   }
   let a = textureLoad(gA, px, 0); let b = textureLoad(gB, px, 0); let m = textureLoad(gC, px, 0);
@@ -501,6 +531,24 @@ struct LOut { @location(0) col: vec4f }
     col += sun * nlc * fc * min(dGGX(nh, ac) * vSmith(nv, nlc, ac), 90.0);
   }
   col += sun * nlc * (dif + spec) * coatAtt;
+  // Faros de xenón del vehículo (proyección frontal en carreras nocturnas)
+  if (isNight) {
+    let pCar = (F.carInv * vec4f(wp, 1.0)).xyz;
+    if (pCar.x > 0.5 && pCar.x < 95.0) {
+      let dFwd = pCar.x - 1.8;
+      if (dFwd > 0.0) {
+        let dLatL = pCar.z - 0.72;
+        let dLatR = pCar.z + 0.72;
+        let dVert = (pCar.y - 0.55) + dFwd * 0.032;
+        let spread = dFwd * 0.20 + 0.85;
+        let beamL = exp(-(dLatL * dLatL) / (spread * spread * 0.5)) * smoothstep(1.3, -0.6, dVert);
+        let beamR = exp(-(dLatR * dLatR) / (spread * spread * 0.5)) * smoothstep(1.3, -0.6, dVert);
+        let atten = 1.0 / (1.0 + dFwd * 0.05 + dFwd * dFwd * 0.0018);
+        let hl = vec3f(3.2, 3.5, 4.2) * (beamL + beamR) * atten * sat(dot(N, vec3f(0.0, 1.0, 0.0)) * 0.6 + 0.4);
+        col += diffC * hl * coatAtt + spec * hl * coatAtt;
+      }
+    }
+  }
   if (sss > 0.0) {
     // Follaje: dispersión subsuperficial y transmisión
     let back = sat(dot(-N, L)) * 0.6 + sat(dot(V, -L)) * sat(-nl + 0.3) * 0.5;
@@ -511,7 +559,12 @@ struct LOut { @location(0) col: vec4f }
   let aoS = hv.r;
   let ao = min(a.a, aoS) * cao;
   // Luz ambiental en sombras: balanceada para evitar tonos azules excesivos
-  var irr = shIrr(N); irr = mix(vec3f(lum(irr)), irr, 0.15) * 1.75 * pow(F.sunCol.rgb / lum(F.sunCol.rgb), vec3f(0.42));
+  var irr = shIrr(N);
+  let sLum = max(lum(F.sunCol.rgb), 1e-4);
+  let sNrm = F.sunCol.rgb / sLum;
+  irr = mix(vec3f(lum(irr)), irr, 0.15) * 1.75 * pow(sNrm, vec3f(0.42));
+  // Suelo mínimo de iluminación ambiental nocturna calibrado para no colapsar a negro absoluto
+  irr = max(irr, select(vec3f(0.0), vec3f(0.012, 0.015, 0.022), isNight));
   col += diffC * irr * ao * coatAtt;
   let R = reflect(-V, N);
   let specOcc = sat(pow(nv + ao, exp2(-16.0 * rough - 1.0)) - 1.0 + ao);

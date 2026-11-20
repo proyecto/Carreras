@@ -12,13 +12,24 @@ function atmSunColor(dirY) {
 }
 async function skyInit(progress) {
   const dev = G.dev, T = R.tex, V = R.view;
-  const sunCfg = (typeof TRACKS !== 'undefined' && TRACKS.active && TRACKS.active.sun) || null;
-  SUN_EL = ((sunCfg && sunCfg.elDeg != null) ? sunCfg.elDeg : 17) * PI / 180;
+  const trk = (typeof TRK !== 'undefined' && TRK.spec) || (typeof TRACKS !== 'undefined' && TRACKS.active) || null;
+  const isNight = !!(trk && (trk.night || trk.id === 'las-vegas-strip' || (trk.sun && trk.sun.night)));
+  const sunCfg = trk ? trk.sun : null;
+  SUN_EL = ((sunCfg && sunCfg.elDeg != null) ? sunCfg.elDeg : (isNight ? 58 : 17)) * PI / 180;
   SUN_AZ = ((sunCfg && sunCfg.azDeg != null) ? sunCfg.azDeg : 180.5) * PI / 180;
-  const sunColEl = ((sunCfg && sunCfg.colorElDeg != null) ? sunCfg.colorElDeg : 14.5) * PI / 180;
+  const sunColEl = ((sunCfg && sunCfg.colorElDeg != null) ? sunCfg.colorElDeg : (isNight ? -10 : 14.5)) * PI / 180;
   R.sun[0] = Math.cos(SUN_EL) * Math.cos(SUN_AZ); R.sun[1] = Math.sin(SUN_EL); R.sun[2] = Math.cos(SUN_EL) * Math.sin(SUN_AZ);
-  // Color del sol: transmitancia atmosférica con tono cálido y realce artístico
-  const sc = atmSunColor(Math.sin(sunColEl)); R.sunCol[0] = sc[0] * 1.5; R.sunCol[1] = sc[1] * 1.5; R.sunCol[2] = sc[2] * 1.5;
+  // Color del sol: transmitancia atmosférica con tono cálido y realce artístico (o proyectores F1 y luz lunar fría en carreras nocturnas)
+  if (isNight) {
+    R.sunCol[0] = 0.28; R.sunCol[1] = 0.34; R.sunCol[2] = 0.48; // Proyectores LED F1 nocturnos y luz lunar fría (nocturna y contrastada)
+    R.fog[0] = 0.00015; R.fog[3] = 0.0;
+    R.fogCol[0] = 0.001; R.fogCol[1] = 0.0015; R.fogCol[2] = 0.0035; R.fogCol[3] = 0.2;
+  } else {
+    const sc = atmSunColor(Math.sin(sunColEl));
+    R.sunCol[0] = Math.max(sc[0] * 1.5, 0.01);
+    R.sunCol[1] = Math.max(sc[1] * 1.5, 0.01);
+    R.sunCol[2] = Math.max(sc[2] * 1.5, 0.01);
+  }
   // Ruido
   const nb = mkPost('noisebake', {}, ['rgba8unorm']);
   const ub = mkBuf(65 * 256, BU.U), ud = new Float32Array(65 * 64);
@@ -32,7 +43,7 @@ async function skyInit(progress) {
   genMips(T.noise, 'rgba8unorm');
   // Cielo en franjas (para evitar timeout de GPU en comandos largos)
   const sb = mkPost('skybake', {}, ['rgba16float']);
-  const su = mkBuf(32, BU.U, new Float32Array([R.sun[0], R.sun[1], R.sun[2], 0, 0.57, 0, 0, 0]));
+  const su = mkBuf(32, BU.U, new Float32Array([R.sun[0], R.sun[1], R.sun[2], isNight ? -1.0 : 0.0, 0.57, 0, 0, 0]));
   const sbg = bgOf(sb, 0, [su, V.noise3, V.noise, R.sLin]);
   const strips = 16;
   for (let i = 0; i < strips; i++) {

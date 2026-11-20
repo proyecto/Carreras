@@ -49,6 +49,7 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 
 - **Nürburgring GP**: Trazado de Gran Premio de 5.148 m con 15 curvas icónicas (Horquilla Castrol, curvas en S de Schumacher, chicane NGK).
 - **Spa-Francorchamps**: Trazado legendario de 7.004 m en las Ardenas con elevación real, subida de Eau Rouge / Raidillon, Pouhon y Blanchimont.
+- **Las Vegas Strip Circuit**: Trazado oficial urbano nocturno de 6.201 m y 17 curvas. Carrera 100% de noche sin vegetación, rodeada por un cañón urbano de rascacielos iluminados, hoteles casino, el icónico **MSG Sphere** con pantallas LED holográficas, focos de iluminación F1 y 1,9 km a fondo por Las Vegas Boulevard (The Strip).
 
 ---
 
@@ -84,10 +85,13 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 Dado que el juego utiliza WebGPU, debe servirse a través de un servidor HTTP local (no abrir directamente mediante `file://`):
 
 ```bash
-# Opción 1: Python 3
+# Opción 1: Servidor Node.js nativo con Señalización Multijugador P2P (Recomendado)
+node server.js
+
+# Opción 2: Python 3
 python3 -m http.server 8000
 
-# Opción 2: Node.js (npx serve)
+# Opción 3: Node.js (npx serve)
 npx serve .
 ```
 
@@ -96,7 +100,22 @@ A continuación, abra en su navegador compatible con WebGPU (Google Chrome, Micr
 http://localhost:8000
 ```
 
+---
+
+## 🌐 Multijugador P2P en Tiempo Real (2 Jugadores)
+
+El simulador cuenta con juego en red de baja latencia (**15–35 ms**) mediante **WebRTC DataChannels** (Peer-to-Peer directo, sin retraso de servidor):
+
+- **Sin Servidor de Partida (0 € de coste)**: La física de ambos bólidos y la colisión se calcula localmente en el navegador a 120 Hz, intercambiando paquetes UDP compactos (`Float32Array` de 48 bytes a 60 Hz).
+- **Cómo Jugar con un Amigo**:
+  1. Inicia el servidor con `node server.js`.
+  2. Haz clic en **🌐 Multijugador** en el menú principal o ve a Opciones.
+  3. Haz clic en **"Crear Sala (Host)"** y copia el enlace generado (ej: `http://localhost:8000/?room=RACE-742`).
+  4. Pásale el enlace a tu amigo $\to$ al abrirlo se conectan automáticamente en menos de 1 segundo.
+  5. ¡Ambos bólidos compiten en pista con colisiones reales, rebufo y medidor de ping en el HUD!
+
 ### Parámetros de URL Disponibles:
+- `?room=<codigo-sala>`: Se une automáticamente a la sala multijugador P2P indicada (ej: `?room=RACE-742`).
 - `?car=<id-coche>`: Carga directamente el coche indicado (ej: `?car=ford-mustang-gt3`).
 - `?track=<id-circuito>`: Carga el circuito indicado (ej: `?track=nurburgring-gp`).
 - `?rival=1` o `?rival=0`: Activa o desactiva el rival en carrera.
@@ -106,7 +125,7 @@ http://localhost:8000
 
 ## 🧪 Pruebas Automatizadas
 
-El proyecto cuenta con una batería de 637 aserciones automáticas en Node.js que certifican shaders, modelos, físicas a 120 Hz, controles, rival IA y patrones de diseño:
+El proyecto cuenta con una batería de 651 aserciones automáticas en Node.js que certifican shaders, modelos, físicas a 120 Hz, controles, rival IA, patrones de diseño y red multijugador:
 
 ```bash
 node tests/run_all.js
