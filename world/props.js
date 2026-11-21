@@ -1169,10 +1169,12 @@ function propsBuild() {
         const isPit = side > 0 && sr > TRK.pit.bldS0 - 30 && sr < TRK.pit.bldS1 + 35;
         const isStand = side < 0 && sr > TRK.stand.s0 - 30 && sr < TRK.stand.s1 + 30;
 
-        // Exclusión total en el corredor y plaza del MSG Sphere:
+        // Exclusión total en el corredor y plaza del MSG Sphere y de la noria gigante High Roller:
         // 1. El lado interior (side < 0) del bucle T5-T9 (s entre 2500 y 3750) se reserva despejado
         //    para garantizar una vista panorámica limpia del monumental orbe iluminado desde la pista
         if (s >= 2500 && s <= 3750 && side < 0) continue;
+        // 2. Corredor de visión hacia la noria gigante High Roller en Koval Lane (s entre 820 y 1140 en side < 0)
+        if (s >= 820 && s <= 1140 && side < 0) continue;
 
         const w = 24.0 + rnd() * 14.0;
         const depth = 20.0 + rnd() * 10.0;
@@ -1213,10 +1215,13 @@ function propsBuild() {
           }
 
           if (minD >= hw + 2.8) {
-            // Comprobación de distancia a la plaza del MSG Sphere:
+            // Comprobación de distancia a la plaza del MSG Sphere y de la noria High Roller:
             const sphP = (TRK.spec && TRK.spec.spherePos) || [-750.0, 0.0, -1410.0];
             const distToSph = Math.hypot(pOrigin[0] - sphP[0], pOrigin[2] - sphP[2]);
             if (distToSph < 185.0) { safe = false; break; }
+            const hrP = (TRK.spec && TRK.spec.highRollerPos) || [90.0, 0.0, -900.0];
+            const distToHR = Math.hypot(pOrigin[0] - hrP[0], pOrigin[2] - hrP[2]);
+            if (distToHR < 125.0) { safe = false; break; }
             safe = true;
             break;
           } else {
@@ -1409,7 +1414,192 @@ function propsBuild() {
     // Añadido a S2 (chapas/doble cara, famDS, cull: none) con rango máximo de 5000 m (visible desde toda la pista)
     S2.add(md, sphI0, 7, 5000);
 
-    // 3. Postes de luz de Gran Premio nocturno (F1 Floodlights) a lo largo de toda la pista
+    // 3. High Roller (Noria gigante monumental de Las Vegas en The LINQ Promenade)
+    // 167,6 m de altura colosal y 158,5 m de diámetro. Con 28 cabinas esféricas de cristal
+    // y deslumbrante iluminación LED de neón violeta y magenta visible desde Koval Lane y The Strip.
+    const hrPos = (TRK.spec && TRK.spec.highRollerPos) || [90.0, 0.0, -900.0];
+    const hrCX = hrPos[0], hrCY = hrPos[1], hrCZ = hrPos[2];
+    const hrHubY = hrCY + 88.0; // Eje / buje central a 88 m de altura
+    const hrR = 78.0; // Radio del aro exterior (156 m de diámetro)
+    const hrRin = 72.0; // Radio del aro estructural interior (144 m de diámetro)
+    const hrW = 5.6; // Separación entre aros delantero y trasero
+    const hrYaw = 0.18; // Orientación paralela al paseo de The LINQ
+    const hrTx = Math.sin(hrYaw), hrTz = Math.cos(hrYaw); // Vector tangente del plano de la rueda
+    const hrAx = Math.cos(hrYaw), hrAz = -Math.sin(hrYaw); // Vector eje perpendicular
+
+    // A. Terminal de embarque y zapatas de cimentación (hormigón y vidrio en mb / S1)
+    const hrBaseI0 = mb.ni;
+    // Explanada de la plaza de The LINQ
+    mb.mat(3); col(mb, 0.28, 0.29, 0.31);
+    mb.cyl(hrCX, hrCY - 0.5, hrCZ, 62.0, hrCY + 0.1, 60.0, 32, true, false);
+
+    // Edificio terminal de acceso / The Wheelhouse
+    mb.mat(3); col(mb, 0.40, 0.42, 0.45);
+    Bx(mb, hrCX - 22.0, hrCX + 22.0, hrCY, hrCY + 8.5, hrCZ - 18.0, hrCZ + 18.0);
+    // Fachada de cristal panorámico en la terminal
+    mb.mat(5); col(mb, 0.25, 0.35, 0.48);
+    Bx(mb, hrCX - 21.0, hrCX + 21.0, hrCY + 1.0, hrCY + 7.5, hrCZ - 18.2, hrCZ - 17.9);
+    Bx(mb, hrCX - 21.0, hrCX + 21.0, hrCY + 1.0, hrCY + 7.5, hrCZ + 17.9, hrCZ + 18.2);
+    // Rótulo luminoso de la terminal
+    mb.mat(6, 235, 0); col(mb, 0.82, 0.2, 1.0);
+    Bx(mb, hrCX - 12.0, hrCX + 12.0, hrCY + 8.6, hrCY + 10.0, hrCZ - 18.1, hrCZ - 17.9);
+
+    // 4 Zapatas masivas de hormigón para las patas en A
+    for (const sgnT of [-1, 1]) {
+      for (const sgnA of [-1, 1]) {
+        const fx = hrCX + sgnT * 48.0 * hrTx + sgnA * 18.0 * hrAx;
+        const fz = hrCZ + sgnT * 48.0 * hrTz + sgnA * 18.0 * hrAz;
+        mb.mat(3); col(mb, 0.52, 0.54, 0.56);
+        Bx(mb, fx - 3.8, fx + 3.8, hrCY, hrCY + 3.0, fz - 3.8, fz + 3.8);
+      }
+    }
+
+    // 4 Patas tubulares de acero en celosía en A hacia el buje
+    mb.mat(1); col(mb, 0.95, 0.96, 0.98); // Acero blanco reflectante
+    for (const sgnT of [-1, 1]) {
+      for (const sgnA of [-1, 1]) {
+        const fx = hrCX + sgnT * 48.0 * hrTx + sgnA * 18.0 * hrAx;
+        const fz = hrCZ + sgnT * 48.0 * hrTz + sgnA * 18.0 * hrAz;
+        const hx = hrCX + sgnA * 5.5 * hrAx;
+        const hz = hrCZ + sgnA * 5.5 * hrAz;
+        mb.tube([[fx, hrCY + 3.0, fz], [hx, hrHubY, hz]], 1.25, 8);
+      }
+      // Tirante transversal horizontal entre patas gemelas a media altura
+      const mxL = hrCX + sgnT * 24.0 * hrTx - 11.5 * hrAx, mzL = hrCZ + sgnT * 24.0 * hrTz - 11.5 * hrAz;
+      const mxR = hrCX + sgnT * 24.0 * hrTx + 11.5 * hrAx, mzR = hrCZ + sgnT * 24.0 * hrTz + 11.5 * hrAz;
+      mb.tube([[mxL, hrHubY * 0.48, mzL], [mxR, hrHubY * 0.48, mzR]], 0.85, 6);
+    }
+    S1.add(mb, hrBaseI0, 7, 3500);
+
+    // B. Buje, aros estructurales, radios de tensión y 28 cabinas LED (en md / S2, cull: none)
+    const hrI0 = md.ni;
+
+    // Buje cilíndrico central
+    const hubAx0 = hrCX - 6.5 * hrAx, hubAz0 = hrCZ - 6.5 * hrAz;
+    const hubAx1 = hrCX + 6.5 * hrAx, hubAz1 = hrCZ + 6.5 * hrAz;
+    md.mat(2, 120, 150); col(md, 0.88, 0.90, 0.94);
+    md.tube([[hubAx0, hrHubY, hubAz0], [hubAx1, hrHubY, hubAz1]], 2.8, 12);
+    // Tapa central luminosa del buje
+    for (const sgn of [-1, 1]) {
+      const hcapX = hrCX + sgn * 6.6 * hrAx, hcapZ = hrCZ + sgn * 6.6 * hrAz;
+      md.mat(6, 240, 0); col(md, 0.85, 0.22, 1.0); // Violeta neón intenso
+      md.cyl(hcapX, hrHubY - 2.5, hcapZ, 2.5, hrHubY + 2.5, 2.5, 12, true, true);
+    }
+
+    // Aros perimetrales: Doble aro (exterior R=78m e interior Rin=72m, separados por hrW=5.6m)
+    const nRim = 56;
+    for (let i = 0; i < nRim; i++) {
+      const a0 = (i / nRim) * TAU, a1 = ((i + 1) / nRim) * TAU;
+      const ca0 = Math.cos(a0), sa0 = Math.sin(a0);
+      const ca1 = Math.cos(a1), sa1 = Math.sin(a1);
+
+      for (const w of [-hrW / 2, hrW / 2]) {
+        // Aro exterior (LED violeta neón brillante)
+        const p0x = hrCX + (ca0 * hrR) * hrTx + w * hrAx;
+        const p0y = hrHubY + sa0 * hrR;
+        const p0z = hrCZ + (ca0 * hrR) * hrTz + w * hrAz;
+
+        const p1x = hrCX + (ca1 * hrR) * hrTx + w * hrAx;
+        const p1y = hrHubY + sa1 * hrR;
+        const p1z = hrCZ + (ca1 * hrR) * hrTz + w * hrAz;
+
+        // Viga perimetral iluminada con LED violeta
+        md.mat(6, 250, 0); col(md, 0.85, 0.20, 1.0);
+        md.tube([[p0x, p0y, p0z], [p1x, p1y, p1z]], 0.32, 5);
+
+        // Aro interior (blanco/cian técnico)
+        const q0x = hrCX + (ca0 * hrRin) * hrTx + w * hrAx;
+        const q0y = hrHubY + sa0 * hrRin;
+        const q0z = hrCZ + (ca0 * hrRin) * hrTz + w * hrAz;
+
+        const q1x = hrCX + (ca1 * hrRin) * hrTx + w * hrAx;
+        const q1y = hrHubY + sa1 * hrRin;
+        const q1z = hrCZ + (ca1 * hrRin) * hrTz + w * hrAz;
+
+        md.mat(2, 128, 128); col(md, 0.9, 0.92, 0.96);
+        md.tube([[q0x, q0y, q0z], [q1x, q1y, q1z]], 0.22, 4);
+
+        // Celosía diagonal radial entre aro exterior e interior
+        md.tube([[q0x, q0y, q0z], [p1x, p1y, p1z]], 0.12, 4);
+      }
+
+      // Travesaño horizontal conectando los dos aros laterales
+      if (i % 2 === 0) {
+        const xL = hrCX + (ca0 * hrR) * hrTx - (hrW / 2) * hrAx, zL = hrCZ + (ca0 * hrR) * hrTz - (hrW / 2) * hrAz;
+        const xR = hrCX + (ca0 * hrR) * hrTx + (hrW / 2) * hrAx, zR = hrCZ + (ca0 * hrR) * hrTz + (hrW / 2) * hrAz;
+        const yT = hrHubY + sa0 * hrR;
+        md.mat(1); col(md, 0.85, 0.88, 0.92);
+        md.tube([[xL, yT, zL], [xR, yT, zR]], 0.18, 4);
+      }
+    }
+
+    // 28 Radios de tensión en cable de acero conectando el buje con el aro
+    const nSpokes = 28;
+    for (let s = 0; s < nSpokes; s++) {
+      const ang = (s / nSpokes) * TAU;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const rimX = hrCX + (ca * hrRin) * hrTx, rimZ = hrCZ + (ca * hrRin) * hrTz;
+      const rimY = hrHubY + sa * hrRin;
+
+      for (const w of [-hrW / 2, hrW / 2]) {
+        const hubX = hrCX + w * 0.9 * hrAx, hubZ = hrCZ + w * 0.9 * hrAz;
+        const rimPX = rimX + w * hrAx, rimPZ = rimZ + w * hrAz;
+        // Cable de radio con pulso LED violeta suave
+        md.mat(6, 215, 0); col(md, 0.70, 0.30, 0.95);
+        md.tube([[hubX, hrHubY, hubZ], [rimPX, rimY, rimPZ]], 0.07, 3);
+      }
+    }
+
+    // 28 Cabinas esféricas de cristal (Gondolas) montadas en el perímetro exterior
+    for (let c = 0; c < nSpokes; c++) {
+      const ang = (c / nSpokes) * TAU;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      // Las cabinas van montadas justo en la periferia exterior (R + 2,8 m)
+      const cabR = hrR + 2.8;
+      const cabX = hrCX + (ca * cabR) * hrTx;
+      const cabY = hrHubY + sa * cabR;
+      const cabZ = hrCZ + (ca * cabR) * hrTz;
+
+      // Anillo de montaje / soporte de trunnion metálico
+      md.mat(2, 110, 140); col(md, 0.22, 0.24, 0.28);
+      Bx(md, cabX - 1.2, cabX + 1.2, cabY - 0.25, cabY + 0.25, cabZ - 2.8, cabZ + 2.8);
+
+      // Cabina esférica de observación acristalada con luz cálida interior
+      md.mat(6, 240, 0);
+      col(md, 1.0, 0.94, 0.82); // Iluminación cálida interior de pasajeros
+      // Esfera de cabina (3,2 m de diámetro)
+      for (let cr = 0; cr < 6; cr++) {
+        const cphi0 = (cr / 6) * PI - PI / 2, cphi1 = ((cr + 1) / 6) * PI - PI / 2;
+        const cy0 = cabY + 1.6 * Math.sin(cphi0), cy1 = cabY + 1.6 * Math.sin(cphi1);
+        const crad0 = 1.6 * Math.cos(cphi0), crad1 = 1.6 * Math.cos(cphi1);
+        for (let cs = 0; cs < 8; cs++) {
+          const cth0 = (cs / 8) * TAU, cth1 = ((cs + 1) / 8) * TAU;
+          const cx00 = cabX + crad0 * Math.cos(cth0) * hrTx + crad0 * Math.sin(cth0) * hrAx;
+          const cz00 = cabZ + crad0 * Math.cos(cth0) * hrTz + crad0 * Math.sin(cth0) * hrAz;
+          const cx10 = cabX + crad0 * Math.cos(cth1) * hrTx + crad0 * Math.sin(cth1) * hrAx;
+          const cz10 = cabZ + crad0 * Math.cos(cth1) * hrTz + crad0 * Math.sin(cth1) * hrAz;
+
+          const cx01 = cabX + crad1 * Math.cos(cth0) * hrTx + crad1 * Math.sin(cth0) * hrAx;
+          const cz01 = cabZ + crad1 * Math.cos(cth0) * hrTz + crad1 * Math.sin(cth0) * hrAz;
+          const cx11 = cabX + crad1 * Math.cos(cth1) * hrTx + crad1 * Math.sin(cth1) * hrAx;
+          const cz11 = cabZ + crad1 * Math.cos(cth1) * hrTz + crad1 * Math.sin(cth1) * hrAz;
+
+          const v0 = md.v(cx00, cy0, cz00, (cx00 - cabX) / 1.6, (cy0 - cabY) / 1.6, (cz00 - cabZ) / 1.6, 0, 0);
+          const v1 = md.v(cx10, cy0, cz10, (cx10 - cabX) / 1.6, (cy0 - cabY) / 1.6, (cz10 - cabZ) / 1.6, 1, 0);
+          const v2 = md.v(cx11, cy1, cz11, (cx11 - cabX) / 1.6, (cy1 - cabY) / 1.6, (cz11 - cabZ) / 1.6, 1, 1);
+          const v3 = md.v(cx01, cy1, cz01, (cx01 - cabX) / 1.6, (cy1 - cabY) / 1.6, (cz01 - cabZ) / 1.6, 0, 1);
+          md.quadI(v0, v3, v2, v1);
+        }
+      }
+
+      // Anillo ecuatorial LED exterior en cada cabina (acento violeta/magenta neón)
+      md.mat(6, 250, 0); col(md, 0.88, 0.22, 1.0);
+      md.tube([[cabX - 1.65 * hrTx, cabY, cabZ - 1.65 * hrTz], [cabX + 1.65 * hrTx, cabY, cabZ + 1.65 * hrTz]], 0.12, 4);
+    }
+    // Añadido a S2 (chapas/doble cara, famDS, cull: none) con rango máximo de 5000 m (visible desde toda la pista)
+    S2.add(md, hrI0, 7, 5000);
+
+    // 4. Postes de luz de Gran Premio nocturno (F1 Floodlights) a lo largo de toda la pista
     const floodStep = 36;
     const nFloods = Math.floor(TRK.L / floodStep);
     for (let f = 0; f < nFloods; f++) {

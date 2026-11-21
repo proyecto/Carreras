@@ -109,6 +109,9 @@ function runTracksTestSuite() {
   assert(propsCode.includes('MSG Sphere') && propsCode.includes('Planet Earth') && propsCode.includes('earthColor'), 'Modelo monumental y textura Planet Earth del MSG Sphere presente');
   assert(propsCode.includes('S2.add(md, sphI0, 7, 5000)'), 'MSG Sphere registrado en S2 sin face culling con 5000m de distancia de renderizado');
   assert(propsCode.includes('distToSph < 185.0') && propsCode.includes('s >= 2500 && s <= 3750 && side < 0'), 'Corredor de visión y exclusión de rascacielos en la plaza del MSG Sphere verificados');
+  assert(propsCode.includes('High Roller') && propsCode.includes('28 Cabinas') && propsCode.includes('nRim = 56'), 'Modelo estructural completo de la noria gigante High Roller (The LINQ) presente');
+  assert(propsCode.includes('S2.add(md, hrI0, 7, 5000)'), 'High Roller registrado en S2 con rango de 5000 m');
+  assert(propsCode.includes('distToHR < 125.0') && propsCode.includes('s >= 820 && s <= 1140 && side < 0'), 'Corredor de visión en Koval Lane hacia High Roller verificado');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

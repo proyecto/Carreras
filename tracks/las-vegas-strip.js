@@ -66,6 +66,9 @@
     spherePos: [-750.0, 0.0, -1410.0],
     sphereR: 64.0,
 
+    // Noria gigante monumental High Roller en The LINQ (167,6 m de altura, visible desde Koval y The Strip)
+    highRollerPos: [90.0, 0.0, -900.0],
+
     // Torres de cámaras de televisión
     tvTowers: [
       [200, 1, 7.0, 6.5],   // Koval Hairpin
@@ -96,6 +99,13 @@
         nome: 'MSG Sphere Loop',
         tipo: 'coche',
         ojo: [-16.0, 4.2, 14.0],
+        blanco: [0.0, 1.2, 0.0],
+        fov: 0.65
+      },
+      {
+        nome: 'High Roller (The LINQ)',
+        tipo: 'coche',
+        ojo: [-14.0, 3.8, 16.0],
         blanco: [0.0, 1.2, 0.0],
         fov: 0.65
       },
