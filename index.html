@@ -250,101 +250,118 @@
     </div>
   </div>
 
-  <!-- 1. Shaders WGSL -->
-  <script src="shaders/core.js?v=night_v3"></script>
-  <script src="shaders/lighting.js?v=night_v3"></script>
-  <script src="shaders/post.js?v=night_v3"></script>
-  <script src="shaders/world.js?v=night_v3"></script>
-  <script src="shaders/vegetation.js?v=night_v3"></script>
-  <script src="shaders/glass.js?v=night_v3"></script>
+  <!-- 1. Shaders WGSL del núcleo y mundo -->
+  <script src="shaders/core.js?v=vegas_f1_v6"></script>
+  <script src="shaders/lighting.js?v=vegas_f1_v6"></script>
+  <script src="shaders/post.js?v=vegas_f1_v6"></script>
+  <script src="shaders/world.js?v=vegas_f1_v6"></script>
+  <script src="shaders/glass.js?v=vegas_f1_v6"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js?v=night_v3"></script>
-  <script src="engine/gpu.js?v=night_v3"></script>
-  <script src="engine/mesh.js?v=night_v3"></script>
-  <script src="game/registry.js?v=night_v3"></script>
-  <script src="engine/renderer.js?v=night_v3"></script>
-  <script src="engine/post.js?v=night_v3"></script>
-  <script src="engine/sky.js?v=night_v3"></script>
-  <script src="engine/forward.js?v=night_v3"></script>
-  <script src="engine/perf.js?v=night_v3"></script>
-  <script src="engine/patterns.js?v=night_v3"></script>
-  <script src="engine/car-factory.js?v=night_v3"></script>
+  <script src="engine/math.js?v=vegas_f1_v6"></script>
+  <script src="engine/gpu.js?v=vegas_f1_v6"></script>
+  <script src="engine/mesh.js?v=vegas_f1_v6"></script>
+  <script src="game/registry.js?v=vegas_f1_v6"></script>
+  <script src="engine/renderer.js?v=vegas_f1_v6"></script>
+  <script src="engine/post.js?v=vegas_f1_v6"></script>
+  <script src="engine/sky.js?v=vegas_f1_v6"></script>
+  <script src="engine/forward.js?v=vegas_f1_v6"></script>
+  <script src="engine/perf.js?v=vegas_f1_v6"></script>
+  <script src="engine/patterns.js?v=vegas_f1_v6"></script>
+  <script src="engine/car-factory.js?v=vegas_f1_v6"></script>
 
-  <!-- 3. Constructores genéricos del mundo (pista, terreno, entorno, vegetación) -->
-  <script src="world/track-builder.js?v=night_v3"></script>
-  <script src="world/track-mesh.js?v=night_v3"></script>
-  <script src="world/props.js?v=vegas_high_roller_v1"></script>
-  <script src="world/vegetation.js?v=night_v3"></script>
-  <script src="world/track-glb.js?v=night_v3"></script>
+  <!-- 3. Constructores base del mundo (pista, terreno, objetos base) -->
+  <script src="world/track-builder.js?v=vegas_f1_v6"></script>
+  <script src="world/track-mesh.js?v=vegas_f1_v6"></script>
+  <script src="world/props.js?v=vegas_f1_v6"></script>
+  <script src="world/track-glb.js?v=vegas_f1_v6"></script>
 
-  <!-- 4. Coches (metadatos de selección + carga bajo demanda del coche activo y rival IA) -->
-  <script src="cars/manifest.js?v=night_v3"></script>
+  <!-- 4. Catálogos y carga bajo demanda condicionada por el circuito y vehículo seleccionados -->
+  <script src="tracks/manifest.js?v=vegas_f1_v6"></script>
+  <script src="cars/manifest.js?v=vegas_f1_v6"></script>
   <script>
     (() => {
       let carId = null;
       let rivalParam = null;
       let rivalCarId = null;
+      let trackId = null;
       try {
         const p = new URLSearchParams(location.search);
         if (p.get('car')) carId = p.get('car');
         if (p.has('rival')) rivalParam = p.get('rival');
         if (p.get('rivalCar')) rivalCarId = p.get('rivalCar');
+        if (p.get('track')) trackId = p.get('track');
       } catch (e) { }
 
       let saved = {};
       if (typeof loadSelection === 'function') {
         saved = loadSelection() || {};
         if (!carId && saved.car) carId = saved.car;
+        if (!trackId && saved.track) trackId = saved.track;
       }
 
-      const manifest = window.CAR_MANIFEST || [];
-      const entry = (carId && manifest.find(c => c.id === carId)) || manifest[0];
-      if (entry && entry.file) {
-        document.write('<script src="cars/' + entry.file + '?v=night_v3"><\/script>');
+      // --- A. Cargar circuito activo bajo demanda ---
+      const trackManifest = window.TRACK_MANIFEST || [];
+      const trackEntry = (trackId && trackManifest.find(t => t.id === trackId)) || trackManifest[0];
+      window.__activeTrackEntry = trackEntry;
+      if (trackEntry && trackEntry.file) {
+        document.write('<script src="tracks/' + trackEntry.file + '?v=vegas_f1_v6"><\/script>');
       }
 
-      // Evaluar si el rival está activo (por defecto sí, salvo que rival=0 o saved.rival === false)
+      // --- B. Vegetación condicional: solo se carga en circuitos naturales (Nürburgring, Spa), no en Las Vegas ---
+      const hasVegetation = !(trackEntry && trackEntry.noVegetation);
+      if (hasVegetation) {
+        document.write('<script src="shaders/vegetation.js?v=vegas_f1_v6"><\/script>');
+        document.write('<script src="world/vegetation.js?v=vegas_f1_v6"><\/script>');
+      }
+
+      // --- C. Props exclusivos de Las Vegas (Noria High Roller, MSG Sphere, Rascacielos): solo en Las Vegas ---
+      const isVegas = Boolean(trackEntry && (trackEntry.id === 'las-vegas-strip' || trackEntry.urban));
+      if (isVegas) {
+        document.write('<script src="world/props-vegas.js?v=vegas_f1_v6"><\/script>');
+      }
+
+      // --- D. Coche activo y rival IA bajo demanda ---
+      const carManifest = window.CAR_MANIFEST || [];
+      const carEntry = (carId && carManifest.find(c => c.id === carId)) || carManifest[0];
+      if (carEntry && carEntry.file) {
+        document.write('<script src="cars/' + carEntry.file + '?v=vegas_f1_v6"><\/script>');
+      }
+
       const rivalEnabled = rivalParam !== null
         ? (rivalParam === '1' || rivalParam === 'true')
         : (saved.rival !== false);
       window.__rivalEnabled = rivalEnabled;
 
       if (rivalEnabled) {
-        const availableRivals = manifest.filter(c => !entry || c.id !== entry.id);
-        const pool = availableRivals.length > 0 ? availableRivals : manifest;
-        let chosenRival = (rivalCarId && manifest.find(c => c.id === rivalCarId));
+        const availableRivals = carManifest.filter(c => !carEntry || c.id !== carEntry.id);
+        const pool = availableRivals.length > 0 ? availableRivals : carManifest;
+        let chosenRival = (rivalCarId && carManifest.find(c => c.id === rivalCarId));
         if (!chosenRival && saved.rivalCar) {
-          chosenRival = manifest.find(c => c.id === saved.rivalCar);
+          chosenRival = carManifest.find(c => c.id === saved.rivalCar);
         }
-        if (!chosenRival || (entry && chosenRival.id === entry.id)) {
+        if (!chosenRival || (carEntry && chosenRival.id === carEntry.id)) {
           chosenRival = pool[Math.floor(Math.random() * pool.length)];
         }
         window.__rivalCarId = chosenRival ? chosenRival.id : null;
-        if (chosenRival && chosenRival.file && chosenRival.file !== (entry && entry.file)) {
-          document.write('<script src="cars/' + chosenRival.file + '?v=night_v3"><\/script>');
+        if (chosenRival && chosenRival.file && chosenRival.file !== (carEntry && carEntry.file)) {
+          document.write('<script src="cars/' + chosenRival.file + '?v=vegas_f1_v6"><\/script>');
         }
       }
     })();
   </script>
 
-  <!-- 5. Circuitos (gestionados desde tracks/manifest.js) -->
-  <script src="tracks/manifest.js?v=night_v3"></script>
-  <script src="tracks/nurburgring-gp.js?v=night_v3"></script>
-  <script src="tracks/spa-francorchamps.js?v=night_v3"></script>
-  <script src="tracks/las-vegas-strip.js?v=vegas_high_roller_v1"></script>
-
-  <!-- 6. Física, IA, efectos, audio, HUD, interfaz y arranque -->
-  <script src="game/i18n.js?v=night_v3"></script>
-  <script src="game/physics.js?v=night_v3"></script>
-  <script src="game/ai.js?v=night_v3"></script>
-  <script src="game/network.js?v=night_v3"></script>
-  <script src="game/fx.js?v=night_v3"></script>
-  <script src="game/game.js?v=night_v3"></script>
-  <script src="game/audio.js?v=night_v3"></script>
-  <script src="game/hud.js?v=night_v3"></script>
-  <script src="game/ui.js?v=night_v3"></script>
-  <script src="game/main.js?v=night_v3"></script>
+  <!-- 5. Física, IA, efectos, audio, HUD, interfaz y arranque -->
+  <script src="game/i18n.js?v=vegas_f1_v6"></script>
+  <script src="game/physics.js?v=vegas_f1_v6"></script>
+  <script src="game/ai.js?v=vegas_f1_v6"></script>
+  <script src="game/network.js?v=vegas_f1_v6"></script>
+  <script src="game/fx.js?v=vegas_f1_v6"></script>
+  <script src="game/game.js?v=vegas_f1_v6"></script>
+  <script src="game/audio.js?v=vegas_f1_v6"></script>
+  <script src="game/hud.js?v=vegas_f1_v6"></script>
+  <script src="game/ui.js?v=vegas_f1_v6"></script>
+  <script src="game/main.js?v=vegas_f1_v6"></script>
 </body>
 
 </html>

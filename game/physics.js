@@ -25,7 +25,7 @@ function createVehicleState() {
     steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
     ax: 0, ay: 0,                                              // Aceleraciones filtradas en chasis
     roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
-    y: 0, gPitch: 0, gRoll: 0,                                 // Altura e inclinación del suelo bajo el coche (filtradas)
+    y: 0, gPitch: 0, gRoll: 0,                                 // Altura e inclinación del suelo bdajo el coche (filtradas)
     spin: new Float32Array(4), omega: new Float32Array(4), susp: new Float32Array(4),
     slip: new Float32Array(4),                                 // Intensidad de derrape por rueda 0..1 (humo y marcas de neumático)
     wx: new Float32Array(4), wy: new Float32Array(4), wz: new Float32Array(4), wzone: new Uint8Array(4), whint: new Int32Array(4).fill(-1),
@@ -73,13 +73,22 @@ function groundQ(wi, veh = VEH) {
     if (zone === ZONE.KERB) { const kx = ad - TRK.hw; if (kx > 0 && kx < KERB_W) y += 0.012 + 0.045 * Math.sin(Math.min(1, kx / (KERB_W * 0.82)) * PI * 0.5) * (kx > KERB_W * 0.82 ? (KERB_W - kx) / (KERB_W * 0.18) : 1) + 0.012 * Math.sin(q[2] * 5.2); }
   } else {
     hfAtQ(q); let e = (ad - (lim - 0.4)) / 1.2; e = e < 0 ? 0 : e > 1 ? 1 : e; y = ty + (q[6] - ty) * e;
-    if (zone === ZONE.GRAVEL) y -= 0.03;
+    if (zone === ZONE.GRAVEL) y -= 0.045;
   }
   q[8] = y; return zone;
 }
 // Versión de conveniencia para pruebas y utilidades
 function groundAt(x, z, wi, veh = VEH) { _gq[0] = x; _gq[1] = z; _vl[3] = groundQ(wi, veh); return _gq[8]; }
-const ZMU = [1.0, 0.96, 0.76, 0.60, 0.50, 0.95, 0.90], ZDRAG = [0, 0.005, 0.025, 0.12, 0.08, 0, 0];
+// Coeficientes de fricción (ZMU) y resistencia al avance por rozamiento/hundimiento (ZDRAG) por superficie:
+// 0: ASPHALT  - Agarre 100%, resistencia nominal de rodadura
+// 1: KERB     - Agarre 94% (hormigón pintado; permite abrir radio R de curva pero con vibración rumble y pérdida de tracción al abusar)
+// 2: GRASS    - Agarre 38% (baja adherencia en hierba, patinaje severo y pérdida de fuerza lateral)
+// 3: GRAVEL   - Agarre 26% (piedra suelta, resistencia masiva de arrastre 0.52 G + arado hidrodinámico que frena el coche)
+// 4: ROUGH    - Agarre 34% (tierra y arena fuera de límites)
+// 5: PIT      - Agarre 98% (carril de boxes limpio)
+// 6: CONCRETE - Agarre 88% (asfalto pintado de escapatorias urbanas)
+const ZMU = [1.0, 0.94, 0.38, 0.26, 0.34, 0.98, 0.88];
+const ZDRAG = [0, 0.012, 0.075, 0.52, 0.14, 0, 0.008];
 
 function vehicleReset(s, d, heading, veh = VEH, vin = VIN) {
   const V = veh; trackPos(s, d, _vp);
@@ -158,8 +167,14 @@ function vehicleStep(keys, veh = VEH, vin = VIN) {
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // Par total transmitido a los ejes
   if (rpm > P.revLimitRpm) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
-  // Sistema de control de tracción (TCS) activo para teclado / competición: modula el exceso de par al límite de agarre
-  const maxDriveGrip = (P.driveF === 1.0 ? (V.fz[0] + V.fz[1]) : P.driveF === 0.0 ? (V.fz[2] + V.fz[3]) : (V.fz[0] + V.fz[1] + V.fz[2] + V.fz[3])) * P.mu * 1.08;
+  // Sistema de control de tracción (TCS) modulado según la adherencia física real de las ruedas motrices
+  const driveMuF = P.mu * (ZMU[V.wzone[0]] + ZMU[V.wzone[1]]) * 0.5;
+  const driveMuR = P.mu * (ZMU[V.wzone[2]] + ZMU[V.wzone[3]]) * 0.5;
+  const maxDriveGrip = (P.driveF === 1.0
+    ? (V.fz[0] + V.fz[1]) * driveMuF
+    : P.driveF === 0.0
+      ? (V.fz[2] + V.fz[3]) * driveMuR
+      : ((V.fz[0] + V.fz[1]) * driveMuF + (V.fz[2] + V.fz[3]) * driveMuR) * 0.5) * 1.08;
   const maxTdrive = maxDriveGrip * P.R;
   if (Tdrive > maxTdrive) Tdrive = maxTdrive;
   Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // Freno motor
@@ -193,7 +208,9 @@ function vehicleStep(keys, veh = VEH, vin = VIN) {
     const dirL = Math.abs(vl) > 0.25 ? Math.sign(vl) : (Math.abs(fxd) > 1 ? 0 : Math.sign(vl) * Math.abs(vl) / 0.25);
     fxd -= bdem * dirL;
     if (!front && hand) { fxd = -cap * 0.92 * dirL; locked = Math.abs(vl) > 0.3; }
-    fxd -= (P.crr + ZDRAG[zone]) * V.fz[i] * dirL;
+    const dragVFactor = Math.min(1, Math.abs(vl) / 0.35);
+    const plowDrag = zone === ZONE.GRAVEL ? 0.28 * Math.min(2.0, Math.abs(vl) / 12.0) : 0;
+    fxd -= (P.crr + (ZDRAG[zone] + plowDrag) * dragVFactor) * V.fz[i] * dirL;
     let fx = fxd, latCap;
     if (locked) { latCap = cap * 0.38; }
     else if (Math.abs(fxd) > cap * 0.985) {
@@ -260,18 +277,92 @@ function vehicleCollide(veh = VEH) {
     const lx = k < 2 ? P.front : -P.rear, lz = (k & 1) ? P.halfW : -P.halfW;
     const cx = V.x + c * lx - s * lz, cz = V.z + s * lx + c * lz;
     _gq[0] = cx; _gq[1] = cz; trackLocateQ(V.hint, _gq);
-    const d = _gq[3], i0 = _gq[4] | 0, f = _gq[5], i1 = (i0 + 1) % TRK.N, bar = d < 0 ? TRK.barL : TRK.barR, lim = bar[i0] + (bar[i1] - bar[i0]) * f - 0.25, pen = (d < 0 ? -d : d) - lim;
-    if (pen > 0 && pen < 6) {
+    const d = _gq[3], i0 = _gq[4] | 0, f = _gq[5], i1 = (i0 + 1) % TRK.N;
+    const bar = d < 0 ? TRK.barL : TRK.barR;
+    let b0 = bar ? bar[i0] : (TRK.hw + 1.25), b1 = bar ? bar[i1] : (TRK.hw + 1.25);
+    if (isNaN(b0) || b0 < 1.0) b0 = TRK.hw + 1.25;
+    if (isNaN(b1) || b1 < 1.0) b1 = TRK.hw + 1.25;
+    const lim = b0 + (b1 - b0) * f - 0.25;
+    const pen = (d < 0 ? -d : d) - lim;
+    if (pen > 0) {
       // normal da barreira (aponta para a pista) = -sinal(d) * normal lateral da pista
       const tx = TRK.tx[i0] + (TRK.tx[i1] - TRK.tx[i0]) * f, tz = TRK.tz[i0] + (TRK.tz[i1] - TRK.tz[i0]) * f, sg = d < 0 ? 1 : -1, nx = -tz * sg, nz = tx * sg;
       V.x += nx * pen; V.z += nz * pen;
       // velocidade do mundo
       let wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c; const vn = wvx * nx + wvz * nz;
       if (vn < 0) {
-        wvx -= nx * vn * 1.25; wvz -= nz * vn * 1.25; const tgx = -nz, tgz = nx, vt = wvx * tgx + wvz * tgz; wvx -= tgx * vt * 0.12; wvz -= tgz * vt * 0.12;
+        wvx -= nx * vn * 1.35; wvz -= nz * vn * 1.35; const tgx = -nz, tgz = nx, vt = wvx * tgx + wvz * tgz; wvx -= tgx * vt * 0.15; wvz -= tgz * vt * 0.15;
         V.vx = wvx * c + wvz * s; V.vy = -wvx * s + wvz * c;
         // torque de guinada pelo impacto no canto
-        const rx = c * lx - s * lz, rz = s * lx + c * lz; V.r += (rx * nz - rz * nx) * (-vn) * 0.08; V.r *= 0.70; V.hits++;
+        const rx = c * lx - s * lz, rz = s * lx + c * lz; V.r += (rx * nz - rz * nx) * (-vn) * 0.08; V.r *= 0.65; V.hits++;
+      }
+    }
+  }
+
+  // Garantía de solidez infranqueable: verificación del centro de masa contra el vallado perimetral
+  _gq[0] = V.x; _gq[1] = V.z; trackLocateQ(V.hint, _gq);
+  const cd = _gq[3], ci0 = _gq[4] | 0, cf = _gq[5], ci1 = (ci0 + 1) % TRK.N;
+  const cbar = cd < 0 ? TRK.barL : TRK.barR;
+  let cb0 = cbar ? cbar[ci0] : (TRK.hw + 1.25), cb1 = cbar ? cbar[ci1] : (TRK.hw + 1.25);
+  if (isNaN(cb0) || cb0 < 1.0) cb0 = TRK.hw + 1.25;
+  if (isNaN(cb1) || cb1 < 1.0) cb1 = TRK.hw + 1.25;
+  const maxCenterD = Math.max(1.0, cb0 + (cb1 - cb0) * cf - P.halfW - 0.05);
+  const cpen = (cd < 0 ? -cd : cd) - maxCenterD;
+  if (cpen > 0) {
+    const ctx = TRK.tx[ci0] + (TRK.tx[ci1] - TRK.tx[ci0]) * cf, ctz = TRK.tz[ci0] + (TRK.tz[ci1] - TRK.tz[ci0]) * cf;
+    const csg = cd < 0 ? 1 : -1, cnx = -ctz * csg, cnz = ctx * csg;
+    V.x += cnx * cpen;
+    V.z += cnz * cpen;
+    let wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
+    const cvn = wvx * cnx + wvz * cnz;
+    if (cvn < 0) {
+      wvx -= cnx * cvn * 1.35; wvz -= cnz * cvn * 1.35;
+      const ctgx = -cnz, ctgz = cnx, cvt = wvx * ctgx + wvz * ctgz;
+      wvx -= ctgx * cvt * 0.20; wvz -= ctgz * cvt * 0.20;
+      V.vx = wvx * c + wvz * s; V.vy = -wvx * s + wvz * c;
+    }
+    V.hits++;
+  }
+
+  // Colisión física sólida contra edificios y rascacielos (TRK.buildingColliders):
+  if (TRK.buildingColliders && TRK.buildingColliders.length > 0) {
+    const blds = TRK.buildingColliders;
+    const vx0 = V.x - 3.2, vx1 = V.x + 3.2, vz0 = V.z - 3.2, vz1 = V.z + 3.2;
+    for (let b = 0; b < blds.length; b++) {
+      const bc = blds[b];
+      if (vx1 < bc.minX || vx0 > bc.maxX || vz1 < bc.minZ || vz0 > bc.maxZ) continue;
+      for (let k = 0; k < 4; k++) {
+        const lx = k < 2 ? P.front : -P.rear, lz = (k & 1) ? P.halfW : -P.halfW;
+        const cx = V.x + c * lx - s * lz, cz = V.z + s * lx + c * lz;
+        if (cx < bc.minX || cx > bc.maxX || cz < bc.minZ || cz > bc.maxZ) continue;
+        const dx = cx - bc.cx, dz = cz - bc.cz;
+        const localU = dx * bc.tx + dz * bc.tz;
+        const localV = dx * bc.nx + dz * bc.nz;
+        const penU = bc.hw - Math.abs(localU);
+        const penV = bc.hd - Math.abs(localV);
+        if (penU > 0 && penV > 0) {
+          const pushU = penU < penV;
+          const pen = pushU ? penU : penV;
+          const sgn = pushU ? Math.sign(localU || 1) : Math.sign(localV || 1);
+          const nxHit = pushU ? (bc.tx * sgn) : (bc.nx * sgn);
+          const nzHit = pushU ? (bc.tz * sgn) : (bc.nz * sgn);
+          V.x += nxHit * (pen + 0.02);
+          V.z += nzHit * (pen + 0.02);
+          let wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
+          const vn = wvx * nxHit + wvz * nzHit;
+          if (vn < 0) {
+            wvx -= nxHit * vn * 1.35;
+            wvz -= nzHit * vn * 1.35;
+            const tgx = -nzHit, tgz = nxHit, vt = wvx * tgx + wvz * tgz;
+            wvx -= tgx * vt * 0.2;
+            wvz -= tgz * vt * 0.2;
+            V.vx = wvx * c + wvz * s;
+            V.vy = -wvx * s + wvz * c;
+            V.r *= 0.5;
+            V.hits++;
+          }
+          break;
+        }
       }
     }
   }

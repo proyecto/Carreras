@@ -353,9 +353,22 @@ fn kerbSurf(in: V2F) -> Surface {
   let n1 = textureSample(tNoise, sLin, in.wpos.xz * 0.11);
   let n2 = textureSample(tNoise, sLin, in.wpos.xz * 0.9); let n3 = textureSample(tNoise, sLin, in.wpos.xz * 6.1);
   let aaS = max(fwidth(s), 0.002);
-  let ph = s / 5.0; let f = fract(ph);
-  let red = smoothstep(0.5 - aaS / 5.0, 0.5 + aaS / 5.0, abs(f - 0.5) * 2.0);   // 2,5 m vermelho / 2,5 m branco
-  var alb = mix(vec3f(0.5, 0.5, 0.48), vec3f(0.3, 0.005, 0.004), red);         // vermelho escuro saturado, tinta fosca
+  var alb = vec3f(0.5, 0.5, 0.48);
+  if (TRK_LEN > 6000.0 && s >= 4950.0 && s <= 5850.0) {
+    // Pianos técnicos oficiales Las Vegas GP: franjas alternas rosa neón, blanco puro y azul cian
+    let ph3 = fract(s / 4.5);
+    if (ph3 < 0.333) {
+      alb = vec3f(1.0, 0.08, 0.58); // Rosa neón
+    } else if (ph3 < 0.666) {
+      alb = vec3f(0.95, 0.95, 0.98); // Blanco puro
+    } else {
+      alb = vec3f(0.0, 0.85, 1.0);  // Azul cian
+    }
+  } else {
+    let ph = s / 5.0; let f = fract(ph);
+    let red = smoothstep(0.5 - aaS / 5.0, 0.5 + aaS / 5.0, abs(f - 0.5) * 2.0);   // 2,5 m rojo / 2,5 m blanco
+    alb = mix(vec3f(0.5, 0.5, 0.48), vec3f(0.3, 0.005, 0.004), red);
+  }
   alb *= 0.8 + 0.28 * n2.r;
   // ---- estrías transversales (ranuras de 30 cm): relieve con auto-sombra. La amplitud decrece suavemente con el tamaño de
   // dente na tela (fwidth), então de longe ou em ângulo rasante não sobra padrão para fazer moiré.

@@ -13,6 +13,7 @@ const TRK = {
   tyreL: null, tyreR: null,   // 0/1 barrera de neumáticos delante del muro
   segs: [], corners: [],
   grid: null, gridX0: 0, gridZ0: 0, gridW: 0, gridH: 0, gridCell: 24,
+  buildingColliders: [],
   // Pit lane y edificaciones (coordenadas s,d respecto a recta principal)
   pit: { s0: -100, s1: 190, wallD: 7.6, laneD0: 8.6, laneD1: 17.0, bldS0: -62, bldS1: 78, bldD0: 17.6, bldD1: 31, padD1: 52 },
   stand: { s0: -75, s1: 75, d0: -15.5, d1: -36 },
@@ -26,6 +27,7 @@ function trackBuild(spec) {
   if (!spec || (!spec.segments && !spec.points)) throw new Error('Ningún circuito activo registrado en TRACKS.');
   TRK.spec = spec;
   TRK.segs = []; TRK.corners = [];
+  TRK.buildingColliders = [];
   TRK.hw = spec.hw ?? 5.5;
   TRK.pit = Object.assign({ s0: -100, s1: 190, wallD: 7.6, laneD0: 8.6, laneD1: 17.0, bldS0: -62, bldS1: 78, bldD0: 17.6, bldD1: 31, padD1: 52 }, spec.pit || {});
   TRK.stand = Object.assign({ s0: -75, s1: 75, d0: -15.5, d1: -36 }, spec.stand || {});
@@ -147,52 +149,96 @@ function trackBuild(spec) {
     for (let i = i0; i <= i1; i++) { const q = ((i % N) + N) % N; const e = ramp ? Math.min(1, (i - i0 + 1) / ramp, (i1 - i + 1) / ramp) : 1; arr[q] = Math.max(arr[q], val * (e * e * (3 - 2 * e))); }
   };
   const hw = TRK.hw;
+  const isUrban = Boolean(spec && (spec.urban || spec.id === 'las-vegas-strip'));
   for (const sg of TRK.segs) if (sg.type === 'A') {
     const right = sg.k > 0, len = sg.s1 - sg.s0, big = Math.abs(sg.ang) >= 60;
     const inK = right ? TRK.kerbR : TRK.kerbL, outK = right ? TRK.kerbL : TRK.kerbR;
     mark(inK, sg.s0 - 4, sg.s1 + 4, 1, 0);
     if (big) { mark(outK, sg.s1 - len * 0.25, sg.s1 + 38, 1, 0); mark(outK, sg.s0 - 30, sg.s0 + 2, 1, 0); }
     else mark(outK, sg.s1 - 2, sg.s1 + 16, 1, 0);
-    if (big) {
+    if (big && !isUrban) {
       const depth = sg.R < 30 ? 26 : sg.R < 50 ? 22 : 30;
       mark(right ? TRK.gravL : TRK.gravR, sg.s0 - 34, sg.s1 + 22, depth, 26);
       mark(right ? TRK.tyreL : TRK.tyreR, sg.s0 - 10, sg.s1 + 6, 1, 0);
     }
     TRK.corners.push(sg);
   }
-  // Barreras: estándar a 8.5 m del borde; tras la grava; limitadas en lado interior
-  for (let i = 0; i < N; i++) {
-    const R = 1 / Math.max(1e-4, Math.abs(kb[i]));
-    let l = hw + 8.5 + TRK.gravL[i] * 0.86, r = hw + 8.5 + TRK.gravR[i] * 0.86;
-    if (kb[i] > 0) r = Math.min(r, Math.max(hw + 3.2, R * 0.55)); else l = Math.min(l, Math.max(hw + 3.2, R * 0.55));
-    TRK.barL[i] = l; TRK.barR[i] = r;
-  }
-  // Recta principal: muro de boxes a la derecha, valla de gradas a la izquierda
   const sI = s => (((Math.round(s / ds)) % N) + N) % N;
-  for (let s = TRK.pit.s0 - 40; s <= TRK.pit.s1 + 40; s++) {
-    const i = sI(s), e = Math.min(1, (s - (TRK.pit.s0 - 40)) / 40, (TRK.pit.s1 + 40 - s) / 40);
-    TRK.barR[i] = lerp(TRK.barR[i], TRK.pit.wallD, e); TRK.barL[i] = lerp(TRK.barL[i], hw + 3.4, e);
+  if (isUrban) {
+    // Circuito urbano F1 (Las Vegas): perfil métrico estricto desde el eje central (centerline)
+    // 1. Rectas: asfalto 14.0 m útil (hw = 7.0m) + arcén 1.5 m -> muro a 8.5 m del eje central.
+    // 2. Curvas rápidas y chicanes: piano 7.0m - 8.0m + arcén asfaltado 2.5m a 3.5m -> muro a 10.5m - 11.5m del eje central.
+    for (let i = 0; i < N; i++) {
+      const curve = Math.min(1.0, Math.abs(kb[i]) * 45.0);
+      const wallD = lerp(8.5, 10.5 + curve * 1.0, curve);
+      TRK.barL[i] = wallD;
+      TRK.barR[i] = wallD;
+    }
+
+    // Curva superior izquierda (Sands Ave a entrada Strip, s ≈ 2600..3300):
+    // Asegura un arcén exterior de 4.0 m en toda la curva (muro a 11.0 m del eje central)
+    for (let s = 2600; s <= 3300; s += 5) {
+      const i = sI(s);
+      TRK.barL[i] = Math.max(TRK.barL[i], 11.0);
+      TRK.barR[i] = Math.max(TRK.barR[i], 11.0);
+    }
+
+    // Recta principal (s de -160 a 150):
+    // Ancho de pista en recta principal: 15.0 m (7.5 m a cada lado)
+    // Muro del Pit Wall: a 7.5 m a la derecha del eje central.
+    // Muro exterior del Pit Lane (carril de boxes): a 19.5 m del eje central.
+    for (let s = TRK.pit.s0 - 30; s <= TRK.pit.s1 + 30; s += 5) {
+      const i = sI(s);
+      const e = Math.min(1, Math.max(0, (s - (TRK.pit.s0 - 30)) / 30), Math.max(0, (TRK.pit.s1 + 30 - s) / 30));
+      TRK.barR[i] = lerp(TRK.barR[i], TRK.pit.laneD1, e);
+      TRK.barL[i] = lerp(TRK.barL[i], 7.5, e);
+    }
+
+    // Las 4 escapatorias urbanas oficiales cerradas al fondo con Tecpro:
+    // 1. Curva 1 (Koval Hairpin, final recta meta, s = 80..160, exterior derecha): cajón 14 m ancho x 45 m largo
+    mark(TRK.barR, 80, 160, 21.0, 12);
+    // 2. Curva 5 (MSG Sphere Entry, s = 1880..2010, exterior izquierda)
+    mark(TRK.barL, 1880, 2010, 21.0, 12);
+    // 3. Curva 12 (Strip Entry, s = 3280..3420, exterior derecha): 14 m ancho x 40 m largo
+    mark(TRK.barR, 3280, 3420, 21.0, 12);
+    // 4. Curva 14 (Harmon Chicane, s = 5000..5180, exterior derecha): 15 m ancho x 65 m largo
+    mark(TRK.barR, 5000, 5180, 22.0, 14);
+  } else {
+    // Barreras: estándar a 8.5 m del borde; tras la grava; limitadas en lado interior
+    for (let i = 0; i < N; i++) {
+      const R = 1 / Math.max(1e-4, Math.abs(kb[i]));
+      let l = hw + 8.5 + TRK.gravL[i] * 0.86, r = hw + 8.5 + TRK.gravR[i] * 0.86;
+      if (kb[i] > 0) r = Math.min(r, Math.max(hw + 3.2, R * 0.55)); else l = Math.min(l, Math.max(hw + 3.2, R * 0.55));
+      TRK.barL[i] = l; TRK.barR[i] = r;
+    }
+    // Recta principal: muro de boxes a la derecha, valla de gradas a la izquierda
+    for (let s = TRK.pit.s0 - 40; s <= TRK.pit.s1 + 40; s++) {
+      const i = sI(s), e = Math.min(1, (s - (TRK.pit.s0 - 40)) / 40, (TRK.pit.s1 + 40 - s) / 40);
+      TRK.barR[i] = lerp(TRK.barR[i], TRK.pit.wallD, e); TRK.barL[i] = lerp(TRK.barL[i], hw + 3.4, e);
+    }
   }
   const tmp = F(); gs(TRK.barL, tmp, 5); TRK.barL.set(tmp); gs(TRK.barR, tmp, 5); TRK.barR.set(tmp);
-  // Holgura: la barrera no puede invadir tramos adyacentes del circuito
-  for (let side = -1; side <= 1; side += 2) {
-    const bar = side < 0 ? TRK.barL : TRK.barR;
-    for (let i = 0; i < N; i++) {
-      let b = bar[i];
-      for (; b > hw + 3.0; b -= 0.5) {
-        const px = X[i] - TZ[i] * side * b, pz = Z[i] + TX[i] * side * b; let ok = true;
-        for (let q = 0; q < N; q += 2) {
-          let di = Math.abs(q - i); di = Math.min(di, N - di); if (di < 70) continue;
-          if (Math.abs(Y[q] - Y[i]) > 14) continue;
-          const dx = X[q] - px, dz = Z[q] - pz; if (dx * dx + dz * dz < (b + 1.5) * (b + 1.5)) { ok = false; break; }
+  // Holgura: la barrera no puede invadir tramos adyacentes del circuito (solo en circuitos rurales con grava)
+  if (!isUrban) {
+    for (let side = -1; side <= 1; side += 2) {
+      const bar = side < 0 ? TRK.barL : TRK.barR;
+      for (let i = 0; i < N; i++) {
+        let b = bar[i];
+        for (; b > hw + 3.0; b -= 0.5) {
+          const px = X[i] - TZ[i] * side * b, pz = Z[i] + TX[i] * side * b; let ok = true;
+          for (let q = 0; q < N; q += 2) {
+            let di = Math.abs(q - i); di = Math.min(di, N - di); if (di < 70) continue;
+            if (Math.abs(Y[q] - Y[i]) > 14) continue;
+            const dx = X[q] - px, dz = Z[q] - pz; if (dx * dx + dz * dz < (b + 1.5) * (b + 1.5)) { ok = false; break; }
+          }
+          if (ok) break;
         }
-        if (ok) break;
+        bar[i] = b;
       }
-      bar[i] = b;
+      gs(bar, tmp, 4); for (let i = 0; i < N; i++) bar[i] = Math.min(bar[i], tmp[i]);
+      const grav = side < 0 ? TRK.gravL : TRK.gravR;
+      for (let i = 0; i < N; i++) { grav[i] = Math.min(grav[i], Math.max(0, bar[i] - hw - 5.2)); if (grav[i] < 3) grav[i] = 0; }
     }
-    gs(bar, tmp, 4); for (let i = 0; i < N; i++) bar[i] = Math.min(bar[i], tmp[i]);
-    const grav = side < 0 ? TRK.gravL : TRK.gravR;
-    for (let i = 0; i < N; i++) { grav[i] = Math.min(grav[i], Math.max(0, bar[i] - hw - 5.2)); if (grav[i] < 3) grav[i] = 0; }
   }
   // Rejilla espacial de muestras para acelerar búsqueda por proximidad
   let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;

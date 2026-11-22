@@ -101,17 +101,40 @@ function runTracksTestSuite() {
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 
-  // 6. Validación de patrocinio y escenografía de boxes (world/props.js)
-  const propsCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
+  // 6. Validación de patrocinio y escenografía de boxes (world/props.js + world/props-vegas.js)
+  const propsBaseCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
+  const vegasPropsPath = path.join(root, 'world/props-vegas.js');
+  assert(fs.existsSync(vegasPropsPath), 'Módulo separado de props de Las Vegas (world/props-vegas.js) presente para carga condicional');
+  const vegasPropsCode = fs.existsSync(vegasPropsPath) ? fs.readFileSync(vegasPropsPath, 'utf8') : '';
+  const propsCode = propsBaseCode + '\n' + vegasPropsCode;
+
   assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
   assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');
   assert(propsCode.includes('PADDOCK BUILDING OFICIAL F1 LAS VEGAS'), 'Modelo arquitectónico oficial de boxes / Paddock Building de Las Vegas presente');
+  assert(propsBaseCode.includes('buildVegasUrbanProps'), 'props.js delega props urbanas a buildVegasUrbanProps bajo demanda');
   assert(propsCode.includes('MSG Sphere') && propsCode.includes('Planet Earth') && propsCode.includes('earthColor'), 'Modelo monumental y textura Planet Earth del MSG Sphere presente');
   assert(propsCode.includes('S2.add(md, sphI0, 7, 5000)'), 'MSG Sphere registrado en S2 sin face culling con 5000m de distancia de renderizado');
   assert(propsCode.includes('distToSph < 185.0') && propsCode.includes('s >= 2500 && s <= 3750 && side < 0'), 'Corredor de visión y exclusión de rascacielos en la plaza del MSG Sphere verificados');
   assert(propsCode.includes('High Roller') && propsCode.includes('28 Cabinas') && propsCode.includes('nRim = 56'), 'Modelo estructural completo de la noria gigante High Roller (The LINQ) presente');
   assert(propsCode.includes('S2.add(md, hrI0, 7, 5000)'), 'High Roller registrado en S2 con rango de 5000 m');
   assert(propsCode.includes('distToHR < 125.0') && propsCode.includes('s >= 820 && s <= 1140 && side < 0'), 'Corredor de visión en Koval Lane hacia High Roller verificado');
+
+  // 7. Nuevos monumentos, contención y ambientación estricta de Las Vegas F1
+  assert(propsCode.includes('Muro Jersey') && propsCode.includes('Catch Fencing'), 'Túnel de contención continuo de muro Jersey y valla metálica FIA presente');
+  assert(propsCode.includes('tecproWall') && propsCode.includes('Tecpro'), 'Escapatorias urbanas de asfalto pintado y barreras Tecpro (rojo/blanco) presentes');
+  assert(propsCode.includes('LAS VEGAS') && propsCode.includes('Flechas de neón rosa y azul cian'), 'Rótulo monumental LAS VEGAS y flechas neón antes de Curva 14 presentes');
+  assert(propsCode.includes('MONUMENTAL LOGO F1 EN LA AZOTEA') && propsCode.includes('f1Red'), 'Logo de la F1 en LED rojo en la azotea del Paddock presente');
+  assert(propsCode.includes('buildTriWingTower') && propsCode.includes('Torre Y 1') && propsCode.includes('Torre Y 2') && propsCode.includes('Torre Y 3'), 'Los tres emblemáticos edificios con forma de Y (tri-wing towers) de Las Vegas presentes');
+  assert(propsCode.includes('Wynn') && propsCode.includes('Caesars Palace') && propsCode.includes('TORRE EIFFEL') && propsCode.includes('GLOBO AEROSTÁTICO') && propsCode.includes('FUENTES DEL BELLAGIO') && propsCode.includes('The Cosmopolitan'), 'Monumentos del Strip (Wynn, Caesars, Paris Torre Eiffel, Globo, Bellagio Fountains, Cosmopolitan) presentes');
+
+  const worldShader = fs.readFileSync(path.join(root, 'shaders/world.js'), 'utf8');
+  assert(worldShader.includes('Pianos técnicos oficiales Las Vegas GP') && worldShader.includes('Rosa neón') && worldShader.includes('Azul cian'), 'Pianos tricolor de Las Vegas (rosa neón, blanco puro, azul cian) presentes en el shader');
+
+  // 8. Validación de carga condicional y modular en index.html
+  const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('trackEntry.file'), 'index.html carga condicionalmente el archivo del circuito seleccionado');
+  assert(indexHtml.includes('hasVegetation = !(trackEntry && trackEntry.noVegetation)') && indexHtml.includes('shaders/vegetation.js'), 'index.html carga vegetación de forma estrictamente condicional (desactivada en Las Vegas)');
+  assert(indexHtml.includes('world/props-vegas.js') && indexHtml.includes('isVegas'), 'index.html carga la noria High Roller y MSG Sphere únicamente cuando se corre en Las Vegas');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

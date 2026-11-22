@@ -297,6 +297,7 @@ function atlasBuild() {
     else { for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(ix - 40 + k * 18, iy + 38); g.lineTo(ix - 22 + k * 18, iy - 38); g.lineTo(ix - 12 + k * 18, iy - 38); g.lineTo(ix - 30 + k * 18, iy + 38); g.closePath(); g.fill(); } }
     const th = Math.min(62, 376 / textW(b[0], 1)); centered(b[0], x + 116, y, 388, 128, th, b[2], 1.8, 0.1);
     reg('b' + i, x, y, 512, 128);
+    if (b[0].startsWith('HEINEKEN')) reg('heineken', x, y, 512, 128);
   });
   PROPS.nBrands = brands.length;
   // placas de distância: chapa de 256x208 com margem; número em traço grosso contínuo
@@ -346,8 +347,12 @@ function propsBuild() {
 
   // ================= guard-rails =================
   // separación de la barrera por lado y muestra (NaN = sin guardarraíl en ese punto)
+  const isVegas = Boolean(TRK.spec && (TRK.spec.id === 'las-vegas-strip' || TRK.spec.urban));
   const d1At = sr => { const e = sat(Math.min((sr - pit.s0) / 45, (pit.s1 - sr) / 45)); return lerp(hw + 4.5, pit.laneD1, e) + 0.8; };
   const railD = (side, i) => {
+    if (isVegas) {
+      return side < 0 ? -TRK.barL[i] : TRK.barR[i];
+    }
     const sr = srOf(i);
     if (side < 0) return (sr > TRK.stand.s0 - 22 && sr < TRK.stand.s1 + 22) ? NaN : -TRK.barL[i];
     if (sr < pit.s0 - 40 || sr > pit.s1 + 36) return TRK.barR[i];
@@ -371,75 +376,77 @@ function propsBuild() {
       for (let r = 0; r < path.length - 1; r++) { const a = base + r * 2; md.quadI(a, a + 2, a + 3, a + 1); }
     }
   };
-  for (const side of [-1, 1]) {
-    // lado esquerdo: pista à direita do sentido de marcha (+a); lado direito: pista à esquerda (−a), perfil invertido
-    const prof = side < 0 ? wprof : wprof.map(p => [-p[0], p[1]]).reverse();
-    let path = [], postPts = [], hadPrev = false, joinNext = false;
-    const flush = () => {
-      if (path.length > 1) {
-        const i0 = md.ni; md.mat(1, 0, 0, 110);
-        railStrip(path, prof, 0.42); railStrip(path, prof, 0.78);
-        S2.add(md, i0, 3, 630);
-        // postes em "C" com calço atrás de cada lâmina e parafuso no fundo do vale (somem junto, a ~110 m)
-        const j0 = mb.ni;
-        for (const p of postPts) {
-          mb.push(p.m); mb.mat(11, 0, 0, 28); col(mb, 1, 1, 1, 0.9); mb.box(0, 0.48, 0.085 * side, 0.07, 0.96, 0.11);
-          for (const yb of [0.42, 0.78]) { mb.box(0, yb, 0.02 * side, 0.1, 0.2, 0.05); mb.mat(2, 90, 200, 28); col(mb, 0.55, 0.56, 0.58); mb.box(0, yb, -0.016 * side, 0.04, 0.04, 0.02); mb.mat(11, 0, 0, 28); col(mb, 1, 1, 1, 0.9); }
-          mb.pop();
-        }
-        S1.add(mb, j0, 3, 162);
-        // terminal redondeado ("nariz") donde el guardarraíl comienza o termina físicamente
-        const t0 = mb.ni; mb.mat(1, 0, 0, 110); col(mb, 1, 1, 1);
-        if (!hadPrev) { const p = path[0]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
-        if (!joinNext) { const p = path[path.length - 1]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
-        S1.add(mb, t0, 3, 630);
-      }
-      hadPrev = joinNext; path = []; postPts = [];
-    };
-    for (let i = 0; i <= N; i += 2) {
-      const q = i % N, d = railD(side, q);
-      if (isNaN(d)) { joinNext = false; flush(); hadPrev = false; continue; }
-      const p = P(q * ds, d); path.push(p); postPts.push({ m: frame(q * ds, d) });
-      if (path.length >= 36) { const last = path[path.length - 1], lp = postPts[postPts.length - 1]; joinNext = true; flush(); path.push(last); postPts.push(lp); }
-    }
-    joinNext = false; flush();
-  }
-
-  // ================= Barreras de neumáticos =================
-  {
-    const tyProf = []; for (let k = 0; k < 5; k++) { const y = k * 0.2; tyProf.push([y + 0.008, 0.262], [y + 0.05, 0.31], [y + 0.15, 0.31], [y + 0.192, 0.262]); }
-    tyProf.push([1.0, 0.262], [1.0, 0.17], [0.86, 0.165]);
-    const rotY = m4rotZ(m4(), PI / 2);
+  if (!isVegas) {
     for (const side of [-1, 1]) {
-      const fl = side < 0 ? TRK.tyreL : TRK.tyreR, bar = side < 0 ? TRK.barL : TRK.barR;
-      let acc = 0, n = 0, i0 = mb.ni, j0 = md.ni, run = 0, prev = null;
-      const endChunk = () => { if (n) { S1.add(mb, i0, 3, 198); S2.add(md, j0, 7, 1200); } i0 = mb.ni; j0 = md.ni; n = 0; };
-      for (let i = 0; i < N; i++) {
-        if (fl[i] < 0.5) { endChunk(); run = 0; prev = null; acc = 0; continue; }
-        acc += ds;
-        while (acc >= 0.64) {
-          acc -= 0.64; const s = i * ds - acc, d = side * (trkAt(bar, i, 0) - 0.62), p = P(s, d);
-          // tinta: blocos de 6 pilhas brancas/vermelhas nos primeiros e últimos 25 m de cada barreira; resto preto
-          const blk = Math.floor(run / 6) % 2, painted = (Math.floor(run / 6) % 4) < 2;
-          const c = painted ? (blk ? [0.55, 0.05, 0.04] : [0.62, 0.62, 0.6]) : [0.02, 0.02, 0.02];
-          mb.mat(15); col(mb, c[0], c[1], c[2], 0.85);
-          mb.push(m4mul(m4(), m4translate(mt, p[0], p[1] - 0.02, p[2]), rotY)); mb.lathe(tyProf, 9); mb.pop();
-          // substituto distante: tira frontal + topo, por pilha
-          if (prev) {
-            md.mat(12); col(md, c[0], c[1], c[2], 0.9);
-            const nx = -(-p[4]) * side, nz = -(p[3]) * side;                 // normal apontando para a pista
-            const ax = prev[0] + nx * 0.3, az = prev[2] + nz * 0.3, bx = p[0] + nx * 0.3, bz = p[2] + nz * 0.3;
-            const cx = prev[0] - nx * 0.3, cz = prev[2] - nz * 0.3, dx = p[0] - nx * 0.3, dz = p[2] - nz * 0.3;
-            const quadN = (x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, n0, n1, n2, u0, v0, u1, v1) => { const a = md.v(x0, y0, z0, n0, n1, n2, u0, v0), b = md.v(x1, y1, z1, n0, n1, n2, u1, v0), c2 = md.v(x2, y2, z2, n0, n1, n2, u1, v1), d2 = md.v(x3, y3, z3, n0, n1, n2, u0, v1); const ex = x1 - x0, ey = y1 - y0, ez = z1 - z0, fx = x3 - x0, fy = y3 - y0, fz = z3 - z0; if ((ey * fz - ez * fy) * n0 + (ez * fx - ex * fz) * n1 + (ex * fy - ey * fx) * n2 >= 0) md.quadI(a, b, c2, d2); else md.quadI(a, d2, c2, b); };
-            quadN(ax, prev[1], az, bx, p[1], bz, bx, p[1] + 1.0, bz, ax, prev[1] + 1.0, az, nx, 0, nz, run, 0, run + 1, 5);
-            quadN(ax, prev[1] + 1.0, az, bx, p[1] + 1.0, bz, dx, p[1] + 1.0, dz, cx, prev[1] + 1.0, cz, 0, 1, 0, run, 0.0, run + 1, 1.0);
-            quadN(dx, p[1], dz, cx, prev[1], cz, cx, prev[1] + 1.0, cz, dx, p[1] + 1.0, dz, -nx, 0, -nz, run + 1, 0, run, 5);
+      // lado esquerdo: pista à direita do sentido de marcha (+a); lado direito: pista à esquerda (−a), perfil invertido
+      const prof = side < 0 ? wprof : wprof.map(p => [-p[0], p[1]]).reverse();
+      let path = [], postPts = [], hadPrev = false, joinNext = false;
+      const flush = () => {
+        if (path.length > 1) {
+          const i0 = md.ni; md.mat(1, 0, 0, 110);
+          railStrip(path, prof, 0.42); railStrip(path, prof, 0.78);
+          S2.add(md, i0, 3, 630);
+          // postes em "C" com calço atrás de cada lâmina e parafuso no fundo do vale (somem junto, a ~110 m)
+          const j0 = mb.ni;
+          for (const p of postPts) {
+            mb.push(p.m); mb.mat(11, 0, 0, 28); col(mb, 1, 1, 1, 0.9); mb.box(0, 0.48, 0.085 * side, 0.07, 0.96, 0.11);
+            for (const yb of [0.42, 0.78]) { mb.box(0, yb, 0.02 * side, 0.1, 0.2, 0.05); mb.mat(2, 90, 200, 28); col(mb, 0.55, 0.56, 0.58); mb.box(0, yb, -0.016 * side, 0.04, 0.04, 0.02); mb.mat(11, 0, 0, 28); col(mb, 1, 1, 1, 0.9); }
+            mb.pop();
           }
-          prev = p; run++; n++;
-          if (n >= 26) endChunk();
+          S1.add(mb, j0, 3, 162);
+          // terminal redondeado ("nariz") donde el guardarraíl comienza o termina físicamente
+          const t0 = mb.ni; mb.mat(1, 0, 0, 110); col(mb, 1, 1, 1);
+          if (!hadPrev) { const p = path[0]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
+          if (!joinNext) { const p = path[path.length - 1]; mb.cyl(p[0], p[1] + 0.24, p[2], 0.17, p[1] + 0.97, 0.17, 10, true, true); }
+          S1.add(mb, t0, 3, 630);
         }
+        hadPrev = joinNext; path = []; postPts = [];
+      };
+      for (let i = 0; i <= N; i += 2) {
+        const q = i % N, d = railD(side, q);
+        if (isNaN(d)) { joinNext = false; flush(); hadPrev = false; continue; }
+        const p = P(q * ds, d); path.push(p); postPts.push({ m: frame(q * ds, d) });
+        if (path.length >= 36) { const last = path[path.length - 1], lp = postPts[postPts.length - 1]; joinNext = true; flush(); path.push(last); postPts.push(lp); }
       }
-      endChunk();
+      joinNext = false; flush();
+    }
+
+    // ================= Barreras de neumáticos =================
+    {
+      const tyProf = []; for (let k = 0; k < 5; k++) { const y = k * 0.2; tyProf.push([y + 0.008, 0.262], [y + 0.05, 0.31], [y + 0.15, 0.31], [y + 0.192, 0.262]); }
+      tyProf.push([1.0, 0.262], [1.0, 0.17], [0.86, 0.165]);
+      const rotY = m4rotZ(m4(), PI / 2);
+      for (const side of [-1, 1]) {
+        const fl = side < 0 ? TRK.tyreL : TRK.tyreR, bar = side < 0 ? TRK.barL : TRK.barR;
+        let acc = 0, n = 0, i0 = mb.ni, j0 = md.ni, run = 0, prev = null;
+        const endChunk = () => { if (n) { S1.add(mb, i0, 3, 198); S2.add(md, j0, 7, 1200); } i0 = mb.ni; j0 = md.ni; n = 0; };
+        for (let i = 0; i < N; i++) {
+          if (fl[i] < 0.5) { endChunk(); run = 0; prev = null; acc = 0; continue; }
+          acc += ds;
+          while (acc >= 0.64) {
+            acc -= 0.64; const s = i * ds - acc, d = side * (trkAt(bar, i, 0) - 0.62), p = P(s, d);
+            // tinta: blocos de 6 pilhas brancas/vermelhas nos primeiros e últimos 25 m de cada barreira; resto preto
+            const blk = Math.floor(run / 6) % 2, painted = (Math.floor(run / 6) % 4) < 2;
+            const c = painted ? (blk ? [0.55, 0.05, 0.04] : [0.62, 0.62, 0.6]) : [0.02, 0.02, 0.02];
+            mb.mat(15); col(mb, c[0], c[1], c[2], 0.85);
+            mb.push(m4mul(m4(), m4translate(mt, p[0], p[1] - 0.02, p[2]), rotY)); mb.lathe(tyProf, 9); mb.pop();
+            // substituto distante: tira frontal + topo, por pilha
+            if (prev) {
+              md.mat(12); col(md, c[0], c[1], c[2], 0.9);
+              const nx = -(-p[4]) * side, nz = -(p[3]) * side;                 // normal apontando para a pista
+              const ax = prev[0] + nx * 0.3, az = prev[2] + nz * 0.3, bx = p[0] + nx * 0.3, bz = p[2] + nz * 0.3;
+              const cx = prev[0] - nx * 0.3, cz = prev[2] - nz * 0.3, dx = p[0] - nx * 0.3, dz = p[2] - nz * 0.3;
+              const quadN = (x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, n0, n1, n2, u0, v0, u1, v1) => { const a = md.v(x0, y0, z0, n0, n1, n2, u0, v0), b = md.v(x1, y1, z1, n0, n1, n2, u1, v0), c2 = md.v(x2, y2, z2, n0, n1, n2, u1, v1), d2 = md.v(x3, y3, z3, n0, n1, n2, u0, v1); const ex = x1 - x0, ey = y1 - y0, ez = z1 - z0, fx = x3 - x0, fy = y3 - y0, fz = z3 - z0; if ((ey * fz - ez * fy) * n0 + (ez * fx - ex * fz) * n1 + (ex * fy - ey * fx) * n2 >= 0) md.quadI(a, b, c2, d2); else md.quadI(a, d2, c2, b); };
+              quadN(ax, prev[1], az, bx, p[1], bz, bx, p[1] + 1.0, bz, ax, prev[1] + 1.0, az, nx, 0, nz, run, 0, run + 1, 5);
+              quadN(ax, prev[1] + 1.0, az, bx, p[1] + 1.0, bz, dx, p[1] + 1.0, dz, cx, prev[1] + 1.0, cz, 0, 1, 0, run, 0.0, run + 1, 1.0);
+              quadN(dx, p[1], dz, cx, prev[1], cz, cx, prev[1] + 1.0, cz, dx, p[1] + 1.0, dz, -nx, 0, -nz, run + 1, 0, run, 5);
+            }
+            prev = p; run++; n++;
+            if (n >= 26) endChunk();
+          }
+        }
+        endChunk();
+      }
     }
   }
 
@@ -478,14 +485,32 @@ function propsBuild() {
     mb.mat(1); col(mb, 1, 1, 1); mb.cyl(0, hWall, 0, 0.06, hf + 0.05, 0.06, 6, false, true);
     mb.pop(); S1.add(mb, i0, 3, 900);
   };
-  wallFence(pit.bldS0 - 2, pit.s1 - 38, pit.wallD, -1, 1.05, 3.3, [0.05, 0.16, 0.4]);                    // muro dos boxes
-  wallFence(TRK.stand.s0 - 22, TRK.stand.s1 + 22, -(hw + 3.4), 1, 1.0, 4.4, [0.62, 0.1, 0.06]);          // frente da arquibancada
-  wallEnd(pit.bldS0 - 2, pit.wallD, 1.05, 3.3, -1); wallEnd(pit.s1 - 38, pit.wallD, 1.05, 3.3, 1); wallEnd(TRK.stand.s0 - 22, -(hw + 3.4), 1.0, 4.4, -1); wallEnd(TRK.stand.s1 + 22, -(hw + 3.4), 1.0, 4.4, 1);
+  if (!isVegas) {
+    wallFence(pit.bldS0 - 2, pit.s1 - 38, pit.wallD, -1, 1.05, 3.3, [0.05, 0.16, 0.4]);                    // muro dos boxes
+    wallFence(TRK.stand.s0 - 22, TRK.stand.s1 + 22, -(hw + 3.4), 1, 1.0, 4.4, [0.62, 0.1, 0.06]);          // frente da arquibancada
+    wallEnd(pit.bldS0 - 2, pit.wallD, 1.05, 3.3, -1); wallEnd(pit.s1 - 38, pit.wallD, 1.05, 3.3, 1); wallEnd(TRK.stand.s0 - 22, -(hw + 3.4), 1.0, 4.4, -1); wallEnd(TRK.stand.s1 + 22, -(hw + 3.4), 1.0, 4.4, 1);
+  }
 
   // ================= construções na reta (coordenadas locais: u = s relativo à linha, y, v = d) =================
   // Convierte vértices locales al mundo siguiendo la rasante de la recta
   const toStraight = (m, v0) => {
-    const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u - 60; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
+    const f = m.f32;
+    const isSpa = Boolean(TRK.spec && TRK.spec.id === 'spa-francorchamps');
+    for (let i = v0; i < m.nv; i++) {
+      const u = f[i * 9], v = f[i * 9 + 2];
+      trackPos(u, 0, o5);
+      if (isSpa) {
+        f[i * 9] = u - 60;
+        f[i * 9 + 1] += o5[1];
+        f[i * 9 + 2] = v;
+      } else {
+        const tx = o5[3], tz = o5[4];
+        const gy = Math.max(o5[1], hfAt(o5[0] - tz * v, o5[2] + tx * v));
+        f[i * 9] = o5[0] - tz * v;
+        f[i * 9 + 1] += gy;
+        f[i * 9 + 2] = o5[2] + tx * v;
+      }
+    }
   };
   const Bx = (m, u0, u1, y0, y1, v0, v1) => m.box((u0 + u1) / 2, (y0 + y1) / 2, (v0 + v1) / 2, Math.abs(u1 - u0), Math.abs(y1 - y0), Math.abs(v1 - v0));
   const rng = mkRng(77);
@@ -559,224 +584,12 @@ function propsBuild() {
     if (local) return;
     toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 3, 900); S2.add(md, k0, 5, 1500);   // la pancarta (lona microperforada) no proyecta sombra: solo la celosía marca el asfalto
   };
-  const isVegas = Boolean(TRK.spec && (TRK.spec.id === 'las-vegas-strip' || TRK.spec.urban));
   const gantryDL = isVegas ? -(hw + 2.2) : -7.7;
   const gantryDR = isVegas ? (pit.wallD - 0.6) : 7.05;
   gantry(0, gantryDL, gantryDR, 'name', true);
-  if (isVegas) {
-    // Pórtico publicitario Heineken 0.0 cruzando la calle de boxes hacia el edificio del paddock
-    gantry(35, pit.wallD - 0.4, pit.bldD0 + 0.4, 'b0', false);
-  }
 
-  // ---- prédio dos boxes ----
-  if (isVegas) {
-    // ================= PADDOCK BUILDING OFICIAL F1 LAS VEGAS =================
-    // Estructura de 4 niveles inspirada fielmente en el edificio de 500M$ de Las Vegas F1
-    // Nivel 1: Garajes de boxes con portales oscuros, rótulos luminosos de escuderías y perchas de repostaje.
-    // Niveles 2 y 3: Suites VIP Paddock Club acristaladas panorámicas con terrazas en voladizo continuo.
-    // Nivel 4: Terraza superior abierta con la estructura de marquesina Heineken 0.0, focos cenitales VIP y torre TAG Heuer.
-    const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1;
-    const nBay = 20, bw = (u1 - u0) / nBay; // 9.5 m por garaje
-
-    for (let part = 0; part < 4; part++) {
-      const b0 = part * 5, b1 = b0 + 5;
-      const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, pv0 = mp.nv, pi0 = mp.ni;
-
-      for (let b = b0; b < b1; b++) {
-        const a = u0 + b * bw, c = a + bw, cx = (a + c) * 0.5;
-        const closed = (b % 5 === 1 && b !== 0 && b !== 19);
-
-        // --- Planta Baja: Garajes (0 a 4.8 m) ---
-        // Pilares de fachada en composite grafito oscuro
-        mb.mat(2, 110, 150); col(mb, 0.08, 0.09, 0.10);
-        Bx(mb, a - 0.35, a + 0.35, -0.5, 4.8, vF - 0.15, vF + 0.45);
-        if (b === nBay - 1) Bx(mb, c - 0.35, c + 0.35, -0.5, 4.8, vF - 0.15, vF + 0.45);
-
-        // Dintel y rótulo retroiluminado del equipo
-        mb.mat(2, 120, 140); col(mb, 0.06, 0.07, 0.08);
-        Bx(mb, a, c, 4.08, 4.8, vF - 0.22, vF + 0.05);
-        mb.mat(6, 160, 0); col(mb, 0.95, 0.95, 0.98); // Luz LED blanca continua
-        Bx(mb, a + 0.8, c - 0.8, 4.22, 4.68, vF - 0.24, vF - 0.18);
-        sign(md, cx + 0.85, 4.22, vF - 0.25, -1.7, 0, 0, 0.46, 'g' + b);
-
-        // Brazo voladizo de servicio (gantry de mangueras neumáticas y piruleta de parada)
-        mb.mat(2, 128, 128); col(mb, 0.22, 0.24, 0.27);
-        mb.tube([[cx, 4.6, vF], [cx, 4.6, vF - 3.8]], 0.055, 5);
-        mb.tube([[cx, 4.6, vF - 3.8], [cx, 3.1, vF - 3.8]], 0.035, 4);
-        mb.mat(2, 150, 0); col(mb, 0.9, 0.05, 0.02); mb.cyl(cx, 3.0, vF - 3.8, 0.22, 3.12, 0.22, 8, true, true);
-        mb.mat(2, 150, 0); col(mb, 0.05, 0.85, 0.2); mb.cyl(cx, 3.12, vF - 3.8, 0.22, 3.24, 0.22, 8, true, true);
-
-        // Interior del garaje (profundidad 12m)
-        const dp = 12.0, x0 = a + 0.35, x1 = c - 0.35;
-        mb.mat(3); col(mb, 0.25, 0.25, 0.27, 0.85); // Suelo de resina epoxi gris
-        mb.quad(x0, 0.02, vF + dp, x1, 0.02, vF + dp, x1, 0.02, vF, x0, 0.02, vF);
-        col(mb, 0.35, 0.36, 0.38, 0.7); // Pared de fondo
-        mb.quad(x1, 0, vF + dp, x0, 0, vF + dp, x0, 4.8, vF + dp, x1, 4.8, vF + dp);
-        const tc = SHIRTS[(b * 3 + 1) % SHIRTS.length];
-        mb.mat(2, 140, 0); col(mb, tc[0], tc[1], tc[2]);
-        Bx(mb, x0, x1, 2.0, 2.5, vF + dp - 0.05, vF + dp);
-        mb.mat(3); col(mb, 0.3, 0.31, 0.33); // Paredes laterales
-        mb.quad(x0, 0, vF + dp, x0, 0, vF, x0, 4.8, vF, x0, 4.8, vF + dp);
-        mb.quad(x1, 0, vF, x1, 0, vF + dp, x1, 4.8, vF + dp, x1, 4.8, vF);
-        col(mb, 0.2, 0.2, 0.22); // Techo
-        mb.quad(x0, 4.8, vF, x1, 4.8, vF, x1, 4.8, vF + dp, x0, 4.8, vF + dp);
-        mb.mat(6, 150, 0); col(mb, 1.0, 0.95, 0.9);
-        for (let k = 1; k <= 3; k++) Bx(mb, cx - 1.2, cx + 1.2, 4.75, 4.78, vF + k * 2.8 - 0.2, vF + k * 2.8 + 0.2);
-
-        if (closed) {
-          mb.mat(5); col(mb, 1, 1, 1);
-          mb.quad(x1, 0, vF + 0.08, x0, 0, vF + 0.08, x0, 4.08, vF + 0.08, x1, 4.08, vF + 0.08, 0, 0, x1 - x0, 4.08);
-        } else {
-          // Carro de herramientas y puesto de ingenieros
-          mb.mat(2, 110, 80); col(mb, 0.75, 0.08, 0.06);
-          Bx(mb, x0 + 0.5, x0 + 2.5, 0, 1.2, vF + dp - 1.4, vF + dp - 0.4);
-          col(mb, 0.15, 0.16, 0.18);
-          Bx(mb, x1 - 3.2, x1 - 0.5, 0.9, 0.96, vF + dp - 1.5, vF + dp - 0.4);
-          // Pilas de neumáticos Pirelli P Zero
-          for (let q = 0; q < 2; q++) {
-            const tyreCol = q === 0 ? [0.85, 0.1, 0.1] : [0.9, 0.8, 0.1];
-            mb.mat(4); col(mb, 0.03, 0.03, 0.03); mb.cyl(x0 + 3.2 + q * 0.85, 0, vF + dp - 0.8, 0.36, 1.05, 0.36, 12, false, true);
-            mb.mat(2, 128, 0); col(mb, tyreCol[0], tyreCol[1], tyreCol[2]); mb.cyl(x0 + 3.2 + q * 0.85, 0.48, vF + dp - 0.8, 0.365, 0.55, 0.365, 12, false, false);
-          }
-          // Mecánicos de boxes
-          const tm = [tc[0] * 0.6 + 0.1, tc[1] * 0.6 + 0.1, tc[2] * 0.6 + 0.1];
-          stander(x0 + 1.2 + (b % 3) * 0.8, 0.02, vF - 0.8 + (b % 2) * 1.5, tm, 0.9);
-          stander(x1 - 1.5, 0.02, vF + 1.2, tm, 0.9);
-        }
-      }
-
-      const a = u0 + b0 * bw, c = u0 + b1 * bw;
-
-      // --- Planta 2: Paddock Club Hospitality Nivel 1 (4.8 a 9.2 m) ---
-      // Voladizo de terraza en hormigón arquitectónico blanco
-      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
-      Bx(mb, a, c, 4.8, 5.25, vF - 2.2, vB);
-      // Barandilla de cristal continua de la terraza
-      mb.mat(5); col(mb, 1, 1, 1);
-      mb.quad(c, 5.25, vF - 2.15, a, 5.25, vF - 2.15, a, 6.35, vF - 2.15, c, 6.35, vF - 2.15, 0, 0, c - a, 1.1);
-      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
-      Bx(mb, a, c, 6.35, 6.42, vF - 2.2, vF - 2.1);
-      // Invitados VIP en la terraza nivel 1
-      for (let k = 0; k < 4; k++) stander(a + 2.5 + k * 11.0, 5.25, vF - 1.5, pick(CROWD), 0.9);
-      // Fachada acristalada panorámica piso 2
-      mb.mat(5);
-      mb.quad(c, 5.25, vF + 0.2, a, 5.25, vF + 0.2, a, 9.2, vF + 0.2, c, 9.2, vF + 0.2, a, 0, c, 3.95);
-      // Montantes verticales oscuros
-      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
-      for (let x = a; x <= c + 0.01; x += 2.375) Bx(mb, x - 0.04, x + 0.04, 5.25, 9.2, vF + 0.12, vF + 0.24);
-
-      // --- Planta 3: Paddock Club Hospitality Nivel 2 (9.2 a 13.6 m) ---
-      // Voladizo de terraza nivel 2 blanco
-      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
-      Bx(mb, a, c, 9.2, 9.65, vF - 2.2, vB);
-      // Barandilla de cristal terraza 2
-      mb.mat(5); col(mb, 1, 1, 1);
-      mb.quad(c, 9.65, vF - 2.15, a, 9.65, vF - 2.15, a, 10.75, vF - 2.15, c, 10.75, vF - 2.15, 0, 0, c - a, 1.1);
-      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
-      Bx(mb, a, c, 10.75, 10.82, vF - 2.2, vF - 2.1);
-      // Invitados VIP terraza 2
-      for (let k = 0; k < 4; k++) stander(a + 4.0 + k * 11.0, 9.65, vF - 1.5, pick(CROWD), 0.9);
-      // Fachada acristalada piso 3
-      mb.mat(5);
-      mb.quad(c, 9.65, vF + 0.2, a, 9.65, vF + 0.2, a, 13.6, vF + 0.2, c, 13.6, vF + 0.2, a, 0, c, 3.95);
-      // Montantes piso 3
-      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
-      for (let x = a; x <= c + 0.01; x += 2.375) Bx(mb, x - 0.04, x + 0.04, 9.65, 13.6, vF + 0.12, vF + 0.24);
-
-      // --- Planta 4: Terraza Superior & Cubierta Heineken (13.6 a 18.5 m) ---
-      // Losa perimetral de la azotea
-      mb.mat(2, 150, 0); col(mb, 0.92, 0.92, 0.90);
-      Bx(mb, a, c, 13.6, 14.15, vF - 2.4, vB + 0.5);
-      // Barandilla perimetral de la azotea
-      mb.mat(5); col(mb, 1, 1, 1);
-      mb.quad(c, 14.15, vF - 2.35, a, 14.15, vF - 2.35, a, 15.35, vF - 2.35, c, 15.35, vF - 2.35, 0, 0, c - a, 1.2);
-      mb.mat(2, 76, 204); col(mb, 0.82, 0.84, 0.86);
-      Bx(mb, a, c, 15.35, 15.42, vF - 2.4, vF - 2.3);
-      // Pavimento de la azotea
-      mb.mat(9); col(mb, 0.25, 0.26, 0.28);
-      mb.quad(a, 14.16, vB + 0.5, c, 14.16, vB + 0.5, c, 14.16, vF - 2.4, a, 14.16, vF - 2.4, 0, 0, c - a, vB - vF + 2.9);
-
-      // Marquesina icónica Heineken 0.0 en los tramos centrales
-      if (part === 1 || part === 2) {
-        mb.mat(2, 110, 150); col(mb, 0.0, 0.48, 0.20); // Verde Heineken
-        for (const px of [a + 4.0, (a + c) * 0.5, c - 4.0]) {
-          mb.tube([[px, 14.15, vF - 1.0], [px, 17.5, vF - 1.0]], 0.08, 6);
-          mb.tube([[px, 14.15, vB - 2.0], [px, 17.5, vB - 2.0]], 0.08, 6);
-        }
-        Bx(mb, a + 2.0, c - 2.0, 17.5, 17.85, vF - 1.2, vB - 1.8);
-        // Letrero Heineken 0.0 gigante retroiluminado en la azotea
-        sign(md, (a + c) * 0.5 + 10.0, 15.6, vF - 2.38, -20.0, 0, 0, 2.0, 'b0');
-      } else {
-        const nm = part === 0 ? 'name' : 'b1';
-        sign(md, (a + c) * 0.5 + 9.0, 14.35, vF - 2.38, -18.0, 0, 0, 1.8, nm);
-      }
-
-      // Proyectores arquitectónicos hacia el cielo nocturno
-      for (let q = 0; q < 3; q++) {
-        const sx = a + (q + 0.5) * (c - a) / 3, sz = vF + 2.0 + q * 3.5;
-        mb.mat(2, 128, 128); col(mb, 0.1, 0.1, 0.12); mb.cyl(sx, 14.15, sz, 0.35, 14.8, 0.35, 8, false, true);
-        mb.mat(6, 180, 0); col(mb, 0.9, 0.95, 1.0); mb.cyl(sx, 14.8, sz, 0.3, 14.85, 0.3, 8, true, true);
-      }
-
-      // Fachada trasera
-      mb.mat(3); col(mb, 0.2, 0.21, 0.23);
-      mb.quad(a, -0.5, vB, c, -0.5, vB, c, 14.15, vB, a, 14.15, vB);
-      mb.mat(5); col(mb, 1, 1, 1);
-      mb.quad(a + 1.0, 5.5, vB + 0.02, c - 1.0, 5.5, vB + 0.02, c - 1.0, 8.5, vB + 0.02, a + 1.0, 8.5, vB + 0.02, a, 0, c, 3.0);
-      mb.quad(a + 1.0, 10.0, vB + 0.02, c - 1.0, 10.0, vB + 0.02, c - 1.0, 13.0, vB + 0.02, a + 1.0, 13.0, vB + 0.02, a, 0, c, 3.0);
-
-      // Fachadas extremas
-      if (part === 0) {
-        mb.mat(3); col(mb, 0.18, 0.19, 0.21);
-        mb.quad(a, -0.5, vF - 2.2, a, -0.5, vB, a, 14.15, vB, a, 14.15, vF - 2.2);
-        sign(md, a - 0.05, 5.0, vF + 1.0, 0, 0, 10.0, 2.5, 'name');
-      }
-      if (part === 3) {
-        mb.mat(3); col(mb, 0.18, 0.19, 0.21);
-        mb.quad(c, -0.5, vB, c, -0.5, vF - 2.2, c, 14.15, vF - 2.2, c, 14.15, vB);
-        // Torre de cronometraje TAG Heuer integrada en el extremo norte
-        mb.mat(2, 110, 150); col(mb, 0.08, 0.09, 0.11);
-        Bx(mb, c - 0.5, c + 4.5, 0, 20.5, vF + 1.0, vF + 5.0);
-        sign(md, c + 4.55, 15.5, vF + 4.8, 0, 0, -3.6, 2.8, 'b1'); // TAG HEUER
-        sign(md, c + 4.55, 11.5, vF + 4.8, 0, 0, -3.6, 2.8, 'b0'); // HEINEKEN
-        mb.mat(6, 180, 0); col(mb, 0.0, 0.85, 0.6); // Pantalla LED de tabla de clasificación
-        Bx(mb, c + 4.52, c + 4.54, 4.0, 11.0, vF + 1.4, vF + 4.6);
-      }
-
-      toStraight(mb, v0); toStraight(md, w0);
-      S1.add(mb, i0, 7, 2500); S2.add(md, k0, 3, 1200);
-      toStraight(mp, pv0); SP.add(mp, pi0, 1, 600);
-    }
-
-    // Línea pintada oficial Aramco en el pit lane (borde de velocidad límite)
-    const vA = mb.nv, iA = mb.ni;
-    for (let s = pit.s0 + 10; s <= pit.s1 - 10; s += 3.0) {
-      const isTurq = ((Math.floor(s / 3.0)) % 2 === 0);
-      mb.mat(2, 140, 0);
-      if (isTurq) col(mb, 0.0, 0.64, 0.88);
-      else col(mb, 0.95, 0.95, 0.95);
-      Bx(mb, s, s + 2.8, 0.015, 0.025, pit.laneD0 - 0.25, pit.laneD0 + 0.25);
-    }
-    toStraight(mb, vA); S1.add(mb, iA, 3, 900);
-
-    // Puestos de mandos / perchas de estrategas de F1 a lo largo del muro de boxes
-    const vP = mb.nv, iP = mb.ni;
-    for (const s of [-60, -40, -20, 0, 20, 40, 60, 80]) {
-      mb.mat(2, 110, 150); col(mb, 0.12, 0.13, 0.15);
-      Bx(mb, s - 2.2, s + 2.2, 0.95, 1.05, pit.wallD - 0.6, pit.wallD + 1.2);
-      col(mb, 0.08, 0.08, 0.09);
-      Bx(mb, s - 2.4, s + 2.4, 2.5, 2.6, pit.wallD - 0.8, pit.wallD + 1.4);
-      for (const sx of [s - 2.2, s + 2.2]) for (const sz of [pit.wallD - 0.6, pit.wallD + 1.2]) {
-        mb.tube([[sx, 0.95, sz], [sx, 2.5, sz]], 0.035, 5);
-      }
-      mb.mat(6, 170, 0); col(mb, 0.0, 0.75, 0.95);
-      for (let scr = 0; scr < 4; scr++) {
-        const scx = s - 1.5 + scr * 1.0;
-        Bx(mb, scx - 0.4, scx + 0.4, 1.4, 1.85, pit.wallD + 0.7, pit.wallD + 0.73);
-      }
-    }
-    toStraight(mb, vP); S1.add(mb, iP, 3, 900);
-  } else {
+  // ---- prédio dos boxes clássico e arquibancada (circuitos rurais) ----
+  if (!isVegas) {
     // ---- prédio dos boxes clássico ----
     const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1, nBay = 20, bw = (u1 - u0) / nBay, hG = 3.7, hS = 4.5, hT = 8.2;
     const wallC = [0.6, 0.6, 0.58], darkC = [0.1, 0.11, 0.12];
@@ -879,8 +692,8 @@ function propsBuild() {
     toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 7, 2500); S2.add(md, k0, 3, 900);
   }
 
-  // ---- arquibancada ----
-  {
+  // ---- arquibancada (circuitos rurais) ----
+  if (!isVegas) {
     const st = TRK.stand, u0 = st.s0, u1 = st.s1, vF = st.d0, nRow = 22, run = 0.85, rise = 0.42, yF = 1.25, vB = vF - 1.0 - nRow * run, yB = yF + nRow * rise;
     const nSec = 5, aisle = 2.2, secW = (u1 - u0 - (nSec + 1) * aisle) / nSec;
     const seatCols = [[0.06, 0.12, 0.26], [0.33, 0.29, 0.12], [0.26, 0.27, 0.29]];   // assentos em tons sóbrios (o público é que dá a cor)
@@ -991,8 +804,8 @@ function propsBuild() {
     }
     S1.add(mb, i0, 3, 430); S2.add(md, k0, 3, 430);
   }
-  // ---- painéis publicitários atrás das barreiras ----
-  {
+  // ---- painéis publicitários atrás das barreiras (circuitos rurais) ----
+  if (!isVegas) {
     let bi = 0;
     const row = (s0, s1, side, step, w, h, y0, chev) => {
       for (let s = s0; s < s1 - w * 0.5; s += step) {
@@ -1027,8 +840,8 @@ function propsBuild() {
     }
     mb.pop(); md.pop(); S1.add(mb, i0, 7, 1500); S2.add(md, k0, 3, 1500);
   }
-  // ---- postos de fiscal ----
-  {
+  // ---- postos de fiscal (circuitos rurais) ----
+  if (!isVegas) {
     const spots = []; for (const c of TRK.corners) { spots.push([c.s0 - 8, c.k > 0 ? 1 : -1]); if (Math.abs(c.ang) > 100) spots.push([(c.s0 + c.s1) / 2, c.k > 0 ? -1 : 1]); }
     spots.push([700, 1], [1190, -1]); let pn = 0;
     for (const [s, side] of spots) {
@@ -1141,503 +954,12 @@ function propsBuild() {
     S1.add(mb, c0, 3, 220);
   }
 
-  // ---- Circuito urbano: rascacielos continuos, hoteles casino con luces de neón, MSG Sphere y farolas F1 ----
-  if (TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
-    const rnd = mkRng(777);
-    const neonColors = [
-      [1.0, 0.85, 0.25], // Bellagio Gold
-      [0.1, 0.92, 1.0],  // Caesars Cyan
-      [1.0, 0.15, 0.65], // Flamingo Magenta
-      [0.2, 1.0, 0.45],  // Emerald MGM Green
-      [0.75, 0.25, 1.0], // Neon Violet
-      [1.0, 0.55, 0.05]  // Electric Amber
-    ];
-    const winColors = [
-      [1.0, 0.94, 0.78],
-      [0.85, 0.92, 1.0],
-      [1.0, 0.88, 0.65]
-    ];
-
-    // 1. Rascacielos y hoteles casino continuos a ambos lados de la pista (cañón urbano)
-    const stepS = 40;
-    const nSteps = Math.floor(TRK.L / stepS);
-    for (let st = 0; st < nSteps; st++) {
-      const s = st * stepS;
-      for (const side of [-1, 1]) {
-        // En zona de boxes o gradas principales se colocan por detrás
-        const sr = s > TRK.L / 2 ? s - TRK.L : s;
-        const isPit = side > 0 && sr > TRK.pit.bldS0 - 30 && sr < TRK.pit.bldS1 + 35;
-        const isStand = side < 0 && sr > TRK.stand.s0 - 30 && sr < TRK.stand.s1 + 30;
-
-        // Exclusión total en el corredor y plaza del MSG Sphere y de la noria gigante High Roller:
-        // 1. El lado interior (side < 0) del bucle T5-T9 (s entre 2500 y 3750) se reserva despejado
-        //    para garantizar una vista panorámica limpia del monumental orbe iluminado desde la pista
-        if (s >= 2500 && s <= 3750 && side < 0) continue;
-        // 2. Corredor de visión hacia la noria gigante High Roller en Koval Lane (s entre 820 y 1140 en side < 0)
-        if (s >= 820 && s <= 1140 && side < 0) continue;
-
-        const w = 24.0 + rnd() * 14.0;
-        const depth = 20.0 + rnd() * 10.0;
-        const h = 42.0 + rnd() * 54.0; // 42 m a 96 m de altura
-        const hp = 8.5; // Altura de podio
-        const style = (st * 3 + (side > 0 ? 1 : 0)) % neonColors.length;
-        const nc = neonColors[style];
-        const wc = winColors[st % winColors.length];
-
-        // Retranqueo seguro respecto al borde de pista y marquesina (-4.5 m)
-        const setback = isPit ? TRK.pit.padD1 + 10 : isStand ? -TRK.stand.d1 + 10 : (hw + 7.5 + rnd() * 4.0);
-        let dOffset = setback + depth / 2;
-
-        // Comprobación de seguridad geométrica: los 4 vértices del edificio y la marquesina
-        // deben mantener holgura segura respecto a la calzada en cualquier curva.
-        const corners = [
-          [-w / 2, -depth / 2 - 4.5],
-          [w / 2, -depth / 2 - 4.5],
-          [-w / 2, depth / 2],
-          [w / 2, depth / 2]
-        ];
-
-        let safe = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          const dTry = side * dOffset;
-          const pOrigin = P(s, dTry);
-          let tx = pOrigin[3], tz = pOrigin[4];
-          if (side < 0) { tx = -tx; tz = -tz; }
-
-          let minD = 1e9;
-          for (let ci = 0; ci < 4; ci++) {
-            const lx = corners[ci][0], lz = corners[ci][1];
-            const wx = pOrigin[0] + tx * lx - tz * lz;
-            const wz = pOrigin[2] + tz * lx + tx * lz;
-            trackLocate(wx, wz, -1, _loc);
-            const cd = Math.abs(_loc[1]);
-            if (cd < minD) minD = cd;
-          }
-
-          if (minD >= hw + 2.8) {
-            // Comprobación de distancia a la plaza del MSG Sphere y de la noria High Roller:
-            const sphP = (TRK.spec && TRK.spec.spherePos) || [-750.0, 0.0, -1410.0];
-            const distToSph = Math.hypot(pOrigin[0] - sphP[0], pOrigin[2] - sphP[2]);
-            if (distToSph < 185.0) { safe = false; break; }
-            const hrP = (TRK.spec && TRK.spec.highRollerPos) || [90.0, 0.0, -900.0];
-            const distToHR = Math.hypot(pOrigin[0] - hrP[0], pOrigin[2] - hrP[2]);
-            if (distToHR < 125.0) { safe = false; break; }
-            safe = true;
-            break;
-          } else {
-            dOffset += Math.max(hw + 3.2 - minD, 4.0);
-          }
-        }
-        if (!safe) continue;
-
-        const d = side * dOffset;
-        const m = frame(s, d, side < 0 ? PI : 0, 0);
-        const i0 = mb.ni;
-        mb.push(m);
-
-        // Podio / Marquesina de entrada del Casino
-        mb.mat(3); col(mb, 0.48, 0.50, 0.52);
-        Bx(mb, -w / 2, w / 2, 0, hp, -depth / 2, depth / 2);
-
-        // Marquesina saliente de neón sobre la acera
-        mb.mat(2, 120, 140); col(mb, 0.15, 0.16, 0.18);
-        Bx(mb, -w * 0.28, w * 0.28, 4.2, 5.0, -depth / 2 - 4.5, -depth / 2);
-        // Letrero de neón luminoso
-        mb.mat(6, 210, 0); col(mb, nc[0], nc[1], nc[2]);
-        Bx(mb, -w * 0.25, w * 0.25, 5.0, 7.5, -depth / 2 - 4.3, -depth / 2 - 4.0);
-
-        // Cuerpo de la torre del rascacielos (retranqueo de 1,2 m)
-        const wt = w - 2.4, dt = depth - 2.4;
-        mb.mat(5); col(mb, 0.22, 0.25, 0.30); // Vidrio reflectante de fachada
-        Bx(mb, -wt / 2, wt / 2, hp, h, -dt / 2, dt / 2);
-
-        // Franjas de ventanas de hotel iluminadas de noche (mat 6 emisivo)
-        mb.mat(6, 175, 0); col(mb, wc[0], wc[1], wc[2]);
-        const nFloors = Math.floor((h - hp) / 4.2);
-        for (let fl = 0; fl < nFloors; fl++) {
-          if (rnd() < 0.25) continue; // Algunas habitaciones a oscuras
-          const yf = hp + 0.8 + fl * 4.2;
-          Bx(mb, -wt * 0.44, wt * 0.44, yf, yf + 1.8, -dt / 2 - 0.08, -dt / 2 + 0.05);
-        }
-
-        // Tiras verticales de neón en las 4 aristas de la torre (icono de Las Vegas)
-        mb.mat(6, 220, 0); col(mb, nc[0], nc[1], nc[2]);
-        for (const [kx, kz] of [[-wt / 2, -dt / 2], [wt / 2, -dt / 2], [-wt / 2, dt / 2], [wt / 2, dt / 2]]) {
-          Bx(mb, kx - 0.25, kx + 0.25, hp, h + 1.0, kz - 0.25, kz + 0.25);
-        }
-
-        // Remate arquitectónico / Corona iluminada en azotea
-        mb.mat(2, 140, 160); col(mb, 0.82, 0.82, 0.85);
-        Bx(mb, -wt * 0.35, wt * 0.35, h, h + 5.0, -dt * 0.35, dt * 0.35);
-        mb.mat(6, 230, 0); col(mb, nc[0], nc[1], nc[2]);
-        Bx(mb, -wt / 2, wt / 2, h + 0.8, h + 2.0, -dt / 2, dt / 2);
-
-        // Antena / aguja superior en edificios altos
-        if (h > 65.0) {
-          mb.mat(1); col(mb, 1, 1, 1);
-          mb.cyl(0, h + 5.0, 0, 0.5, h + 24.0, 0.08, 8, false, true);
-          // Baliza de aviación roja parpadeante en la cúspide
-          mb.mat(6, 240, 0); col(mb, 1.0, 0.05, 0.05);
-          Bx(mb, -0.3, 0.3, h + 23.5, h + 24.5, -0.3, 0.3);
-        }
-
-        mb.pop();
-        S1.add(mb, i0, 7, 2800);
-      }
-    }
-
-    // 2. MSG Sphere (Monumental Exosfera LED de Las Vegas · Planet Earth Display)
-    // Ubicada majestuosamente en la plaza central del bucle de las curvas T5 a T9
-    const spherePos = (TRK.spec && TRK.spec.spherePos) || [-750.0, 0.0, -1410.0];
-    const sphR = (TRK.spec && TRK.spec.sphereR) || 64.0; // Radio horizontal de 64 m (128 m de diámetro)
-    const sphH = 88.0; // Altura colosal de 88 m que corona el horizonte de Las Vegas
-    const sphCX = spherePos[0], sphCY = spherePos[1], sphCZ = spherePos[2];
-
-    // A. Explanada y basamento arquitectónico del pabellón de acceso
-    const sphBaseI0 = mb.ni;
-    // Explanada de asfalto y hormigón de la plaza
-    mb.mat(3); col(mb, 0.22, 0.24, 0.26);
-    mb.cyl(sphCX, sphCY - 0.5, sphCZ, sphR + 42.0, sphCY + 0.1, sphR + 40.0, 48, true, false);
-
-    // Podio Nivel 1: Atrio circular de hormigón arquitectónico
-    col(mb, 0.44, 0.45, 0.48);
-    mb.cyl(sphCX, sphCY - 1.0, sphCZ, sphR + 18.0, sphCY + 3.2, sphR + 15.0, 48, true, true);
-
-    // Podio Nivel 2: Cornisa cilíndrica de soporte de la cúpula
-    col(mb, 0.35, 0.37, 0.40);
-    mb.cyl(sphCX, sphCY + 3.2, sphCZ, sphR + 10.0, sphCY + 6.0, sphR + 7.0, 48, true, true);
-
-    // Anillo perimetral de neón arquitectónico cian en la cornisa del podio
-    mb.mat(6, 240, 0); col(mb, 0.0, 0.85, 1.0);
-    mb.cyl(sphCX, sphCY + 5.8, sphCZ, sphR + 7.2, sphCY + 6.3, sphR + 7.2, 48, false, true);
-
-    // Batería de 12 torres de proyectores en la periferia de la plaza apuntando hacia la Esfera
-    for (let pt = 0; pt < 12; pt++) {
-      const pAng = (pt / 12) * TAU;
-      const px = sphCX + (sphR + 32.0) * Math.cos(pAng);
-      const pz = sphCZ + (sphR + 32.0) * Math.sin(pAng);
-      mb.mat(1); col(mb, 1, 1, 1);
-      mb.cyl(px, sphCY, pz, 0.25, sphCY + 11.0, 0.14, 8, false, true);
-      mb.mat(2, 120, 130); col(mb, 0.15, 0.16, 0.18);
-      Bx(mb, px - 0.6, px + 0.6, sphCY + 10.8, sphCY + 11.6, pz - 0.6, pz + 0.6);
-      mb.mat(6, 235, 0); col(mb, 0.95, 0.98, 1.0);
-      Bx(mb, px - 0.5, px + 0.5, sphCY + 11.2, sphCY + 11.7, pz - 0.5, pz + 0.5);
-    }
-    S1.add(mb, sphBaseI0, 7, 3500);
-
-    // B. Malla de la Esfera LED (Planet Earth / La Tierra brillante en el cielo nocturno)
-    // Se inserta en md (doble cara, famDS, cull: none) con devanado exterior para máxima fidelidad visual y 0 culling
-    const sphI0 = md.ni;
-    const nRings = 32, nSec = 48;
-    md.mat(6, 248, 0);
-
-    // Generador procedural de continentes, océanos y remolinos de nubes del Planeta Tierra
-    const earthColor = (th, ph) => {
-      const cx = Math.cos(ph) * Math.cos(th);
-      const cy = Math.sin(ph);
-      const cz = Math.cos(ph) * Math.sin(th);
-
-      // Armónicos esféricos multi-octava para siluetas continentales
-      let n = Math.sin(cx * 2.5 + 0.3) * Math.cos(cy * 2.2) * Math.sin(cz * 2.8 + 0.7);
-      n += 0.5 * Math.sin(cx * 5.1 + cy * 4.3) * Math.cos(cz * 5.2 - cx * 2.1);
-      n += 0.25 * Math.sin(cx * 10.5 - cz * 8.4) * Math.cos(cy * 9.7);
-      n += 0.12 * Math.sin(cy * 18.2 + cz * 16.5);
-
-      // Capa de nubes con remolinos ciclónicos
-      const twist = Math.sin(cy * 4.0) * 1.5;
-      let clouds = Math.sin((cx + twist) * 4.2 + cz * 3.8) * Math.cos(cy * 5.0);
-      clouds += 0.5 * Math.sin(cx * 8.5 - cy * 9.1 + cz * 7.4);
-      clouds = Math.max(0, clouds * 0.72 + 0.12);
-
-      const isLand = n > 0.08;
-      const isCoast = n > 0.0 && n <= 0.08;
-
-      let r, g, b;
-      if (isLand) {
-        // Vegetación y desiertos continentales
-        const arid = Math.sin(cx * 3.0 + cz * 4.0) * 0.5 + 0.5;
-        r = 0.12 + 0.45 * arid;
-        g = 0.42 + 0.16 * (1.0 - arid);
-        b = 0.15 + 0.12 * arid;
-      } else if (isCoast) {
-        // Plataformas marinas cian
-        r = 0.05; g = 0.52; b = 0.85;
-      } else {
-        // Océano azul cobalto profundo
-        r = 0.02; g = 0.18; b = 0.72;
-      }
-
-      // Remolinos de nubes blancas luminosas
-      if (clouds > 0.26) {
-        const cAlpha = Math.min(1.0, (clouds - 0.26) * 2.8);
-        r = r * (1 - cAlpha) + 0.95 * cAlpha;
-        g = g * (1 - cAlpha) + 0.98 * cAlpha;
-        b = b * (1 - cAlpha) + 1.00 * cAlpha;
-      }
-      return [r, g, b];
-    };
-
-    for (let ring = 0; ring < nRings; ring++) {
-      const phi0 = -0.14 * PI + (ring / nRings) * (0.64 * PI);
-      const phi1 = -0.14 * PI + ((ring + 1) / nRings) * (0.64 * PI);
-      const y0 = sphCY + 6.0 + sphH * (Math.sin(phi0) + Math.sin(0.14 * PI)) / (1.0 + Math.sin(0.14 * PI));
-      const y1 = sphCY + 6.0 + sphH * (Math.sin(phi1) + Math.sin(0.14 * PI)) / (1.0 + Math.sin(0.14 * PI));
-      const r0 = sphR * Math.cos(phi0);
-      const r1 = sphR * Math.cos(phi1);
-
-      for (let sec = 0; sec < nSec; sec++) {
-        const theta0 = (sec / nSec) * TAU;
-        const theta1 = ((sec + 1) / nSec) * TAU;
-
-        const x00 = sphCX + r0 * Math.cos(theta0), z00 = sphCZ + r0 * Math.sin(theta0);
-        const x10 = sphCX + r0 * Math.cos(theta1), z10 = sphCZ + r0 * Math.sin(theta1);
-        const x01 = sphCX + r1 * Math.cos(theta0), z01 = sphCZ + r1 * Math.sin(theta0);
-        const x11 = sphCX + r1 * Math.cos(theta1), z11 = sphCZ + r1 * Math.sin(theta1);
-
-        // Color de la Tierra en el centro de la celda
-        const midTh = (theta0 + theta1) * 0.5, midPh = (phi0 + phi1) * 0.5;
-        const rgb = earthColor(midTh, midPh);
-        col(md, rgb[0], rgb[1], rgb[2]);
-
-        // Normales esféricas hacia el exterior
-        const ny0 = (y0 - (sphCY + 6.0)) / sphH;
-        const ny1 = (y1 - (sphCY + 6.0)) / sphH;
-        const v0 = md.v(x00, y0, z00, (x00 - sphCX) / sphR, ny0, (z00 - sphCZ) / sphR, sec / nSec, ring / nRings);
-        const v1 = md.v(x10, y0, z10, (x10 - sphCX) / sphR, ny0, (z10 - sphCZ) / sphR, (sec + 1) / nSec, ring / nRings);
-        const v2 = md.v(x11, y1, z11, (x11 - sphCX) / sphR, ny1, (z11 - sphCZ) / sphR, (sec + 1) / nSec, (ring + 1) / nRings);
-        const v3 = md.v(x01, y1, z01, (x01 - sphCX) / sphR, ny1, (z01 - sphCZ) / sphR, sec / nSec, (ring + 1) / nRings);
-
-        // Devanado antihorario visto desde el exterior (v0, v3, v2, v1) con normales hacia fuera
-        md.quadI(v0, v3, v2, v1);
-      }
-    }
-    // Añadido a S2 (chapas/doble cara, famDS, cull: none) con rango máximo de 5000 m (visible desde toda la pista)
-    S2.add(md, sphI0, 7, 5000);
-
-    // 3. High Roller (Noria gigante monumental de Las Vegas en The LINQ Promenade)
-    // 167,6 m de altura colosal y 158,5 m de diámetro. Con 28 cabinas esféricas de cristal
-    // y deslumbrante iluminación LED de neón violeta y magenta visible desde Koval Lane y The Strip.
-    const hrPos = (TRK.spec && TRK.spec.highRollerPos) || [90.0, 0.0, -900.0];
-    const hrCX = hrPos[0], hrCY = hrPos[1], hrCZ = hrPos[2];
-    const hrHubY = hrCY + 88.0; // Eje / buje central a 88 m de altura
-    const hrR = 78.0; // Radio del aro exterior (156 m de diámetro)
-    const hrRin = 72.0; // Radio del aro estructural interior (144 m de diámetro)
-    const hrW = 5.6; // Separación entre aros delantero y trasero
-    const hrYaw = 0.18; // Orientación paralela al paseo de The LINQ
-    const hrTx = Math.sin(hrYaw), hrTz = Math.cos(hrYaw); // Vector tangente del plano de la rueda
-    const hrAx = Math.cos(hrYaw), hrAz = -Math.sin(hrYaw); // Vector eje perpendicular
-
-    // A. Terminal de embarque y zapatas de cimentación (hormigón y vidrio en mb / S1)
-    const hrBaseI0 = mb.ni;
-    // Explanada de la plaza de The LINQ
-    mb.mat(3); col(mb, 0.28, 0.29, 0.31);
-    mb.cyl(hrCX, hrCY - 0.5, hrCZ, 62.0, hrCY + 0.1, 60.0, 32, true, false);
-
-    // Edificio terminal de acceso / The Wheelhouse
-    mb.mat(3); col(mb, 0.40, 0.42, 0.45);
-    Bx(mb, hrCX - 22.0, hrCX + 22.0, hrCY, hrCY + 8.5, hrCZ - 18.0, hrCZ + 18.0);
-    // Fachada de cristal panorámico en la terminal
-    mb.mat(5); col(mb, 0.25, 0.35, 0.48);
-    Bx(mb, hrCX - 21.0, hrCX + 21.0, hrCY + 1.0, hrCY + 7.5, hrCZ - 18.2, hrCZ - 17.9);
-    Bx(mb, hrCX - 21.0, hrCX + 21.0, hrCY + 1.0, hrCY + 7.5, hrCZ + 17.9, hrCZ + 18.2);
-    // Rótulo luminoso de la terminal
-    mb.mat(6, 235, 0); col(mb, 0.82, 0.2, 1.0);
-    Bx(mb, hrCX - 12.0, hrCX + 12.0, hrCY + 8.6, hrCY + 10.0, hrCZ - 18.1, hrCZ - 17.9);
-
-    // 4 Zapatas masivas de hormigón para las patas en A
-    for (const sgnT of [-1, 1]) {
-      for (const sgnA of [-1, 1]) {
-        const fx = hrCX + sgnT * 48.0 * hrTx + sgnA * 18.0 * hrAx;
-        const fz = hrCZ + sgnT * 48.0 * hrTz + sgnA * 18.0 * hrAz;
-        mb.mat(3); col(mb, 0.52, 0.54, 0.56);
-        Bx(mb, fx - 3.8, fx + 3.8, hrCY, hrCY + 3.0, fz - 3.8, fz + 3.8);
-      }
-    }
-
-    // 4 Patas tubulares de acero en celosía en A hacia el buje
-    mb.mat(1); col(mb, 0.95, 0.96, 0.98); // Acero blanco reflectante
-    for (const sgnT of [-1, 1]) {
-      for (const sgnA of [-1, 1]) {
-        const fx = hrCX + sgnT * 48.0 * hrTx + sgnA * 18.0 * hrAx;
-        const fz = hrCZ + sgnT * 48.0 * hrTz + sgnA * 18.0 * hrAz;
-        const hx = hrCX + sgnA * 5.5 * hrAx;
-        const hz = hrCZ + sgnA * 5.5 * hrAz;
-        mb.tube([[fx, hrCY + 3.0, fz], [hx, hrHubY, hz]], 1.25, 8);
-      }
-      // Tirante transversal horizontal entre patas gemelas a media altura
-      const mxL = hrCX + sgnT * 24.0 * hrTx - 11.5 * hrAx, mzL = hrCZ + sgnT * 24.0 * hrTz - 11.5 * hrAz;
-      const mxR = hrCX + sgnT * 24.0 * hrTx + 11.5 * hrAx, mzR = hrCZ + sgnT * 24.0 * hrTz + 11.5 * hrAz;
-      mb.tube([[mxL, hrHubY * 0.48, mzL], [mxR, hrHubY * 0.48, mzR]], 0.85, 6);
-    }
-    S1.add(mb, hrBaseI0, 7, 3500);
-
-    // B. Buje, aros estructurales, radios de tensión y 28 cabinas LED (en md / S2, cull: none)
-    const hrI0 = md.ni;
-
-    // Buje cilíndrico central
-    const hubAx0 = hrCX - 6.5 * hrAx, hubAz0 = hrCZ - 6.5 * hrAz;
-    const hubAx1 = hrCX + 6.5 * hrAx, hubAz1 = hrCZ + 6.5 * hrAz;
-    md.mat(2, 120, 150); col(md, 0.88, 0.90, 0.94);
-    md.tube([[hubAx0, hrHubY, hubAz0], [hubAx1, hrHubY, hubAz1]], 2.8, 12);
-    // Tapa central luminosa del buje
-    for (const sgn of [-1, 1]) {
-      const hcapX = hrCX + sgn * 6.6 * hrAx, hcapZ = hrCZ + sgn * 6.6 * hrAz;
-      md.mat(6, 240, 0); col(md, 0.85, 0.22, 1.0); // Violeta neón intenso
-      md.cyl(hcapX, hrHubY - 2.5, hcapZ, 2.5, hrHubY + 2.5, 2.5, 12, true, true);
-    }
-
-    // Aros perimetrales: Doble aro (exterior R=78m e interior Rin=72m, separados por hrW=5.6m)
-    const nRim = 56;
-    for (let i = 0; i < nRim; i++) {
-      const a0 = (i / nRim) * TAU, a1 = ((i + 1) / nRim) * TAU;
-      const ca0 = Math.cos(a0), sa0 = Math.sin(a0);
-      const ca1 = Math.cos(a1), sa1 = Math.sin(a1);
-
-      for (const w of [-hrW / 2, hrW / 2]) {
-        // Aro exterior (LED violeta neón brillante)
-        const p0x = hrCX + (ca0 * hrR) * hrTx + w * hrAx;
-        const p0y = hrHubY + sa0 * hrR;
-        const p0z = hrCZ + (ca0 * hrR) * hrTz + w * hrAz;
-
-        const p1x = hrCX + (ca1 * hrR) * hrTx + w * hrAx;
-        const p1y = hrHubY + sa1 * hrR;
-        const p1z = hrCZ + (ca1 * hrR) * hrTz + w * hrAz;
-
-        // Viga perimetral iluminada con LED violeta
-        md.mat(6, 250, 0); col(md, 0.85, 0.20, 1.0);
-        md.tube([[p0x, p0y, p0z], [p1x, p1y, p1z]], 0.32, 5);
-
-        // Aro interior (blanco/cian técnico)
-        const q0x = hrCX + (ca0 * hrRin) * hrTx + w * hrAx;
-        const q0y = hrHubY + sa0 * hrRin;
-        const q0z = hrCZ + (ca0 * hrRin) * hrTz + w * hrAz;
-
-        const q1x = hrCX + (ca1 * hrRin) * hrTx + w * hrAx;
-        const q1y = hrHubY + sa1 * hrRin;
-        const q1z = hrCZ + (ca1 * hrRin) * hrTz + w * hrAz;
-
-        md.mat(2, 128, 128); col(md, 0.9, 0.92, 0.96);
-        md.tube([[q0x, q0y, q0z], [q1x, q1y, q1z]], 0.22, 4);
-
-        // Celosía diagonal radial entre aro exterior e interior
-        md.tube([[q0x, q0y, q0z], [p1x, p1y, p1z]], 0.12, 4);
-      }
-
-      // Travesaño horizontal conectando los dos aros laterales
-      if (i % 2 === 0) {
-        const xL = hrCX + (ca0 * hrR) * hrTx - (hrW / 2) * hrAx, zL = hrCZ + (ca0 * hrR) * hrTz - (hrW / 2) * hrAz;
-        const xR = hrCX + (ca0 * hrR) * hrTx + (hrW / 2) * hrAx, zR = hrCZ + (ca0 * hrR) * hrTz + (hrW / 2) * hrAz;
-        const yT = hrHubY + sa0 * hrR;
-        md.mat(1); col(md, 0.85, 0.88, 0.92);
-        md.tube([[xL, yT, zL], [xR, yT, zR]], 0.18, 4);
-      }
-    }
-
-    // 28 Radios de tensión en cable de acero conectando el buje con el aro
-    const nSpokes = 28;
-    for (let s = 0; s < nSpokes; s++) {
-      const ang = (s / nSpokes) * TAU;
-      const ca = Math.cos(ang), sa = Math.sin(ang);
-      const rimX = hrCX + (ca * hrRin) * hrTx, rimZ = hrCZ + (ca * hrRin) * hrTz;
-      const rimY = hrHubY + sa * hrRin;
-
-      for (const w of [-hrW / 2, hrW / 2]) {
-        const hubX = hrCX + w * 0.9 * hrAx, hubZ = hrCZ + w * 0.9 * hrAz;
-        const rimPX = rimX + w * hrAx, rimPZ = rimZ + w * hrAz;
-        // Cable de radio con pulso LED violeta suave
-        md.mat(6, 215, 0); col(md, 0.70, 0.30, 0.95);
-        md.tube([[hubX, hrHubY, hubZ], [rimPX, rimY, rimPZ]], 0.07, 3);
-      }
-    }
-
-    // 28 Cabinas esféricas de cristal (Gondolas) montadas en el perímetro exterior
-    for (let c = 0; c < nSpokes; c++) {
-      const ang = (c / nSpokes) * TAU;
-      const ca = Math.cos(ang), sa = Math.sin(ang);
-      // Las cabinas van montadas justo en la periferia exterior (R + 2,8 m)
-      const cabR = hrR + 2.8;
-      const cabX = hrCX + (ca * cabR) * hrTx;
-      const cabY = hrHubY + sa * cabR;
-      const cabZ = hrCZ + (ca * cabR) * hrTz;
-
-      // Anillo de montaje / soporte de trunnion metálico
-      md.mat(2, 110, 140); col(md, 0.22, 0.24, 0.28);
-      Bx(md, cabX - 1.2, cabX + 1.2, cabY - 0.25, cabY + 0.25, cabZ - 2.8, cabZ + 2.8);
-
-      // Cabina esférica de observación acristalada con luz cálida interior
-      md.mat(6, 240, 0);
-      col(md, 1.0, 0.94, 0.82); // Iluminación cálida interior de pasajeros
-      // Esfera de cabina (3,2 m de diámetro)
-      for (let cr = 0; cr < 6; cr++) {
-        const cphi0 = (cr / 6) * PI - PI / 2, cphi1 = ((cr + 1) / 6) * PI - PI / 2;
-        const cy0 = cabY + 1.6 * Math.sin(cphi0), cy1 = cabY + 1.6 * Math.sin(cphi1);
-        const crad0 = 1.6 * Math.cos(cphi0), crad1 = 1.6 * Math.cos(cphi1);
-        for (let cs = 0; cs < 8; cs++) {
-          const cth0 = (cs / 8) * TAU, cth1 = ((cs + 1) / 8) * TAU;
-          const cx00 = cabX + crad0 * Math.cos(cth0) * hrTx + crad0 * Math.sin(cth0) * hrAx;
-          const cz00 = cabZ + crad0 * Math.cos(cth0) * hrTz + crad0 * Math.sin(cth0) * hrAz;
-          const cx10 = cabX + crad0 * Math.cos(cth1) * hrTx + crad0 * Math.sin(cth1) * hrAx;
-          const cz10 = cabZ + crad0 * Math.cos(cth1) * hrTz + crad0 * Math.sin(cth1) * hrAz;
-
-          const cx01 = cabX + crad1 * Math.cos(cth0) * hrTx + crad1 * Math.sin(cth0) * hrAx;
-          const cz01 = cabZ + crad1 * Math.cos(cth0) * hrTz + crad1 * Math.sin(cth0) * hrAz;
-          const cx11 = cabX + crad1 * Math.cos(cth1) * hrTx + crad1 * Math.sin(cth1) * hrAx;
-          const cz11 = cabZ + crad1 * Math.cos(cth1) * hrTz + crad1 * Math.sin(cth1) * hrAz;
-
-          const v0 = md.v(cx00, cy0, cz00, (cx00 - cabX) / 1.6, (cy0 - cabY) / 1.6, (cz00 - cabZ) / 1.6, 0, 0);
-          const v1 = md.v(cx10, cy0, cz10, (cx10 - cabX) / 1.6, (cy0 - cabY) / 1.6, (cz10 - cabZ) / 1.6, 1, 0);
-          const v2 = md.v(cx11, cy1, cz11, (cx11 - cabX) / 1.6, (cy1 - cabY) / 1.6, (cz11 - cabZ) / 1.6, 1, 1);
-          const v3 = md.v(cx01, cy1, cz01, (cx01 - cabX) / 1.6, (cy1 - cabY) / 1.6, (cz01 - cabZ) / 1.6, 0, 1);
-          md.quadI(v0, v3, v2, v1);
-        }
-      }
-
-      // Anillo ecuatorial LED exterior en cada cabina (acento violeta/magenta neón)
-      md.mat(6, 250, 0); col(md, 0.88, 0.22, 1.0);
-      md.tube([[cabX - 1.65 * hrTx, cabY, cabZ - 1.65 * hrTz], [cabX + 1.65 * hrTx, cabY, cabZ + 1.65 * hrTz]], 0.12, 4);
-    }
-    // Añadido a S2 (chapas/doble cara, famDS, cull: none) con rango máximo de 5000 m (visible desde toda la pista)
-    S2.add(md, hrI0, 7, 5000);
-
-    // 4. Postes de luz de Gran Premio nocturno (F1 Floodlights) a lo largo de toda la pista
-    const floodStep = 36;
-    const nFloods = Math.floor(TRK.L / floodStep);
-    for (let f = 0; f < nFloods; f++) {
-      const s = f * floodStep;
-      for (const side of [-1, 1]) {
-        const d = side * (hw + 3.2);
-        const m = frame(s, d, side < 0 ? PI : 0, 0);
-        const flI0 = mb.ni;
-        mb.push(m);
-
-        // Poste vertical cónico galvanizado (15,5 m de altura)
-        mb.mat(1); col(mb, 1, 1, 1);
-        mb.cyl(0, 0, 0, 0.18, 15.5, 0.11, 8, false, true);
-
-        // Brazo horizontal hacia la pista
-        mb.mat(2, 128, 128); col(mb, 0.22, 0.22, 0.24);
-        Bx(mb, -0.09, 0.09, 15.1, 15.26, side * -0.1, side * 2.7);
-
-        // Batería de 4 focos LED de alta potencia orientados hacia el asfalto
-        for (let q = 0; q < 4; q++) {
-          const zf = side * (0.6 + q * 0.6);
-          // Carcasa del foco
-          mb.mat(2, 120, 140); col(mb, 0.14, 0.15, 0.17);
-          Bx(mb, -0.28, 0.28, 14.8, 15.1, zf - 0.2, zf + 0.2);
-          // Lente emisiva blanca brillante que baña la pista
-          mb.mat(6, 230, 0); col(mb, 1.0, 0.96, 0.88);
-          Bx(mb, -0.25, 0.25, 14.78, 14.82, zf - 0.18, zf + 0.18);
-        }
-
-        mb.pop();
-        S1.add(mb, flI0, 7, 1800);
-      }
-    }
-
-    // 4. Pasarelas luminosas / Pórticos sobre la pista con publicidad y patrocinio
-    for (const gS of [0, 800, 1750, 3600, 4400, 5300]) {
-      gantry(gS, -(hw + 3.5), hw + 3.5, 'name', true, false);
-    }
+  // ---- Circuito urbano: rascacielos continuos, hoteles casino con luces de neón, MSG Sphere, High Roller y farolas F1 ----
+  // Cargado de forma condicional y modular únicamente en trazados urbanos / Las Vegas Strip (world/props-vegas.js)
+  if (typeof buildVegasUrbanProps === 'function' && TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
+    buildVegasUrbanProps({
+      mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng
+    });
   }
 
   WORLD.stats.tris.props = mb.ni / 3; WORLD.stats.tris.propsDS = md.ni / 3; WORLD.stats.ranges.props = S1.r.length; WORLD.stats.ranges.propsDS = S2.r.length;
