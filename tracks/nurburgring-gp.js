@@ -271,151 +271,195 @@
 
       // -----------------------------------------------------------------------
       // 2. MERCEDES-BENZ TRIBÜNE (T4 EN MERCEDES-ARENA)
-      // Grada semicircular monumental que abraza el exterior del Mercedes-Arena (T2-T4)
-      // s = 860m a 1060m (200m de desarrollo curvo envolvente), d = -25.0m a -44.0m
-      // Conjunto arquitectónico completo según F1/FIA:
-      // A. Estructura escalonada curva de hormigón de 20 filas (rise 0.44m, run 0.88m, desnivel 8.8m)
-      // B. Asientos individuales en azul Mercedes-Benz / AMG (#0040a0) con público animado
-      // C. Pasillos de acceso, escaleras vomitorias y barandillas metálicas de protección
-      // D. Muro de contención frontal con pasamanos y paneles publicitarios de pista
-      // E. Fachada posterior exterior acabada en paneles arquitectónicos blancos/metálicos
-      // F. Pilares estructurales traseros de acero (pylons) con cerchas tubulares de celosía
-      // G. Gran marquesina/cubierta metálica curva en voladizo (cantilever canopy)
-      //    con cara superior de aluminio reflectante, cielo interior grafito y fascia perimetral
-      //    frontal en azul corporativo Mercedes con rotulación y molduras de remate
+      // Reproducción exacta de la icónica grada monumental de Mercedes-Arena según la foto oficial:
+      // A. Muro perimetral frontal blanco bajo (0.85m) con patrocinadores Allianz / Mercedes
+      // B. Graderío inferior (Lower Bowl): 10 filas de asientos azules con público multicolor
+      // C. Balcón / Fascia intermedia VIP en negro con rótulo monumental "Mercedes-Benz" y estrella
+      // D. Ventanales panorámicos de palcos VIP en cristal tintado
+      // E. Graderío superior (Upper Bowl): 12 filas empinadas cubiertas bajo la marquesina
+      // F. Columnas estructurales inclinadas en V (slanted steel columns) que soportan el voladizo
+      // G. Gran cubierta/marquesina radial en voladizo (cantilever canopy) con vigas radiales inferiores
+      // H. MONUMENTAL ESTRELLA DE MERCEDES-BENZ EN 3D (cromo reflectante) en la cima del techo
       // -----------------------------------------------------------------------
       {
-        const arenaS0 = 860, arenaS1 = 1060;
-        const dS_arena = 6.0;
+        const arenaS0 = 865, arenaS1 = 1055;
+        const dS_arena = 5.5;
         const nS_arena = Math.round((arenaS1 - arenaS0) / dS_arena);
-        const nArenaSteps = 20, stepRise = 0.44, stepRun = 0.88;
-        const colSeatMercedesBlue = [0.05, 0.26, 0.76];
+        const colSeatMercedesBlue = [0.06, 0.28, 0.76];
+        const colFasciaBlack = [0.08, 0.08, 0.10];
         const colRoofWhite = [0.93, 0.94, 0.96];
-        const colFasciaBlue = [0.04, 0.16, 0.54];
-        const colTrussSteel = [0.22, 0.24, 0.26];
+        const colSteelDark = [0.18, 0.20, 0.24];
+        const colChrome = [0.95, 0.96, 0.98];
 
         let mbI0 = mb.ni, mdI0 = md.ni, mpI0 = mp ? mp.ni : 0;
         let segCount = 0;
 
         for (let seg = 0; seg < nS_arena; seg++) {
           const sA = arenaS0 + seg * dS_arena, sB = arenaS0 + (seg + 1) * dS_arena;
-          const isAisle = (seg % 5 === 0); // Cada 5 bloques se abre un pasillo/escalera vomitoria
+          const isAisle = (seg % 5 === 0);
 
-          // Cota base del terreno en la primera fila
-          const pA_frontGround = P(sA, -25.0), pB_frontGround = P(sB, -25.0);
-          const yBaseA = pA_frontGround[1], yBaseB = pB_frontGround[1];
+          const pA_base = P(sA, -25.0), pB_base = P(sB, -25.0);
+          const yBaseA = pA_base[1], yBaseB = pB_base[1];
 
-          // 1. Graderío escalonado de hormigón
-          for (let r = 0; r < nArenaSteps; r++) {
-            const dFront = -(25.0 + r * stepRun);
-            const dBack = -(25.0 + (r + 1) * stepRun);
-            const y0A = yBaseA + r * stepRise, y1A = y0A + stepRise;
-            const y0B = yBaseB + r * stepRise, y1B = y0B + stepRise;
+          // 1. Muro perimetral frontal blanco bajo con rótulos de patrocinadores y valla transparente FIA
+          {
+            const pA_w = P(sA, -24.8), pB_w = P(sB, -24.8);
+            mb.mat(3); col(mb, 0.94, 0.95, 0.96); // Murete blanco bajo tipo F1
+            mb.quad(pA_w[0], yBaseA, pA_w[2], pB_w[0], yBaseB, pB_w[2], pB_w[0], yBaseB + 0.85, pB_w[2], pA_w[0], yBaseA + 0.85, pA_w[2]);
+            // Rótulo azul Allianz / Mercedes en el frontal
+            md.mat(2, 240, 240); col(md, 0.08, 0.25, 0.65);
+            md.quad(pA_w[0], yBaseA + 0.12, pA_w[2], pB_w[0], yBaseB + 0.12, pB_w[2], pB_w[0], yBaseB + 0.72, pB_w[2], pA_w[0], yBaseA + 0.72, pA_w[2]);
+
+            // Valla de seguridad FIA (Catch fencing) de malla metálica sobre el murete blanco:
+            // Postes de acero galvanizado y cables tensores horizontales (100% transparente para ver el público y la grada)
+            mb.mat(1); col(mb, 0.72, 0.74, 0.78);
+            mb.cyl(pA_w[0], yBaseA + 0.85, pA_w[2], 0.04, yBaseA + 2.5, 0.035, 5, true, true);
+            mb.tube([[pA_w[0], yBaseA + 1.45, pA_w[2]], [pB_w[0], yBaseB + 1.45, pB_w[2]]], 0.009, 3);
+            mb.tube([[pA_w[0], yBaseA + 1.95, pA_w[2]], [pB_w[0], yBaseB + 1.95, pB_w[2]]], 0.009, 3);
+            mb.tube([[pA_w[0], yBaseA + 2.45, pA_w[2]], [pB_w[0], yBaseB + 2.45, pB_w[2]]], 0.009, 3);
+          }
+
+          // 2. Graderío inferior (Lower Bowl): 10 filas
+          const nLowRows = 10, lowRun = 0.88, lowRise = 0.42;
+          for (let r = 0; r < nLowRows; r++) {
+            const dFront = -(25.2 + r * lowRun), dBack = -(25.2 + (r + 1) * lowRun);
+            const y0A = yBaseA + r * lowRise, y1A = y0A + lowRise;
+            const y0B = yBaseB + r * lowRise, y1B = y0B + lowRise;
 
             const pA_f = P(sA, dFront), pB_f = P(sB, dFront);
             const pA_b = P(sA, dBack), pB_b = P(sB, dBack);
 
-            // A. Contrahuella vertical de hormigón
-            mb.mat(3); col(mb, 0.60, 0.61, 0.62, 1.0 - 0.25 * (r / nArenaSteps));
+            mb.mat(3); col(mb, 0.62, 0.63, 0.65, 1.0 - 0.2 * (r / nLowRows));
             mb.quad(pA_f[0], y0A, pA_f[2], pB_f[0], y0B, pB_f[2], pB_f[0], y1B, pB_f[2], pA_f[0], y1A, pA_f[2]);
-            // B. Huella horizontal de hormigón
             mb.quad(pA_f[0], y1A, pA_f[2], pB_f[0], y1B, pB_f[2], pB_b[0], y1B, pB_b[2], pA_b[0], y1A, pA_b[2]);
 
-            // C. Asientos individuales en azul oficial Mercedes-Benz (salvo en pasillos de acceso)
+            // Asientos y público en el graderío inferior
             if (!isAisle) {
               md.mat(8); col(md, colSeatMercedesBlue[0], colSeatMercedesBlue[1], colSeatMercedesBlue[2]);
-              const pA_sf = P(sA, dFront - 0.14), pB_sf = P(sB, dFront - 0.14);
-              const pA_sb = P(sA, dBack + 0.14), pB_sb = P(sB, dBack + 0.14);
-              // Base del asiento
-              md.quad(pA_sf[0], y1A + 0.36, pA_sf[2], pB_sf[0], y1B + 0.36, pB_sf[2], pB_sb[0], y1B + 0.36, pB_sb[2], pA_sb[0], y1A + 0.36, pA_sb[2]);
-              // Respaldo ergonómico
-              md.quad(pA_sb[0], y1A + 0.36, pA_sb[2], pB_sb[0], y1B + 0.36, pB_sb[2], pB_sb[0], y1B + 0.78, pB_sb[2], pA_sb[0], y1A + 0.78, pA_sb[2]);
+              const pA_sf = P(sA, dFront - 0.12), pB_sf = P(sB, dFront - 0.12);
+              const pA_sb = P(sA, dBack + 0.12), pB_sb = P(sB, dBack + 0.12);
+              md.quad(pA_sf[0], y1A + 0.35, pA_sf[2], pB_sf[0], y1B + 0.35, pB_sf[2], pB_sb[0], y1B + 0.35, pB_sb[2], pA_sb[0], y1A + 0.35, pA_sb[2]);
+              md.quad(pA_sb[0], y1A + 0.35, pA_sb[2], pB_sb[0], y1B + 0.35, pB_sb[2], pB_sb[0], y1B + 0.75, pB_sb[2], pA_sb[0], y1A + 0.75, pA_sb[2]);
 
-              // Público animado en Mercedes-Arena
-              if (mp && SP && typeof sitter === 'function' && rnd() < 0.65) {
+              if (mp && SP && typeof sitter === 'function' && rnd() < 0.72) {
                 const pMid_s = P((sA + sB) * 0.5, (dFront + dBack) * 0.5);
                 const yMid = (y1A + y1B) * 0.5;
-                const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.1, 0.3, 0.8];
-                if (rnd() < 0.15 && typeof stander === 'function') {
+                const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.8, 0.2, 0.2];
+                if (rnd() < 0.18 && typeof stander === 'function') {
                   stander(pMid_s[0], yMid + 0.05, pMid_s[2], crowdColor, 0.95);
                 } else {
-                  sitter(pMid_s[0], yMid + 0.36, pMid_s[2], 0.95);
+                  sitter(pMid_s[0], yMid + 0.35, pMid_s[2], 0.95);
                 }
               }
             }
           }
 
-          // 2. Pasillos y escaleras de acceso entre sectores
-          if (isAisle) {
-            const pA_midF = P((sA + sB) * 0.5, -25.0);
-            const pA_midB = P((sA + sB) * 0.5, -(25.0 + nArenaSteps * stepRun));
-            const yBot = (yBaseA + yBaseB) * 0.5 + 0.85;
-            const yTop = yBot + nArenaSteps * stepRise;
-            // Barandilla central de acero inoxidable en la escalera
-            mb.mat(2, 120, 160); col(mb, 0.82, 0.84, 0.88);
-            mb.tube([[pA_midF[0], yBot, pA_midF[2]], [pA_midB[0], yTop, pA_midB[2]]], 0.04, 5);
-          }
+          // 3. Balcón y Fascia intermedia VIP con gran rótulo "Mercedes-Benz"
+          const dMidFront = -(25.2 + nLowRows * lowRun);
+          const dMidBack = dMidFront - 3.2;
+          const yMidBotA = yBaseA + nLowRows * lowRise, yMidBotB = yBaseB + nLowRows * lowRise;
+          const yMidTopA = yMidBotA + 2.6, yMidTopB = yMidBotB + 2.6;
 
-          // 3. Muro perimetral frontal de seguridad
+          const pA_mf = P(sA, dMidFront), pB_mf = P(sB, dMidFront);
+          const pA_mb = P(sA, dMidBack), pB_mb = P(sB, dMidBack);
+
+          // Suelo de la terraza VIP
+          mb.mat(3); col(mb, 0.50, 0.51, 0.53);
+          mb.quad(pA_mf[0], yMidBotA, pA_mf[2], pB_mf[0], yMidBotB, pB_mf[2], pB_mb[0], yMidBotB, pB_mb[2], pA_mb[0], yMidBotA, pA_mb[2]);
+
+          // Gran fascia frontal oscura (cinta negra con "Mercedes-Benz")
+          mb.mat(3); col(mb, colFasciaBlack[0], colFasciaBlack[1], colFasciaBlack[2]);
+          mb.quad(pA_mf[0], yMidBotA, pA_mf[2], pB_mf[0], yMidBotB, pB_mf[2], pB_mf[0], yMidTopB, pB_mf[2], pA_mf[0], yMidTopA, pA_mf[2]);
+
+          // Rótulos monumentales "Mercedes-Benz" en blanco y logos circulares en la fascia
           {
-            const pA_fw = P(sA, -24.8), pB_fw = P(sB, -24.8);
-            mb.mat(3); col(mb, 0.64, 0.65, 0.66);
-            mb.quad(pA_fw[0], yBaseA, pA_fw[2], pB_fw[0], yBaseB, pB_fw[2], pB_fw[0], yBaseB + 1.15, pB_fw[2], pA_fw[0], yBaseA + 1.15, pA_fw[2]);
-            // Pasamanos tubular
-            mb.mat(2, 100, 140); col(mb, 0.85, 0.86, 0.88);
-            mb.tube([[pA_fw[0], yBaseA + 1.18, pA_fw[2]], [pB_fw[0], yBaseB + 1.18, pB_fw[2]]], 0.035, 5);
+            md.mat(2, 255, 255); col(md, 0.96, 0.97, 0.99); // Blanco puro reflectante
+            // Placa central de texto / emblema
+            md.quad(pA_mf[0], yMidBotA + 0.6, pA_mf[2], pB_mf[0], yMidBotB + 0.6, pB_mf[2], pB_mf[0], yMidTopB - 0.5, pB_mf[2], pA_mf[0], yMidTopA - 0.5, pA_mf[2]);
+            // Logotipo circular Mercedes en relieve
+            const pMidEmblem = P((sA + sB) * 0.5, dMidFront + 0.08);
+            const yEmblem = (yMidBotA + yMidTopA) * 0.5;
+            mb.mat(2, 220, 220); col(mb, 0.95, 0.95, 0.98);
+            mb.cyl(pMidEmblem[0], yEmblem, pMidEmblem[2], 0.65, yEmblem + 0.06, 0.65, 10, true, true);
           }
 
-          // 4. Fachada exterior trasera y cerramiento
-          const dWallRear = -(25.0 + nArenaSteps * stepRun + 1.2);
-          const yTopArenaA = yBaseA + nArenaSteps * stepRise + 1.2;
-          const yTopArenaB = yBaseB + nArenaSteps * stepRise + 1.2;
-          const pA_r0 = P(sA, dWallRear), pB_r0 = P(sB, dWallRear);
+          // Ventanales panorámicos de palcos VIP en la pared trasera de la terraza
+          mb.mat(5); col(mb, 0.25, 0.45, 0.65);
+          mb.quad(pA_mb[0], yMidBotA, pA_mb[2], pB_mb[0], yMidBotB, pB_mb[2], pB_mb[0], yMidTopB, pB_mb[2], pA_mb[0], yMidTopA, pA_mb[2]);
+
+          // 4. Graderío superior (Upper Bowl): 12 filas empinadas cubiertas
+          const nUpRows = 12, upRun = 0.82, upRise = 0.48;
+          for (let r = 0; r < nUpRows; r++) {
+            const dFront = dMidBack - r * upRun, dBack = dMidBack - (r + 1) * upRun;
+            const y0A = yMidTopA + r * upRise, y1A = y0A + upRise;
+            const y0B = yMidTopB + r * upRise, y1B = y0B + upRise;
+
+            const pA_f = P(sA, dFront), pB_f = P(sB, dFront);
+            const pA_b = P(sA, dBack), pB_b = P(sB, dBack);
+
+            mb.mat(3); col(mb, 0.58, 0.59, 0.60, 1.0 - 0.2 * (r / nUpRows));
+            mb.quad(pA_f[0], y0A, pA_f[2], pB_f[0], y0B, pB_f[2], pB_f[0], y1B, pB_f[2], pA_f[0], y1A, pA_f[2]);
+            mb.quad(pA_f[0], y1A, pA_f[2], pB_f[0], y1B, pB_f[2], pB_b[0], y1B, pB_b[2], pA_b[0], y1A, pA_b[2]);
+
+            if (!isAisle) {
+              md.mat(8); col(md, colSeatMercedesBlue[0], colSeatMercedesBlue[1], colSeatMercedesBlue[2]);
+              const pA_sf = P(sA, dFront - 0.12), pB_sf = P(sB, dFront - 0.12);
+              const pA_sb = P(sA, dBack + 0.12), pB_sb = P(sB, dBack + 0.12);
+              md.quad(pA_sf[0], y1A + 0.35, pA_sf[2], pB_sf[0], y1B + 0.35, pB_sf[2], pB_sb[0], y1B + 0.35, pB_sb[2], pA_sb[0], y1A + 0.35, pA_sb[2]);
+              md.quad(pA_sb[0], y1A + 0.35, pA_sb[2], pB_sb[0], y1B + 0.35, pB_sb[2], pB_sb[0], y1B + 0.75, pB_sb[2], pA_sb[0], y1A + 0.75, pA_sb[2]);
+
+              if (mp && SP && typeof sitter === 'function' && rnd() < 0.80) {
+                const pMid_s = P((sA + sB) * 0.5, (dFront + dBack) * 0.5);
+                const yMid = (y1A + y1B) * 0.5;
+                const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.2, 0.4, 0.9];
+                sitter(pMid_s[0], yMid + 0.35, pMid_s[2], 0.95);
+              }
+            }
+          }
+
+          // 5. Pared posterior exterior y tambor central
+          const dRearWall = dMidBack - nUpRows * upRun - 1.2;
+          const yRearTopA = yMidTopA + nUpRows * upRise + 1.2;
+          const yRearTopB = yMidTopB + nUpRows * upRise + 1.2;
+          const pA_rw = P(sA, dRearWall), pB_rw = P(sB, dRearWall);
           mb.mat(2, 220, 220); col(mb, 0.90, 0.91, 0.94);
-          mb.quad(pB_r0[0], yBaseB, pB_r0[2], pA_r0[0], yBaseA, pA_r0[2], pA_r0[0], yTopArenaA + 2.4, pA_r0[2], pB_r0[0], yTopArenaB + 2.4, pB_r0[2]);
+          mb.quad(pB_rw[0], yBaseB, pB_rw[2], pA_rw[0], yBaseA, pA_rw[2], pA_rw[0], yRearTopA + 2.0, pA_rw[2], pB_rw[0], yRearTopB + 2.0, pB_rw[2]);
 
-          // 5. Pilares traseros de soporte de acero y cerchas
+          // 6. Columnas estructurales inclinadas en V (Slanted Steel Struts)
           if (seg % 4 === 0) {
-            const pPylon = P(sA, dWallRear - 0.6);
-            const yPylBot = yBaseA, yPylTop = yTopArenaA + 7.2;
-            mb.mat(2, 128, 128); col(mb, colTrussSteel[0], colTrussSteel[1], colTrussSteel[2]);
-            mb.cyl(pPylon[0], yPylBot, pPylon[2], 0.42, yPylTop, 0.38, 8, true, true);
-
-            // Cercha diagonal que se proyecta hacia la cubierta en voladizo
-            const pRoofFrontNode = P(sA, -27.5);
-            const yRoofFrontNode = yTopArenaA + 4.2;
-            mb.tube([[pPylon[0], yPylTop - 0.4, pPylon[2]], [pRoofFrontNode[0], yRoofFrontNode, pRoofFrontNode[2]]], 0.12, 6);
-            mb.tube([[pPylon[0], yTopArenaA + 2.0, pPylon[2]], [pPylon[0] * 0.5 + pRoofFrontNode[0] * 0.5, yRoofFrontNode * 0.5 + (yTopArenaA + 5.5) * 0.5, pPylon[2] * 0.5 + pRoofFrontNode[2] * 0.5]], 0.08, 5);
+            const pColBase = P(sA, dMidFront - 0.2);
+            const yColBase = yMidBotA + 0.1;
+            const pColTop = P(sA, -29.5);
+            const yColTop = yRearTopA + 4.2;
+            mb.mat(2, 128, 128); col(mb, colSteelDark[0], colSteelDark[1], colSteelDark[2]);
+            mb.tube([[pColBase[0], yColBase, pColBase[2]], [pColTop[0], yColTop, pColTop[2]]], 0.22, 7);
           }
 
-          // 6. GRAN CUBIERTA / MARQUESINA METÁLICA CURVA EN VOLADIZO (CANTILEVER CANOPY)
+          // 7. Gran Cubierta / Marquesina en voladizo (Cantilever Canopy)
           {
-            const dRoofFront = -27.2; // Vuela cubriendo casi todo el graderío hacia la pista
-            const dRoofBack = dWallRear - 1.5;
-            const yRoofBackA = yTopArenaA + 6.2, yRoofBackB = yTopArenaB + 6.2;
-            const yRoofFrontA = yTopArenaA + 4.0, yRoofFrontB = yTopArenaB + 4.0;
+            const dRoofFront = -29.5; // Cubre todo el graderío superior y terraza
+            const dRoofBack = dRearWall - 2.5;
+            const yRoofFrontA = yRearTopA + 4.2, yRoofFrontB = yRearTopB + 4.2;
+            const yRoofBackA = yRearTopA + 5.8, yRoofBackB = yRearTopB + 5.8;
 
             const pA_rf = P(sA, dRoofFront), pB_rf = P(sB, dRoofFront);
             const pA_rb = P(sA, dRoofBack), pB_rb = P(sB, dRoofBack);
 
-            // A. Cara superior reflectante de aluminio blanco/plateado
+            // Cara superior metálica blanca/plateada reflectante
             md.mat(9); col(md, colRoofWhite[0], colRoofWhite[1], colRoofWhite[2]);
             md.quad(pA_rf[0], yRoofFrontA, pA_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pB_rb[0], yRoofBackB, pB_rb[2], pA_rb[0], yRoofBackA, pA_rb[2]);
 
-            // B. Cara inferior (cielo visto desde la grada y la pista)
-            mb.mat(3); col(mb, 0.32, 0.34, 0.36);
-            mb.quad(pB_rf[0], yRoofFrontB - 0.35, pB_rf[2], pA_rf[0], yRoofFrontA - 0.35, pA_rf[2], pA_rb[0], yRoofBackA - 0.35, pA_rb[2], pB_rb[0], yRoofBackB - 0.35, pB_rb[2]);
+            // Cara inferior (techo visto con vigas radiales)
+            mb.mat(3); col(mb, 0.28, 0.30, 0.34);
+            mb.quad(pB_rf[0], yRoofFrontB - 0.4, pB_rf[2], pA_rf[0], yRoofFrontA - 0.4, pA_rf[2], pA_rb[0], yRoofBackA - 0.4, pA_rb[2], pB_rb[0], yRoofBackB - 0.4, pB_rb[2]);
 
-            // C. Canto / Fascia frontal curva perimetral en Azul Mercedes
-            mb.mat(17); col(mb, colFasciaBlue[0], colFasciaBlue[1], colFasciaBlue[2]);
-            mb.quad(pA_rf[0], yRoofFrontA - 0.35, pA_rf[2], pB_rf[0], yRoofFrontB - 0.35, pB_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pA_rf[0], yRoofFrontA, pA_rf[2]);
+            // Viga radial oscura (spoke beam) en la cara inferior
+            mb.mat(2, 128, 128); col(mb, colSteelDark[0], colSteelDark[1], colSteelDark[2]);
+            mb.tube([[pA_rb[0], yRoofBackA - 0.45, pA_rb[2]], [pA_rf[0], yRoofFrontA - 0.45, pA_rf[2]]], 0.14, 6);
 
-            // D. Borde lateral en los extremos de la grada
-            if (seg === 0) {
-              mb.quad(pA_rf[0], yRoofFrontA - 0.35, pA_rf[2], pA_rb[0], yRoofBackA - 0.35, pA_rb[2], pA_rb[0], yRoofBackA, pA_rb[2], pA_rf[0], yRoofFrontA, pA_rf[2]);
-            } else if (seg === nS_arena - 1) {
-              mb.quad(pB_rb[0], yRoofBackB - 0.35, pB_rb[2], pB_rf[0], yRoofFrontB - 0.35, pB_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pB_rb[0], yRoofBackB, pB_rb[2]);
-            }
+            // Canto frontal perimetral de la cubierta
+            mb.mat(17); col(mb, colFasciaBlack[0], colFasciaBlack[1], colFasciaBlack[2]);
+            mb.quad(pA_rf[0], yRoofFrontA - 0.4, pA_rf[2], pB_rf[0], yRoofFrontB - 0.4, pB_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pA_rf[0], yRoofFrontA, pA_rf[2]);
           }
 
           segCount++;
@@ -428,6 +472,40 @@
             }
             mbI0 = mb.ni; mdI0 = md.ni;
           }
+        }
+
+        // 8. MONUMENTAL ESTRELLA DE MERCEDES-BENZ EN 3D SOBRE LA CORONACIÓN DEL TECHO
+        {
+          const sStar = (arenaS0 + arenaS1) * 0.5;
+          const pStarCenter = P(sStar, -46.0);
+          const yStarBase = pStarCenter[1] + 20.0;
+          const starRadius = 2.4;
+          const tx = pStarCenter[3], tz = pStarCenter[4];
+
+          // Anillo circular exterior de cromo
+          const ringPts = [];
+          const nPts = 16;
+          for (let i = 0; i <= nPts; i++) {
+            const a = (i / nPts) * Math.PI * 2;
+            const dx = tx * Math.cos(a) * starRadius;
+            const dz = tz * Math.cos(a) * starRadius;
+            const dy = Math.sin(a) * starRadius;
+            ringPts.push([pStarCenter[0] + dx, yStarBase + dy, pStarCenter[2] + dz]);
+          }
+          mb.mat(1); col(mb, colChrome[0], colChrome[1], colChrome[2]);
+          mb.tube(ringPts, 0.12, 6);
+
+          // Las 3 aspas de la estrella Mercedes (vertical 90°, inferior izq 210°, inferior der 330°)
+          const starAngles = [Math.PI * 0.5, Math.PI * 0.5 + Math.PI * 2 / 3, Math.PI * 0.5 - Math.PI * 2 / 3];
+          for (const a of starAngles) {
+            const tipX = pStarCenter[0] + tx * Math.cos(a) * (starRadius * 0.95);
+            const tipZ = pStarCenter[2] + tz * Math.cos(a) * (starRadius * 0.95);
+            const tipY = yStarBase + Math.sin(a) * (starRadius * 0.95);
+            mb.tube([[pStarCenter[0], yStarBase, pStarCenter[2]], [tipX, tipY, tipZ]], 0.10, 5);
+          }
+
+          // Mástil de soporte de la estrella
+          mb.cyl(pStarCenter[0], yStarBase - starRadius - 1.2, pStarCenter[2], 0.14, yStarBase - starRadius, 0.12, 6, true, true);
         }
 
         // Flush final de la grada Mercedes-Benz
@@ -660,18 +738,17 @@
       }
 
       // -----------------------------------------------------------------------
-      // 8. BARRERAS DE SEGURIDAD FIA: GUARDARRAÍL ARMCO TRIPLE Y VALLA METÁLICA
-      // Protección de escapatorias exteriores clave de Nürburgring GP
+      // 8. BARRERAS DE SEGURIDAD FIA: GUARDARRAÍL ARMCO METÁLICO BAJO
+      // Escapatorias exteriores (con postes y cables finos, sin muros opacos que tapen la vista)
       // -----------------------------------------------------------------------
       {
         const fiaI0 = mb.ni, fiaD0 = md.ni;
         const zones = [
-          [510, 640, -1],   // Yokohama-S
-          [860, 1060, -1],  // Mercedes-Arena (frente a la grada)
-          [1620, 1720, 1],  // Ford-Kurve
-          [2100, 2300, 1],  // Dunlop-Kehre
-          [2520, 2740, -1], // Schumacher-S
-          [4010, 4170, -1]  // Chicane Veedol
+          [510, 640, -1],   // Yokohama-S exterior
+          [1620, 1720, 1],  // Ford-Kurve exterior
+          [2100, 2300, 1],  // Dunlop-Kehre exterior
+          [2520, 2740, -1], // Schumacher-S exterior
+          [4010, 4170, -1]  // Chicane Veedol exterior
         ];
 
         for (const [zS0, zS1, side] of zones) {
@@ -679,19 +756,19 @@
           const nSeg = Math.round((zS1 - zS0) / segStep);
           for (let st = 0; st < nSeg; st++) {
             const s0 = zS0 + st * segStep, s1 = zS0 + (st + 1) * segStep;
-            const d = side * (hw + 3.8);
+            const d = side * (hw + 4.2);
             const p0 = P(s0, d), p1 = P(s1, d);
 
-            // Muro / Guardarraíl metálico de 1.1m
+            // Guardarraíl metálico bajo de 0.85m (Armco)
             mb.mat(1); col(mb, 0.72, 0.74, 0.78);
-            mb.quad(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p1[0], p1[1] + 1.1, p1[2], p0[0], p0[1] + 1.1, p0[2]);
+            mb.quad(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p1[0], p1[1] + 0.85, p1[2], p0[0], p0[1] + 0.85, p0[2]);
 
-            // Poste de soporte cada tramo
-            mb.cyl(p0[0], p0[1], p0[2], 0.08, p0[1] + 3.4, 0.07, 6, true, true);
+            // Postes de acero galvanizado
+            mb.cyl(p0[0], p0[1], p0[2], 0.06, p0[1] + 1.85, 0.06, 6, true, true);
 
-            // Valla metálica superior FIA (Catch fencing) de 2.3m
-            md.mat(7); col(md, 0.60, 0.62, 0.65, 0.55);
-            md.quad(p0[0], p0[1] + 1.1, p0[2], p1[0], p1[1] + 1.1, p1[2], p1[0], p1[1] + 3.4, p1[2], p0[0], p0[1] + 3.4, p0[2]);
+            // Cables tensores horizontales delgados (completamente transparentes)
+            mb.tube([[p0[0], p0[1] + 1.25, p0[2]], [p1[0], p1[1] + 1.25, p1[2]]], 0.015, 4);
+            mb.tube([[p0[0], p0[1] + 1.75, p0[2]], [p1[0], p1[1] + 1.75, p1[2]]], 0.015, 4);
           }
         }
         S1.add(mb, fiaI0, 7, 1800);

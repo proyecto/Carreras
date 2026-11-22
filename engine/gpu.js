@@ -13,18 +13,23 @@ const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real
 const G = { dev: null, ctx: null, fmt: 'bgra8unorm', W: 0, H: 0, hasTS: false, canvas: null };
 
 async function gpuInit() {
-  if (!navigator.gpu) throw new Error('WebGPU no disponible en este navegador.');
+  if (!navigator.gpu) throw new Error('WebGPU no disponible en este navegador o dispositivo móvil. En iOS requiere iOS 18.2+ o activar WebGPU en Ajustes > Safari; en Android requiere Chrome 121+ con soporte Vulkan.');
   const ad = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
   if (!ad) throw new Error('Ningún adaptador WebGPU disponible.');
   const feats = [];
   // "timestamp-query" se solicita para medición de rendimiento (?perf) y juego interactivo
   // (muestra el tiempo de GPU si el navegador lo permite); ?nots lo desactiva.
   for (const f of ['float32-filterable', 'rg11b10ufloat-renderable'].concat((Q.has('perf') || GAME.ui) && !Q.has('nots') ? ['timestamp-query'] : [])) if (ad.features.has(f)) feats.push(f);
-  if (!ad.features.has('float32-filterable')) throw new Error('GPU sin soporte para float32-filterable.');
+  if (!ad.features.has('float32-filterable')) throw new Error('GPU sin soporte para float32-filterable (requerido por el mapa de elevación WGSL).');
   G.hasTS = feats.includes('timestamp-query');
   G.dev = await ad.requestDevice({
     requiredFeatures: feats,
-    requiredLimits: { maxColorAttachmentBytesPerSample: Math.min(64, ad.limits.maxColorAttachmentBytesPerSample), maxSampledTexturesPerShaderStage: 24, maxBufferSize: ad.limits.maxBufferSize, maxTextureDimension2D: 8192 }
+    requiredLimits: {
+      maxColorAttachmentBytesPerSample: Math.min(64, ad.limits.maxColorAttachmentBytesPerSample || 32),
+      maxSampledTexturesPerShaderStage: Math.min(24, ad.limits.maxSampledTexturesPerShaderStage || 16),
+      maxBufferSize: Math.min(ad.limits.maxBufferSize || 268435456, 1073741824),
+      maxTextureDimension2D: Math.min(8192, ad.limits.maxTextureDimension2D || 4096)
+    }
   });
   G.dev.addEventListener('uncapturederror', e => { console.error('GPU: ' + e.error.message); G.lastErr = e.error.message; });
   G.canvas = document.getElementById('c');
