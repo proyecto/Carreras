@@ -1,7 +1,7 @@
 # Prompt de Generación: Circuito Urbano Nocturno Las Vegas Strip (F1)
 
 > **Instrucción de uso:**  
-> Cuando solicites *"Regenera el circuito de Las Vegas"* o desees modificar algún parámetro de este escenario, el asistente aplicará estricta y fielmente las directrices de este archivo sobre `tracks/las-vegas-strip.js` y `world/props-vegas.js`, sin alterar ningún otro circuito del juego.
+> Cuando solicites *"Regenera el circuito de Las Vegas"* o desees modificar algún parámetro de este escenario, el asistente aplicará estricta y fielmente las directrices de este archivo de manera **100% autocontenida** sobre `tracks/las-vegas-strip.js` (incluyendo su geometría spline, perfil altimétrico y props 3D en `buildProps`), sin alterar ningún otro circuito ni archivo compartido del juego.
 
 ---
 

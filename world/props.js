@@ -588,8 +588,8 @@ function propsBuild() {
   const gantryDR = isVegas ? (pit.wallD - 0.6) : 7.05;
   gantry(0, gantryDL, gantryDR, 'name', true);
 
-  // ---- prédio dos boxes clássico e arquibancada (circuitos rurais) ----
-  if (!isVegas) {
+  // ---- prédio dos boxes clássico e arquibancada (circuitos rurais sem buildProps próprio) ----
+  if (!isVegas && (!TRK.spec || typeof TRK.spec.buildProps !== 'function')) {
     // ---- prédio dos boxes clássico ----
     const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1, nBay = 20, bw = (u1 - u0) / nBay, hG = 3.7, hS = 4.5, hT = 8.2;
     const wallC = [0.6, 0.6, 0.58], darkC = [0.1, 0.11, 0.12];
@@ -954,9 +954,12 @@ function propsBuild() {
     S1.add(mb, c0, 3, 220);
   }
 
-  // ---- Circuito urbano: rascacielos continuos, hoteles casino con luces de neón, MSG Sphere, High Roller y farolas F1 ----
-  // Cargado de forma condicional y modular únicamente en trazados urbanos / Las Vegas Strip (world/props-vegas.js)
-  if (typeof buildVegasUrbanProps === 'function' && TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
+  // ---- Props específicas y autocontenidas del circuito activo ----
+  if (TRK.spec && typeof TRK.spec.buildProps === 'function') {
+    TRK.spec.buildProps({
+      mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng, toStraight
+    });
+  } else if (typeof buildVegasUrbanProps === 'function' && TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
     buildVegasUrbanProps({
       mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng
     });

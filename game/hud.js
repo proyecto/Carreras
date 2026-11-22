@@ -75,13 +75,8 @@ function hudBuildMap(W, Hh, r) {
   g.lineWidth = Math.max(1, Math.round(r * 0.012));
   g.stroke();
 
-  // Título panel izquierdo (Radar de curva)
+  // Título panel izquierdo (El nombre dinámico de la curva se dibuja por frame en hudDrawMap)
   const fontBadge = '600 ' + Math.round(r * 0.105) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  g.font = fontBadge;
-  g.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  g.textAlign = 'left';
-  g.textBaseline = 'top';
-  g.fillText('CURVA ADELANTE', Math.round(r * 0.18), Math.round(r * 0.13));
 
   // Título panel derecho (Nombre del circuito)
   const trk = (typeof TRK !== 'undefined' ? TRK : null);
@@ -312,26 +307,90 @@ function hudDrawMinimap() {
     }
   }
 
-  // Indicador de alerta de curva (Distancia, dirección y radio de giro)
+  // Detección de curva actual o próxima según metadata del circuito
+  const curTrackS = ((curM % trk.L) + trk.L) % trk.L;
+  const corners = (trk.corners && trk.corners.length) ? trk.corners : ((trk.spec && trk.spec.corners) || []);
+  let inCorner = null;
+  let nextCorner = null;
+  let minNextDist = 1e9;
+
+  for (let ci = 0; ci < corners.length; ci++) {
+    const c = corners[ci];
+    if (c.s0 <= c.s1) {
+      if (curTrackS >= (c.s0 - 6) && curTrackS <= (c.s1 + 6)) {
+        inCorner = c;
+        break;
+      }
+    } else {
+      // Curva que cruza la meta
+      if (curTrackS >= (c.s0 - 6) || curTrackS <= (c.s1 + 6)) {
+        inCorner = c;
+        break;
+      }
+    }
+  }
+
+  if (!inCorner) {
+    for (let ci = 0; ci < corners.length; ci++) {
+      const c = corners[ci];
+      const distToS0 = (c.s0 - curTrackS + trk.L) % trk.L;
+      if (distToS0 > 0 && distToS0 < minNextDist && distToS0 < 350) {
+        minNextDist = distToS0;
+        nextCorner = c;
+      }
+    }
+  }
+
+  // Línea 1: Nombre de la curva / Recta
+  let cornerTitle = 'RECTA';
+  let titleColor = 'rgba(255, 255, 255, 0.45)';
+  if (inCorner) {
+    cornerTitle = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA';
+    titleColor = '#facc15'; // Oro brillante para indicar curva activa
+  } else if (nextCorner) {
+    cornerTitle = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE';
+    titleColor = '#38bdf8'; // Azul cielo / cian para curva aproximándose
+  } else if (maxK > 0.004) {
+    cornerTitle = 'CURVA ADELANTE';
+    titleColor = 'rgba(255, 255, 255, 0.75)';
+  }
+
+  // Ajuste adaptativo del tamaño de fuente para no desbordar el panel
   m.textAlign = 'left';
   m.textBaseline = 'top';
-  m.font = '700 ' + Math.round(r * 0.13) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  if (maxK > 0.004) {
-    const isRight = apexK > 0;
-    const radius = Math.round(1 / maxK);
-    let badgeColor = '#4ade80'; // verde si es abierta (>100m)
-    let arrow = isRight ? '↱ R' : '↰ L';
-    if (radius < 55) {
-      badgeColor = '#ef4444'; // roja si es cerrada / horquilla (<55m)
-      arrow = isRight ? '⤹ R' : '⤸ L';
-    } else if (radius < 95) {
-      badgeColor = '#facc15'; // amarilla si es media (<95m)
-    }
+  let titleFontSz = Math.round(r * 0.115);
+  m.font = '700 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  const maxTitleW = midX - Math.round(r * 0.22);
+  while (titleFontSz > 7 && m.measureText(cornerTitle).width > maxTitleW) {
+    titleFontSz -= 0.5;
+    m.font = '700 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  }
+  m.fillStyle = titleColor;
+  m.fillText(cornerTitle, Math.round(r * 0.18), Math.round(r * 0.13));
+
+  // Línea 2: Indicador métrico, dirección y radio
+  if (inCorner) {
+    const k = inCorner.k ?? (trk.k ? trk.k[Math.floor(curTrackS) % trk.N] : 0);
+    const isRight = k >= 0;
+    const radius = Math.round(inCorner.R || (maxK > 0 ? (1 / maxK) : 60));
+    let arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+    let badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
     m.fillStyle = badgeColor;
-    m.fillText(arrow + ' ' + apexDist + 'm (' + radius + 'm)', Math.round(r * 0.18), Math.round(r * 0.26));
+    m.font = '700 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText(arrow + ' EN CURVA (' + radius + 'm)', Math.round(r * 0.18), Math.round(r * 0.27));
+  } else if (nextCorner || maxK > 0.004) {
+    const isRight = nextCorner ? (nextCorner.k >= 0) : (apexK > 0);
+    const radius = Math.round(nextCorner ? (nextCorner.R || (maxK > 0 ? 1 / maxK : 60)) : (1 / maxK));
+    const distM = nextCorner ? Math.round(minNextDist) : apexDist;
+    let arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+    let badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+    m.fillStyle = badgeColor;
+    m.font = '700 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText(arrow + ' ' + distM + 'm (' + radius + 'm)', Math.round(r * 0.18), Math.round(r * 0.27));
   } else {
-    m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    m.fillText('RECTA', Math.round(r * 0.18), Math.round(r * 0.26));
+    m.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    m.font = '600 ' + Math.round(r * 0.115) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText('A FONDO', Math.round(r * 0.18), Math.round(r * 0.27));
   }
 
   // Proyección de la carretera adelante en vista subjetiva (radar)
