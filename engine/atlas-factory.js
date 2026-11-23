@@ -16,6 +16,7 @@
  *      patrocinadores oficiales FIA (Heineken 0.0, TAG Heuer, Pirelli, Aramco, Rolex, etc.) y carga a textura WebGPU.
  */
 
+(() => {
 const _PI = Math.PI;
 const _TAU = Math.PI * 2;
 
@@ -734,7 +735,11 @@ if (typeof window !== 'undefined') {
   window.AtlasFactory = AtlasFactory;
   window.atlasBuild = () => AtlasFactory.buildPropsAtlas();
 }
+if (typeof globalThis !== 'undefined') {
+  globalThis.AtlasFactory = AtlasFactory;
+}
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AtlasFactory, GLY, GWID, textW, strokeText, personSprite, personStrip };
 }
+})();

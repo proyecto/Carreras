@@ -3,12 +3,12 @@
 // Shader WGSL de materiales para el Fiat Uno Mille EP 1996 (con escalera en el techo).
 // Pintura metalizada con barniz, plásticos, gomas, neumáticos, tapacubos, ópticas, etc.
 
-if (typeof WGSL === 'undefined') {
-  var WGSL = {};
-  if (typeof globalThis !== 'undefined') globalThis.WGSL = WGSL;
-}
+(() => {
+  const _WGSL = typeof WGSL !== 'undefined' ? WGSL : ((typeof window !== 'undefined' && window.WGSL) || (typeof globalThis !== 'undefined' && globalThis.WGSL) || {});
+  if (typeof window !== 'undefined') window.WGSL = _WGSL;
+  if (typeof globalThis !== 'undefined') globalThis.WGSL = _WGSL;
 
-WGSL["mat_car"] = `// Materiales del coche (Fiat Uno Mille EP): pintura metalizada con barniz, plásticos, gomas, neumáticos, tapacubos, ópticas...
+  _WGSL["mat_car"] = `// Materiales del coche (Fiat Uno Mille EP): pintura metalizada con barniz, plásticos, gomas, neumáticos, tapacubos, ópticas...
 // id (mat.x): 1 pintura | 2 plástico negro | 3 goma | 4 neumático | 5 tapacubos | 6 acero | 7 cromado | 8 interior | 9 lente opaca
 //             10 aluminio | 11 cincha | 12 decal atlas | 13 fondo | 14 reflector faro | 15 espejo | 16 rejilla
 //             17 pintura lisa brilhante (capacete; a=1 preto vítreo)
@@ -256,6 +256,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
 }
 `;
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mat_car: WGSL["mat_car"] };
-}
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { mat_car: _WGSL["mat_car"] };
+  }
+})();

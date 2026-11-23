@@ -5,15 +5,6 @@
 const PROPS = (typeof window !== 'undefined' && window.PROPS) || { sets: [], regions: {} };
 if (typeof window !== 'undefined') window.PROPS = PROPS;
 
-// Funciones del Atlas delegadas a AtlasFactory para compatibilidad total
-const GLY = typeof AtlasFactory !== 'undefined' ? AtlasFactory.GLY : {};
-const GWID = typeof AtlasFactory !== 'undefined' ? AtlasFactory.GWID : {};
-const gAdv = typeof AtlasFactory !== 'undefined' ? AtlasFactory.gAdv : ch => 5;
-const textW = typeof AtlasFactory !== 'undefined' ? AtlasFactory.textW : () => 0;
-const strokeText = typeof AtlasFactory !== 'undefined' ? AtlasFactory.strokeText : () => {};
-const personSprite = typeof AtlasFactory !== 'undefined' ? AtlasFactory.personSprite : () => {};
-const personStrip = typeof AtlasFactory !== 'undefined' ? AtlasFactory.personStrip : () => ({ data: new Uint8Array(0), w: 0, h: 0 });
-
 function atlasBuild() {
   if (typeof AtlasFactory !== 'undefined' && typeof AtlasFactory.buildPropsAtlas === 'function') {
     return AtlasFactory.buildPropsAtlas({ regions: PROPS.regions });
