@@ -349,10 +349,10 @@ class VehicleFactory {
    * Crea un contenedor de estado de renderizado para interpolación de fotogramas.
    */
   static createRenderState() {
-    const m4 = () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    const mkMat4 = typeof m4 === 'function' ? m4 : () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
     return {
       cx: 0, cy: 0, cz: 0, yaw: 0, steer: 0, speed: 0,
-      body: m4(), tmp: m4(), ground: m4(),
+      body: mkMat4(), tmp: mkMat4(), ground: mkMat4(),
       susp: new Float32Array(4),
       spin: new Float32Array(4),
       keys: 0, rivalKeys: 0

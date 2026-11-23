@@ -1,7 +1,15 @@
 'use strict';
 // ---- 00_math.js
 // Matemáticas sin asignación de memoria: todo escribe en parámetros de salida (Float32Array preasignados).
-const PI = Math.PI, TAU = Math.PI * 2;
+const PI = Math.PI, TAU = Math.PI * 2, PI2 = TAU;
+const CUBE_FACE_AXES = [
+  [0, 0, -1, 0, -1, 0, 1, 0, 0],
+  [0, 0, 1, 0, -1, 0, -1, 0, 0],
+  [1, 0, 0, 0, 0, 1, 0, 1, 0],
+  [1, 0, 0, 0, 0, -1, 0, -1, 0],
+  [1, 0, 0, 0, -1, 0, 0, 0, 1],
+  [-1, 0, 0, 0, -1, 0, 0, 0, -1]
+];
 const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
 const lerp = (a, b, t) => a + (b - a) * t;
 const sat = x => x < 0 ? 0 : x > 1 ? 1 : x;

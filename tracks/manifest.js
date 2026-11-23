@@ -29,8 +29,21 @@ window.TRACK_MANIFEST = [
 
 window.TRACK_LIST = window.TRACK_MANIFEST.map(t => t.file);
 
-// Pre-registrar en TRACKS si el registro ya está disponible
-if (typeof TRACKS !== 'undefined') {
+// Pre-registrar en TrackFactory / TRACKS si el registro ya está disponible
+if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
+  for (const item of window.TRACK_MANIFEST) {
+    TrackFactory.register({
+      id: item.id,
+      name: item.name,
+      subtitle: item.subtitle,
+      specs: item.specs,
+      file: item.file,
+      night: item.night,
+      urban: item.urban,
+      noVegetation: item.noVegetation
+    });
+  }
+} else if (typeof TRACKS !== 'undefined') {
   for (const item of window.TRACK_MANIFEST) {
     TRACKS.register({
       id: item.id,

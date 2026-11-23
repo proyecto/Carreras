@@ -20,6 +20,7 @@ function runTracksTestSuite() {
   const root = path.resolve(__dirname, '..');
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
+  const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
 
   const ctx = {
@@ -37,6 +38,7 @@ function runTracksTestSuite() {
   vm.createContext(ctx);
   vm.runInContext(mathCode, ctx);
   vm.runInContext(regCode, ctx);
+  vm.runInContext(trackFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
@@ -135,6 +137,46 @@ function runTracksTestSuite() {
   assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('trackEntry.file'), 'index.html carga condicionalmente el archivo del circuito seleccionado');
   assert(indexHtml.includes('hasVegetation = !(trackEntry && trackEntry.noVegetation)') && indexHtml.includes('shaders/vegetation.js'), 'index.html carga vegetación de forma estrictamente condicional (desactivada en Las Vegas)');
   assert(indexHtml.includes('world/props-vegas.js') && indexHtml.includes('isVegas'), 'index.html carga la noria High Roller y MSG Sphere únicamente cuando se corre en Las Vegas');
+  assert(indexHtml.includes('engine/track-factory.js'), 'index.html incluye el módulo unificado TrackFactory');
+
+  // 9. Validación de TrackFactory (engine/track-factory.js)
+  const TF = ctx.window.TrackFactory || ctx.TrackFactory;
+  assert(TF && typeof TF === 'object', 'TrackFactory exportado y accesible');
+  assert(typeof TF.sI === 'function', 'TrackFactory.sI definido');
+  assert(TF.sI(0, 3, 100) === 0, 'TrackFactory.sI en origen');
+  assert(TF.sI(300, 3, 100) === 0, 'TrackFactory.sI vuelta completa cíclica');
+  assert(TF.sI(-3, 3, 100) === 99, 'TrackFactory.sI índice negativo cíclico correcto');
+
+  assert(typeof TF.gs === 'function', 'TrackFactory.gs definido');
+  const testArr = new Float32Array([10, 0, 0, 0, 0]);
+  const smoothDst = new Float32Array(5);
+  TF.gs(testArr, smoothDst, 1.0, 5);
+  assert(Number.isFinite(smoothDst[0]) && smoothDst[0] > 0 && !isNaN(smoothDst[1]), 'TrackFactory.gs suavizado gaussiano válido y sin NaNs');
+
+  assert(typeof TF.kerbProfile === 'function', 'TrackFactory.kerbProfile definido');
+  assert(TF.kerbProfile(-0.5) === 0 && TF.kerbProfile(5.0) === 0, 'TrackFactory.kerbProfile fuera de rango es 0');
+  assert(TF.kerbProfile(0.5) > 0, 'TrackFactory.kerbProfile en rampa devuelve elevación positiva');
+
+  assert(typeof TF.validateTrack === 'function', 'TrackFactory.validateTrack definido');
+  const validCheck = TF.validateTrack({
+    id: 'test-track',
+    name: 'Circuito Test',
+    hw: 7.0,
+    points: [[0, 0], [10, 0], [10, 10], [0, 10]],
+    corners: [],
+    pit: { s0: 0, s1: 100 },
+    stand: { s0: 0, s1: 100, d0: 15 },
+    naturalH: () => 0
+  });
+  assert(validCheck.valid === true, 'TrackFactory.validateTrack valida positivamente un circuito correcto');
+
+  const invalidCheck = TF.validateTrack({ id: 'bad-track' });
+  assert(invalidCheck.valid === false && invalidCheck.errors.length > 0, 'TrackFactory.validateTrack detecta errores en spec incompleto');
+
+  assert(typeof TF.findNextCorner === 'function', 'TrackFactory.findNextCorner definido');
+  const testCorners = [{ s: 200, name: 'Curva 1', ang: 45, R: 60 }, { s: 500, name: 'Curva 2', ang: -30, R: 80 }];
+  const nextC = TF.findNextCorner(150, testCorners, 200);
+  assert(nextC && nextC.name === 'Curva 1' && nextC.distance === 50, 'TrackFactory.findNextCorner detecta curva entrante en lookahead');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

@@ -52,7 +52,7 @@ function postInit() {
   P.cubeSkyBG = dev.createBindGroup({ layout: P.cubeSky.bgls[0], entries: [{ binding: 0, resource: { buffer: R.frameBuf } }, { binding: 1, resource: { buffer: R.passBuf, size: 64 } }, { binding: 2, resource: V.sky }, { binding: 3, resource: R.sSky }] });
   P.envBlur = mkPost('envblur', {}, [HDR]);
   const eb = new Float32Array(6 * 8 * 64);
-  const AX = [[0, 0, -1, 0, -1, 0, 1, 0, 0], [0, 0, 1, 0, -1, 0, -1, 0, 0], [1, 0, 0, 0, 0, 1, 0, 1, 0], [1, 0, 0, 0, 0, -1, 0, -1, 0], [1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, -1, 0, 0, 0, -1]];
+  const AX = typeof CUBE_FACE_AXES !== 'undefined' ? CUBE_FACE_AXES : [[0, 0, -1, 0, -1, 0, 1, 0, 0], [0, 0, 1, 0, -1, 0, -1, 0, 0], [1, 0, 0, 0, 0, 1, 0, 1, 0], [1, 0, 0, 0, 0, -1, 0, -1, 0], [1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, -1, 0, 0, 0, -1]];
   for (let f = 0; f < 6; f++) for (let m = 1; m <= ENV_MIPS; m++) {
     const o = (f * 8 + m) * 64, a = AX[f]; eb.set([a[0], a[1], a[2], 0, a[3], a[4], a[5], 0, a[6], a[7], a[8], 0, 2.6 / (ENV_RES >> m), 0, 0, 0], o);
   }

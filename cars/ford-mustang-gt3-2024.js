@@ -92,30 +92,10 @@ fn surf(in: V2F, ff: bool) -> Surface {
 `;
 
 function loadAtlas() {
-  const W = 2048, H = 2048;
-  const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 7 });
-  const initData = new Uint8Array(W * H * 4);
-  initData.fill(220);
-  G.dev.queue.writeTexture({ texture: tex }, initData, { bytesPerRow: W * 4 }, [W, H]);
-
-  if (typeof Image !== 'undefined') {
-    const img = new Image();
-    img.src = ATLAS_B64;
-    const loadPromise = new Promise(resolve => {
-      img.onload = () => {
-        if (typeof createImageBitmap !== 'undefined') {
-          createImageBitmap(img).then(bmp => {
-            G.dev.queue.copyExternalImageToTexture({ source: bmp }, { texture: tex }, [W, H]);
-            genMips(tex, 'rgba8unorm-srgb');
-            resolve();
-          }).catch(resolve);
-        } else resolve();
-      };
-      img.onerror = resolve;
-    });
-    if (R && R.pending) R.pending.push(loadPromise);
+  if (typeof CarFactory !== 'undefined' && typeof CarFactory.createAtlasTexture === 'function') {
+    return CarFactory.createAtlasTexture(ATLAS_B64, 2048, 2048, 40);
   }
-  return tex;
+  return null;
 }
 
 const CAR = {

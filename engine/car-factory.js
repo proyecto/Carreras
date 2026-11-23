@@ -73,6 +73,14 @@ const CarFactory = {
             G.dev.queue.writeTexture({ texture: tex }, id.data, { bytesPerRow: W * 4 }, [W, H]);
             if (typeof genMips === 'function') genMips(tex, 'rgba8unorm-srgb');
           });
+        } else if (typeof document !== 'undefined') {
+          const cvs = document.createElement('canvas');
+          cvs.width = W; cvs.height = H;
+          const ctx2d = cvs.getContext('2d');
+          ctx2d.drawImage(img, 0, 0);
+          const id = ctx2d.getImageData(0, 0, W, H);
+          G.dev.queue.writeTexture({ texture: tex }, id.data, { bytesPerRow: W * 4 }, [W, H]);
+          if (typeof genMips === 'function') genMips(tex, 'rgba8unorm-srgb');
         }
       };
     }

@@ -88,41 +88,10 @@ fn surf(in: V2F, ff: bool) -> Surface {
 `;
 
 function loadAtlas() {
-  const W = 2048, H = 2048;
-  const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 7 });
-  const initData = new Uint8Array(W * H * 4);
-  initData.fill(220);
-  G.dev.queue.writeTexture({ texture: tex }, initData, { bytesPerRow: W * 4 }, [W, H]);
-
-  if (typeof Image !== 'undefined') {
-    const img = new Image();
-    img.src = ATLAS_B64;
-    img.onload = () => {
-      if (typeof createImageBitmap !== 'undefined') {
-        createImageBitmap(img).then(bmp => {
-          G.dev.queue.copyExternalImageToTexture({ source: bmp }, { texture: tex }, [W, H]);
-          if (typeof genMips === 'function') genMips(tex, 'rgba8unorm-srgb');
-        }).catch(() => {
-          const cvs = document.createElement('canvas');
-          cvs.width = W; cvs.height = H;
-          const ctx2d = cvs.getContext('2d');
-          ctx2d.drawImage(img, 0, 0);
-          const id = ctx2d.getImageData(0, 0, W, H);
-          G.dev.queue.writeTexture({ texture: tex }, id.data, { bytesPerRow: W * 4 }, [W, H]);
-          if (typeof genMips === 'function') genMips(tex, 'rgba8unorm-srgb');
-        });
-      } else {
-        const cvs = document.createElement('canvas');
-        cvs.width = W; cvs.height = H;
-        const ctx2d = cvs.getContext('2d');
-        ctx2d.drawImage(img, 0, 0);
-        const id = ctx2d.getImageData(0, 0, W, H);
-        G.dev.queue.writeTexture({ texture: tex }, id.data, { bytesPerRow: W * 4 }, [W, H]);
-        if (typeof genMips === 'function') genMips(tex, 'rgba8unorm-srgb');
-      }
-    };
+  if (typeof CarFactory !== 'undefined' && typeof CarFactory.createAtlasTexture === 'function') {
+    return CarFactory.createAtlasTexture(ATLAS_B64, 2048, 2048, 40);
   }
-  return tex;
+  return null;
 }
 
 const CAR = {

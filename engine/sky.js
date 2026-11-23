@@ -63,7 +63,7 @@ async function computeSH() {
   for (let f = 0; f < 6; f++) enc.copyTextureToBuffer({ texture: R.tex.env, mipLevel: mip, origin: [0, 0, f] }, { buffer: buf, offset: f * bpr * n, bytesPerRow: bpr, rowsPerImage: n }, [n, n, 1]);
   dev.queue.submit([enc.finish()]); await buf.mapAsync(GPUMapMode.READ);
   const u16 = new Uint16Array(buf.getMappedRange()), sh = new Float64Array(27); let wsum = 0;
-  const AX = [[0, 0, -1, 0, -1, 0, 1, 0, 0], [0, 0, 1, 0, -1, 0, -1, 0, 0], [1, 0, 0, 0, 0, 1, 0, 1, 0], [1, 0, 0, 0, 0, -1, 0, -1, 0], [1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, -1, 0, 0, 0, -1]];
+  const AX = typeof CUBE_FACE_AXES !== 'undefined' ? CUBE_FACE_AXES : [[0, 0, -1, 0, -1, 0, 1, 0, 0], [0, 0, 1, 0, -1, 0, -1, 0, 0], [1, 0, 0, 0, 0, 1, 0, 1, 0], [1, 0, 0, 0, 0, -1, 0, -1, 0], [1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, -1, 0, 0, 0, -1]];
   for (let f = 0; f < 6; f++) for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const qx = (x + 0.5) / n * 2 - 1, qy = (y + 0.5) / n * 2 - 1, a = AX[f];
     let dx = a[6] + a[0] * qx + a[3] * qy, dy = a[7] + a[1] * qx + a[4] * qy, dz = a[8] + a[2] * qx + a[5] * qy; const l = Math.hypot(dx, dy, dz); dx /= l; dy /= l; dz /= l;

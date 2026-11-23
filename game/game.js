@@ -72,10 +72,6 @@ var RACE_START = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorIns
     }
   }
 };
-function raceStartTrigger() {
-  if (typeof raceDirectorInstance !== 'undefined') raceDirectorInstance.triggerStart();
-  else RACE_START.triggerStart();
-}
 
 const DEFAULT_CONTROLS = {
   accel: ['KeyW', 'ArrowUp'],
