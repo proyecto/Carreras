@@ -147,640 +147,44 @@
     ],
 
     // =========================================================================
-    // 100% AUTOCONTENIDO: CONSTRUCCIÓN DEL ESCENARIO DE NÜRBURGRING GP
+    // =========================================================================
+    // ESCENARIO DECLARATIVO DE NÜRBURGRING GP (Construido con PropFactory)
     // =========================================================================
     buildProps(ctx) {
-      const { mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng, toStraight } = ctx;
-      const rnd = typeof mkRng === 'function' ? mkRng(442) : Math.random;
-      const PI = Math.PI, PI2 = PI * 2;
-      const o5 = new Float64Array(5);
-
-      // Paleta corporativa de Nürburgring y ADAC GT
-      const colBilsteinYellow = [1.0, 0.88, 0.05];
-      const colBilsteinBlue = [0.08, 0.32, 0.75];
-      const colAdacYellow = [0.98, 0.82, 0.02];
-      const colRavenolBlue = [0.05, 0.22, 0.65];
-      const colSeatRed = [0.78, 0.12, 0.12];
-      const colSeatWhite = [0.94, 0.94, 0.95];
-
-      // -----------------------------------------------------------------------
-      // 1. HAUPTTRIBÜNE (GRADA PRINCIPAL DE META T4a)
-      // Situada en d = -15.5m a -42.0m, s = -90m a +135m (225 m de longitud)
-      // Estructura abierta de 22 filas escalonadas, marquesina en voladizo,
-      // asientos bicolor (Rojo/Blanco), pasillos y público de competición.
-      // -----------------------------------------------------------------------
-      {
-        const st = TRK.stand;
-        const u0 = st.s0, u1 = st.s1, vF = st.d0;
-        const nRow = 22, run = 0.85, rise = 0.42, yF = 1.25;
-        const vB = vF - 1.0 - nRow * run, yB = yF + nRow * rise;
-        const nSec = 6, aisle = 2.4;
-        const secW = (u1 - u0 - (nSec + 1) * aisle) / nSec;
-
-        for (let sec = 0; sec < nSec; sec++) {
-          const a = u0 + aisle + sec * (secW + aisle), c = a + secW;
-          const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni;
-
-          // Huellas y contrahuellas de hormigón
-          for (let r = 0; r < nRow; r++) {
-            const v = vF - 1.0 - r * run, y = yF + r * rise, ao = 1.0 - 0.35 * (r / nRow);
-            mb.mat(3); col(mb, 0.52, 0.53, 0.54, ao);
-            mb.quad(a, y, v, c, y, v, c, y + rise, v, a, y + rise, v); // Frente
-            mb.quad(a, y + rise, v, c, y + rise, v, c, y + rise, v - run, a, y + rise, v - run); // Peldaño
-
-            // Asientos individuales Nürburgring (patrón rojo y blanco por sector)
-            const sTone = (sec % 2 === 0) ? colSeatRed : colSeatWhite;
-            md.mat(8); col(md, sTone[0], sTone[1], sTone[2], ao);
-            md.quad(a, y + rise + 0.38, v - 0.22, c, y + rise + 0.38, v - 0.22, c, y + rise + 0.38, v - 0.72, a, y + rise + 0.38, v - 0.72, 0, 0, c - a, 0.5);
-            md.quad(a, y + rise + 0.38, v - 0.72, c, y + rise + 0.38, v - 0.72, c, y + rise + 0.82, v - 0.74, a, y + rise + 0.82, v - 0.74, 0, 0, c - a, 0.44);
-          }
-
-          // Público en las gradas
-          if (mp && SP && typeof sitter === 'function') {
-            const pv0 = mp.nv, pi0 = mp.ni;
-            for (let r = 0; r < nRow; r++) {
-              const v = vF - 1.0 - r * run, y = yF + r * rise;
-              const occ = 0.75 + 0.2 * Math.sin((r + 1) / (nRow + 1) * PI);
-              for (let x = a + 0.4; x < c - 0.4; x += 0.55) {
-                if (rnd() < occ) {
-                  const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.85, 0.2, 0.1];
-                  if (rnd() < 0.12 && typeof stander === 'function') {
-                    stander(x + (rnd() - 0.5) * 0.2, y + rise + 0.05, v - 0.45, crowdColor, 0.95);
-                  } else {
-                    sitter(x, y + rise + 0.38, v - 0.72, 0.95);
-                  }
-                }
-              }
-            }
-            if (typeof toStraight === 'function') toStraight(mp, pv0);
-            SP.add(mp, pi0, 1, 950);
-          }
-
-          // Escaleras laterales de acceso en cada sector
-          for (const [x0, x1] of sec === 0 ? [[a - aisle, a], [c, c + aisle]] : [[c, c + aisle]]) {
-            mb.mat(3); col(mb, 0.65, 0.65, 0.66, 0.9);
-            for (let r = 0; r < nRow; r++) {
-              const v = vF - 1.0 - r * run, y = yF + r * rise;
-              mb.quad(x0, y, v, x1, y, v, x1, y + rise, v, x0, y + rise, v);
-              mb.quad(x0, y + rise, v, x1, y + rise, v, x1, y + rise, v - run, x0, y + rise, v - run);
-            }
-            mb.mat(2, 102, 153); col(mb, 0.8, 0.8, 0.82);
-            mb.tube([[(x0 + x1) / 2, yF + 0.95, vF - 1.0], [(x0 + x1) / 2, yB + 0.95, vB]], 0.035, 5);
-          }
-
-          // Murete frontal con vallas oficiales de Nürburgring
-          const ea = sec === 0 ? u0 : a - aisle / 2, ec = sec === nSec - 1 ? u1 : c + aisle / 2;
-          mb.mat(3); col(mb, 0.60, 0.60, 0.62);
-          Bx(mb, ea, ec, -0.5, yF + 0.9, vF - 1.0, vF - 0.75);
-          if (typeof sign === 'function') {
-            const nm = ['name', 'b0', 'b5', 'b2', 'b7', 'name'][sec % 6];
-            sign(md, ea + 2, 0.25, vF - 0.73, ec - ea - 4, 0, 0, 1.4, nm);
-          }
-
-          // Pared trasera y cerramiento
-          mb.mat(3); col(mb, 0.48, 0.48, 0.50);
-          mb.quad(ec, -0.5, vB - 0.3, ea, -0.5, vB - 0.3, ea, yB + 5.8, vB - 0.3, ec, yB + 5.8, vB - 0.3);
-          mb.quad(ea, yB, vB, ec, yB, vB, ec, yB + 5.8, vB, ea, yB + 5.8, vB);
-
-          // Marquesina de acero en voladizo (cantilever canopy)
-          const yr0 = yB + 6.0, yr1 = yB + 3.8, vr1 = vF - 0.2;
-          md.mat(9); col(md, 0.72, 0.74, 0.76);
-          md.quad(ec, yr0, vB - 0.8, ea, yr0, vB - 0.8, ea, yr1, vr1, ec, yr1, vr1, 0, 0, ec - ea, vr1 - vB + 0.8);
-
-          // Vigas y cerchas metálicas de soporte
-          mb.mat(2, 128, 128); col(mb, 0.22, 0.24, 0.26);
-          for (const x of [ea + 0.4, (ea + ec) / 2, ec - 0.4]) {
-            Bx(mb, x - 0.22, x + 0.22, -0.5, yr0 - 0.1, vB - 0.3, vB + 0.15);
-            const bm = mb.nv;
-            Bx(mb, x - 0.12, x + 0.12, -0.5, 0.0, 0, 1);
-            for (let q = bm; q < mb.nv; q++) {
-              const t = mb.f32[q * 9 + 2], top = mb.f32[q * 9 + 1] > -0.25;
-              mb.f32[q * 9 + 2] = lerp(vB - 0.3, vr1 - 0.3, t);
-              mb.f32[q * 9 + 1] = lerp(yr0, yr1, t) - (top ? 0.06 : lerp(0.95, 0.3, t));
-            }
-          }
-
-          if (typeof toStraight === 'function') {
-            toStraight(mb, v0);
-            toStraight(md, w0);
-          }
-          S1.add(mb, i0, 7, 2400);
-          S2.add(md, k0, 7, 2400);
-        }
-      }
-
-      // -----------------------------------------------------------------------
-      // 2. MERCEDES-BENZ TRIBÜNE (T4 EN MERCEDES-ARENA)
-      // Reproducción exacta de la icónica grada monumental de Mercedes-Arena según la foto oficial:
-      // A. Muro perimetral frontal blanco bajo (0.85m) con patrocinadores Allianz / Mercedes
-      // B. Graderío inferior (Lower Bowl): 10 filas de asientos azules con público multicolor
-      // C. Balcón / Fascia intermedia VIP en negro con rótulo monumental "Mercedes-Benz" y estrella
-      // D. Ventanales panorámicos de palcos VIP en cristal tintado
-      // E. Graderío superior (Upper Bowl): 12 filas empinadas cubiertas bajo la marquesina
-      // F. Columnas estructurales inclinadas en V (slanted steel columns) que soportan el voladizo
-      // G. Gran cubierta/marquesina radial en voladizo (cantilever canopy) con vigas radiales inferiores
-      // H. MONUMENTAL ESTRELLA DE MERCEDES-BENZ EN 3D (cromo reflectante) en la cima del techo
-      // -----------------------------------------------------------------------
-      {
-        const arenaS0 = 865, arenaS1 = 1055;
-        const dS_arena = 5.5;
-        const nS_arena = Math.round((arenaS1 - arenaS0) / dS_arena);
-        const colSeatMercedesBlue = [0.06, 0.28, 0.76];
-        const colFasciaBlack = [0.08, 0.08, 0.10];
-        const colRoofWhite = [0.93, 0.94, 0.96];
-        const colSteelDark = [0.18, 0.20, 0.24];
-        const colChrome = [0.95, 0.96, 0.98];
-
-        let mbI0 = mb.ni, mdI0 = md.ni, mpI0 = mp ? mp.ni : 0;
-        let segCount = 0;
-
-        for (let seg = 0; seg < nS_arena; seg++) {
-          const sA = arenaS0 + seg * dS_arena, sB = arenaS0 + (seg + 1) * dS_arena;
-          const isAisle = (seg % 5 === 0);
-
-          const pA_base = P(sA, -25.0), pB_base = P(sB, -25.0);
-          const yBaseA = pA_base[1], yBaseB = pB_base[1];
-
-          // 1. Muro perimetral frontal blanco bajo con rótulos de patrocinadores y valla transparente FIA
-          {
-            const pA_w = P(sA, -24.8), pB_w = P(sB, -24.8);
-            mb.mat(3); col(mb, 0.94, 0.95, 0.96); // Murete blanco bajo tipo F1
-            mb.quad(pA_w[0], yBaseA, pA_w[2], pB_w[0], yBaseB, pB_w[2], pB_w[0], yBaseB + 0.85, pB_w[2], pA_w[0], yBaseA + 0.85, pA_w[2]);
-            // Rótulo azul Allianz / Mercedes en el frontal
-            md.mat(2, 240, 240); col(md, 0.08, 0.25, 0.65);
-            md.quad(pA_w[0], yBaseA + 0.12, pA_w[2], pB_w[0], yBaseB + 0.12, pB_w[2], pB_w[0], yBaseB + 0.72, pB_w[2], pA_w[0], yBaseA + 0.72, pA_w[2]);
-
-            // Valla de seguridad FIA (Catch fencing) de malla metálica sobre el murete blanco:
-            // Postes de acero galvanizado y cables tensores horizontales (100% transparente para ver el público y la grada)
-            mb.mat(1); col(mb, 0.72, 0.74, 0.78);
-            mb.cyl(pA_w[0], yBaseA + 0.85, pA_w[2], 0.04, yBaseA + 2.5, 0.035, 5, true, true);
-            mb.tube([[pA_w[0], yBaseA + 1.45, pA_w[2]], [pB_w[0], yBaseB + 1.45, pB_w[2]]], 0.009, 3);
-            mb.tube([[pA_w[0], yBaseA + 1.95, pA_w[2]], [pB_w[0], yBaseB + 1.95, pB_w[2]]], 0.009, 3);
-            mb.tube([[pA_w[0], yBaseA + 2.45, pA_w[2]], [pB_w[0], yBaseB + 2.45, pB_w[2]]], 0.009, 3);
-          }
-
-          // 2. Graderío inferior (Lower Bowl): 10 filas
-          const nLowRows = 10, lowRun = 0.88, lowRise = 0.42;
-          for (let r = 0; r < nLowRows; r++) {
-            const dFront = -(25.2 + r * lowRun), dBack = -(25.2 + (r + 1) * lowRun);
-            const y0A = yBaseA + r * lowRise, y1A = y0A + lowRise;
-            const y0B = yBaseB + r * lowRise, y1B = y0B + lowRise;
-
-            const pA_f = P(sA, dFront), pB_f = P(sB, dFront);
-            const pA_b = P(sA, dBack), pB_b = P(sB, dBack);
-
-            mb.mat(3); col(mb, 0.62, 0.63, 0.65, 1.0 - 0.2 * (r / nLowRows));
-            mb.quad(pA_f[0], y0A, pA_f[2], pB_f[0], y0B, pB_f[2], pB_f[0], y1B, pB_f[2], pA_f[0], y1A, pA_f[2]);
-            mb.quad(pA_f[0], y1A, pA_f[2], pB_f[0], y1B, pB_f[2], pB_b[0], y1B, pB_b[2], pA_b[0], y1A, pA_b[2]);
-
-            // Asientos y público en el graderío inferior
-            if (!isAisle) {
-              md.mat(8); col(md, colSeatMercedesBlue[0], colSeatMercedesBlue[1], colSeatMercedesBlue[2]);
-              const pA_sf = P(sA, dFront - 0.12), pB_sf = P(sB, dFront - 0.12);
-              const pA_sb = P(sA, dBack + 0.12), pB_sb = P(sB, dBack + 0.12);
-              md.quad(pA_sf[0], y1A + 0.35, pA_sf[2], pB_sf[0], y1B + 0.35, pB_sf[2], pB_sb[0], y1B + 0.35, pB_sb[2], pA_sb[0], y1A + 0.35, pA_sb[2]);
-              md.quad(pA_sb[0], y1A + 0.35, pA_sb[2], pB_sb[0], y1B + 0.35, pB_sb[2], pB_sb[0], y1B + 0.75, pB_sb[2], pA_sb[0], y1A + 0.75, pA_sb[2]);
-
-              if (mp && SP && typeof sitter === 'function' && rnd() < 0.72) {
-                const pMid_s = P((sA + sB) * 0.5, (dFront + dBack) * 0.5);
-                const yMid = (y1A + y1B) * 0.5;
-                const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.8, 0.2, 0.2];
-                if (rnd() < 0.18 && typeof stander === 'function') {
-                  stander(pMid_s[0], yMid + 0.05, pMid_s[2], crowdColor, 0.95);
-                } else {
-                  sitter(pMid_s[0], yMid + 0.35, pMid_s[2], 0.95);
-                }
-              }
-            }
-          }
-
-          // 3. Balcón y Fascia intermedia VIP con gran rótulo "Mercedes-Benz"
-          const dMidFront = -(25.2 + nLowRows * lowRun);
-          const dMidBack = dMidFront - 3.2;
-          const yMidBotA = yBaseA + nLowRows * lowRise, yMidBotB = yBaseB + nLowRows * lowRise;
-          const yMidTopA = yMidBotA + 2.6, yMidTopB = yMidBotB + 2.6;
-
-          const pA_mf = P(sA, dMidFront), pB_mf = P(sB, dMidFront);
-          const pA_mb = P(sA, dMidBack), pB_mb = P(sB, dMidBack);
-
-          // Suelo de la terraza VIP
-          mb.mat(3); col(mb, 0.50, 0.51, 0.53);
-          mb.quad(pA_mf[0], yMidBotA, pA_mf[2], pB_mf[0], yMidBotB, pB_mf[2], pB_mb[0], yMidBotB, pB_mb[2], pA_mb[0], yMidBotA, pA_mb[2]);
-
-          // Gran fascia frontal oscura (cinta negra con "Mercedes-Benz")
-          mb.mat(3); col(mb, colFasciaBlack[0], colFasciaBlack[1], colFasciaBlack[2]);
-          mb.quad(pA_mf[0], yMidBotA, pA_mf[2], pB_mf[0], yMidBotB, pB_mf[2], pB_mf[0], yMidTopB, pB_mf[2], pA_mf[0], yMidTopA, pA_mf[2]);
-
-          // Rótulos monumentales "Mercedes-Benz" en blanco y logos circulares en la fascia
-          {
-            md.mat(2, 255, 255); col(md, 0.96, 0.97, 0.99); // Blanco puro reflectante
-            // Placa central de texto / emblema
-            md.quad(pA_mf[0], yMidBotA + 0.6, pA_mf[2], pB_mf[0], yMidBotB + 0.6, pB_mf[2], pB_mf[0], yMidTopB - 0.5, pB_mf[2], pA_mf[0], yMidTopA - 0.5, pA_mf[2]);
-            // Logotipo circular Mercedes en relieve
-            const pMidEmblem = P((sA + sB) * 0.5, dMidFront + 0.08);
-            const yEmblem = (yMidBotA + yMidTopA) * 0.5;
-            mb.mat(2, 220, 220); col(mb, 0.95, 0.95, 0.98);
-            mb.cyl(pMidEmblem[0], yEmblem, pMidEmblem[2], 0.65, yEmblem + 0.06, 0.65, 10, true, true);
-          }
-
-          // Ventanales panorámicos de palcos VIP en la pared trasera de la terraza
-          mb.mat(5); col(mb, 0.25, 0.45, 0.65);
-          mb.quad(pA_mb[0], yMidBotA, pA_mb[2], pB_mb[0], yMidBotB, pB_mb[2], pB_mb[0], yMidTopB, pB_mb[2], pA_mb[0], yMidTopA, pA_mb[2]);
-
-          // 4. Graderío superior (Upper Bowl): 12 filas empinadas cubiertas
-          const nUpRows = 12, upRun = 0.82, upRise = 0.48;
-          for (let r = 0; r < nUpRows; r++) {
-            const dFront = dMidBack - r * upRun, dBack = dMidBack - (r + 1) * upRun;
-            const y0A = yMidTopA + r * upRise, y1A = y0A + upRise;
-            const y0B = yMidTopB + r * upRise, y1B = y0B + upRise;
-
-            const pA_f = P(sA, dFront), pB_f = P(sB, dFront);
-            const pA_b = P(sA, dBack), pB_b = P(sB, dBack);
-
-            mb.mat(3); col(mb, 0.58, 0.59, 0.60, 1.0 - 0.2 * (r / nUpRows));
-            mb.quad(pA_f[0], y0A, pA_f[2], pB_f[0], y0B, pB_f[2], pB_f[0], y1B, pB_f[2], pA_f[0], y1A, pA_f[2]);
-            mb.quad(pA_f[0], y1A, pA_f[2], pB_f[0], y1B, pB_f[2], pB_b[0], y1B, pB_b[2], pA_b[0], y1A, pA_b[2]);
-
-            if (!isAisle) {
-              md.mat(8); col(md, colSeatMercedesBlue[0], colSeatMercedesBlue[1], colSeatMercedesBlue[2]);
-              const pA_sf = P(sA, dFront - 0.12), pB_sf = P(sB, dFront - 0.12);
-              const pA_sb = P(sA, dBack + 0.12), pB_sb = P(sB, dBack + 0.12);
-              md.quad(pA_sf[0], y1A + 0.35, pA_sf[2], pB_sf[0], y1B + 0.35, pB_sf[2], pB_sb[0], y1B + 0.35, pB_sb[2], pA_sb[0], y1A + 0.35, pA_sb[2]);
-              md.quad(pA_sb[0], y1A + 0.35, pA_sb[2], pB_sb[0], y1B + 0.35, pB_sb[2], pB_sb[0], y1B + 0.75, pB_sb[2], pA_sb[0], y1A + 0.75, pA_sb[2]);
-
-              if (mp && SP && typeof sitter === 'function' && rnd() < 0.80) {
-                const pMid_s = P((sA + sB) * 0.5, (dFront + dBack) * 0.5);
-                const yMid = (y1A + y1B) * 0.5;
-                const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.2, 0.4, 0.9];
-                sitter(pMid_s[0], yMid + 0.35, pMid_s[2], 0.95);
-              }
-            }
-          }
-
-          // 5. Pared posterior exterior y tambor central
-          const dRearWall = dMidBack - nUpRows * upRun - 1.2;
-          const yRearTopA = yMidTopA + nUpRows * upRise + 1.2;
-          const yRearTopB = yMidTopB + nUpRows * upRise + 1.2;
-          const pA_rw = P(sA, dRearWall), pB_rw = P(sB, dRearWall);
-          mb.mat(2, 220, 220); col(mb, 0.90, 0.91, 0.94);
-          mb.quad(pB_rw[0], yBaseB, pB_rw[2], pA_rw[0], yBaseA, pA_rw[2], pA_rw[0], yRearTopA + 2.0, pA_rw[2], pB_rw[0], yRearTopB + 2.0, pB_rw[2]);
-
-          // 6. Columnas estructurales inclinadas en V (Slanted Steel Struts)
-          if (seg % 4 === 0) {
-            const pColBase = P(sA, dMidFront - 0.2);
-            const yColBase = yMidBotA + 0.1;
-            const pColTop = P(sA, -29.5);
-            const yColTop = yRearTopA + 4.2;
-            mb.mat(2, 128, 128); col(mb, colSteelDark[0], colSteelDark[1], colSteelDark[2]);
-            mb.tube([[pColBase[0], yColBase, pColBase[2]], [pColTop[0], yColTop, pColTop[2]]], 0.22, 7);
-          }
-
-          // 7. Gran Cubierta / Marquesina en voladizo (Cantilever Canopy)
-          {
-            const dRoofFront = -29.5; // Cubre todo el graderío superior y terraza
-            const dRoofBack = dRearWall - 2.5;
-            const yRoofFrontA = yRearTopA + 4.2, yRoofFrontB = yRearTopB + 4.2;
-            const yRoofBackA = yRearTopA + 5.8, yRoofBackB = yRearTopB + 5.8;
-
-            const pA_rf = P(sA, dRoofFront), pB_rf = P(sB, dRoofFront);
-            const pA_rb = P(sA, dRoofBack), pB_rb = P(sB, dRoofBack);
-
-            // Cara superior metálica blanca/plateada reflectante
-            md.mat(9); col(md, colRoofWhite[0], colRoofWhite[1], colRoofWhite[2]);
-            md.quad(pA_rf[0], yRoofFrontA, pA_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pB_rb[0], yRoofBackB, pB_rb[2], pA_rb[0], yRoofBackA, pA_rb[2]);
-
-            // Cara inferior (techo visto con vigas radiales)
-            mb.mat(3); col(mb, 0.28, 0.30, 0.34);
-            mb.quad(pB_rf[0], yRoofFrontB - 0.4, pB_rf[2], pA_rf[0], yRoofFrontA - 0.4, pA_rf[2], pA_rb[0], yRoofBackA - 0.4, pA_rb[2], pB_rb[0], yRoofBackB - 0.4, pB_rb[2]);
-
-            // Viga radial oscura (spoke beam) en la cara inferior
-            mb.mat(2, 128, 128); col(mb, colSteelDark[0], colSteelDark[1], colSteelDark[2]);
-            mb.tube([[pA_rb[0], yRoofBackA - 0.45, pA_rb[2]], [pA_rf[0], yRoofFrontA - 0.45, pA_rf[2]]], 0.14, 6);
-
-            // Canto frontal perimetral de la cubierta
-            mb.mat(17); col(mb, colFasciaBlack[0], colFasciaBlack[1], colFasciaBlack[2]);
-            mb.quad(pA_rf[0], yRoofFrontA - 0.4, pA_rf[2], pB_rf[0], yRoofFrontB - 0.4, pB_rf[2], pB_rf[0], yRoofFrontB, pB_rf[2], pA_rf[0], yRoofFrontA, pA_rf[2]);
-          }
-
-          segCount++;
-          if (segCount % 6 === 0) {
-            S1.add(mb, mbI0, 7, 2600);
-            S2.add(md, mdI0, 7, 2600);
-            if (mp && SP && mp.ni > mpI0) {
-              SP.add(mp, mpI0, 1, 1400);
-              mpI0 = mp.ni;
-            }
-            mbI0 = mb.ni; mdI0 = md.ni;
-          }
-        }
-
-        // 8. MONUMENTAL ESTRELLA DE MERCEDES-BENZ EN 3D SOBRE LA CORONACIÓN DEL TECHO
-        {
-          const sStar = (arenaS0 + arenaS1) * 0.5;
-          const pStarCenter = P(sStar, -46.0);
-          const yStarBase = pStarCenter[1] + 20.0;
-          const starRadius = 2.4;
-          const tx = pStarCenter[3], tz = pStarCenter[4];
-
-          // Anillo circular exterior de cromo
-          const ringPts = [];
-          const nPts = 16;
-          for (let i = 0; i <= nPts; i++) {
-            const a = (i / nPts) * Math.PI * 2;
-            const dx = tx * Math.cos(a) * starRadius;
-            const dz = tz * Math.cos(a) * starRadius;
-            const dy = Math.sin(a) * starRadius;
-            ringPts.push([pStarCenter[0] + dx, yStarBase + dy, pStarCenter[2] + dz]);
-          }
-          mb.mat(1); col(mb, colChrome[0], colChrome[1], colChrome[2]);
-          mb.tube(ringPts, 0.12, 6);
-
-          // Las 3 aspas de la estrella Mercedes (vertical 90°, inferior izq 210°, inferior der 330°)
-          const starAngles = [Math.PI * 0.5, Math.PI * 0.5 + Math.PI * 2 / 3, Math.PI * 0.5 - Math.PI * 2 / 3];
-          for (const a of starAngles) {
-            const tipX = pStarCenter[0] + tx * Math.cos(a) * (starRadius * 0.95);
-            const tipZ = pStarCenter[2] + tz * Math.cos(a) * (starRadius * 0.95);
-            const tipY = yStarBase + Math.sin(a) * (starRadius * 0.95);
-            mb.tube([[pStarCenter[0], yStarBase, pStarCenter[2]], [tipX, tipY, tipZ]], 0.10, 5);
-          }
-
-          // Mástil de soporte de la estrella
-          mb.cyl(pStarCenter[0], yStarBase - starRadius - 1.2, pStarCenter[2], 0.14, yStarBase - starRadius, 0.12, 6, true, true);
-        }
-
-        // Flush final de la grada Mercedes-Benz
-        if (mb.ni > mbI0) S1.add(mb, mbI0, 7, 2600);
-        if (md.ni > mdI0) S2.add(md, mdI0, 7, 2600);
-        if (mp && SP && mp.ni > mpI0) SP.add(mp, mpI0, 1, 1400);
-      }
-
-      // -----------------------------------------------------------------------
-      // 3. EDIFICIO DE BOXES Y TORRE DE CONTROL DE NÜRBURGRING
-      // s = -75m a +95m, d = 22.8m a 38.0m (33 boxes, 3 plantas, sala de control)
-      // -----------------------------------------------------------------------
-      {
-        const pit = TRK.pit;
-        const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1;
-        const nBay = 33, bw = (u1 - u0) / nBay;
-        const hG = 4.2, hS = 5.2, hT = 9.8;
-        const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni;
-
-        for (let b = 0; b < nBay; b++) {
-          const a = u0 + b * bw, c = a + bw, closed = rnd() < 0.25;
-
-          // Pilares estructurales de fachada
-          mb.mat(3); col(mb, 0.62, 0.63, 0.64);
-          Bx(mb, a - 0.22, a + 0.22, -0.5, hG, vF - 0.15, vF + 0.35);
-          if (b === nBay - 1) Bx(mb, c - 0.22, c + 0.22, -0.5, hG, vF - 0.15, vF + 0.35);
-
-          // Dintel publicitario con colores de equipos
-          const teamCol = [
-            [0.12, 0.45, 0.95], // Bilstein Blue
-            [0.98, 0.85, 0.05], // ADAC Yellow
-            [0.85, 0.12, 0.12], // Rowe Red
-            [0.10, 0.68, 0.35]  // Dekra Green
-          ][b % 4];
-          mb.mat(17); col(mb, teamCol[0], teamCol[1], teamCol[2]);
-          Bx(mb, a, c, hG, hS, vF - 0.12, vF + 0.35);
-
-          // Taller interior de boxes
-          const dp = 7.5, x0 = a + 0.25, x1 = c - 0.25;
-          mb.mat(3); col(mb, 0.38, 0.38, 0.39, 0.8);
-          mb.quad(x0, 0.02, vF + dp, x1, 0.02, vF + dp, x1, 0.02, vF, x0, 0.02, vF); // Suelo
-          mb.quad(x1, 0, vF + dp, x0, 0, vF + dp, x0, hG, vF + dp, x1, hG, vF + dp); // Fondo
-          mb.quad(x0, 0, vF + dp, x0, 0, vF, x0, hG, vF, x0, hG, vF + dp); // Lateral izq
-          mb.quad(x1, 0, vF, x1, 0, vF + dp, x1, hG, vF + dp, x1, hG, vF); // Lateral der
-
-          if (!closed) {
-            // Carros de herramientas y mecánicos
-            mb.mat(2, 110, 150); col(mb, teamCol[0] * 0.8, teamCol[1] * 0.8, teamCol[2] * 0.8);
-            Bx(mb, x0 + 0.4, x0 + 1.6, 0.0, 1.05, vF + dp - 1.1, vF + dp - 0.4);
-            // Neumáticos slick apilados
-            mb.mat(4); col(mb, 0.02, 0.02, 0.02);
-            mb.cyl(x1 - 0.6, 0, vF + 1.2, 0.32, 0.85, 0.32, 10, false, true);
-          } else {
-            // Portón seccional cerrado
-            mb.mat(13); col(mb, 0.70, 0.72, 0.74);
-            mb.quad(x1, 0, vF + 0.1, x0, 0, vF + 0.1, x0, hG, vF + 0.1, x1, hG, vF + 0.1);
-          }
-        }
-
-        // Planta VIP superior y terrazas de observación
-        mb.mat(3); col(mb, 0.58, 0.58, 0.59);
-        Bx(mb, u0, u1, hS, hS + 0.35, vF - 1.8, vB);
-        // Barandilla acristalada de terraza
-        mb.mat(5); col(mb, 1, 1, 1);
-        mb.quad(u1, hS + 0.35, vF - 1.75, u0, hS + 0.35, vF - 1.75, u0, hS + 1.45, vF - 1.75, u1, hS + 1.45, vF - 1.75);
-        // Fachada acristalada superior
-        mb.quad(u1, hS + 0.35, vF + 1.0, u0, hS + 0.35, vF + 1.0, u0, hT, vF + 1.0, u1, hT, vF + 1.0);
-
-        // Torre de Control de Carrera (Rennleitung) en el extremo de boxes (u0)
-        const tu0 = u0 - 8.5, tu1 = u0 + 4.5, tv0 = vF - 3.5, tv1 = vF + 4.5;
-        mb.mat(3); col(mb, 0.35, 0.36, 0.38);
-        Bx(mb, tu0, tu1, 0, 18.5, tv0, tv1);
-        // Sala panorámica de comisarios en voladizo en la azotea
-        mb.mat(5); col(mb, 1, 1, 1);
-        mb.quad(tu1 + 1.2, 14.5, tv0 - 1.2, tu0 - 1.2, 14.5, tv0 - 1.2, tu0 - 1.2, 18.0, tv0 - 1.2, tu1 + 1.2, 18.0, tv0 - 1.2);
-        // Antenas de cronometraje
-        mb.mat(1, 0, 0, 80); col(mb, 0.9, 0.9, 0.9);
-        mb.cyl((tu0 + tu1) / 2, 18.5, (tv0 + tv1) / 2, 0.12, 26.5, 0.04, 6, false, true);
-
-        if (typeof toStraight === 'function') {
-          toStraight(mb, v0);
-          toStraight(md, w0);
-        }
-        S1.add(mb, i0, 7, 2600);
-        S2.add(md, k0, 7, 1200);
-
-        // Muro de boxes (Pit Wall) con pantallas de telemetría y murete
-        const pwI0 = mb.ni;
-        const pwF = pit.wallD;
-        for (let s = pit.bldS0 - 10; s <= pit.bldS1 + 10; s += 4.5) {
-          at(mb, s, pwF, 0, m => {
-            m.mat(3); col(m, 0.65, 0.66, 0.68);
-            Bx(m, -2.25, 2.25, 0.0, 1.05, -0.35, 0.35);
-            // Puesto de ingenieros con marquesina y pantallas
-            m.mat(2, 128, 128); col(m, 0.15, 0.16, 0.18);
-            Bx(m, -1.2, 1.2, 1.05, 2.6, 0.1, 0.95);
-            m.mat(6, 220, 0); col(m, 0.2, 0.8, 1.0); // Monitores
-            Bx(m, -1.1, 1.1, 1.4, 2.1, 0.08, 0.12);
-          });
-        }
-        S1.add(mb, pwI0, 7, 1800);
-      }
-
-      // -----------------------------------------------------------------------
-      // 4. BURG NÜRBURG (CASTILLO MEDIEVAL EN LA CIMA SUR DE EIFEL)
-      // Situado en x = 1050m, z = -2150m, y = +115m (cumbre del horizonte sur)
-      // Torre circular de homenaje (Bergfried, r=6.5m, h=24m), muralla almenada,
-      // contrafuertes de basalto volcánico y bandera alemana en el mástil.
-      // -----------------------------------------------------------------------
-      {
-        const cstI0 = mb.ni;
-        const cx = 1050.0, cz = -2150.0;
-        const cy = TRK.spec && typeof TRK.spec.naturalH === 'function' ? TRK.spec.naturalH(cx, cz) : 115.0;
-
-        // Torre cilíndrica del homenaje (Bergfried)
-        mb.mat(3); col(mb, 0.44, 0.42, 0.40);
-        mb.cyl(cx, cy, cz, 6.5, cy + 24.0, 6.0, 16, true, true);
-
-        // Almenas superiores defensivas
-        for (let i = 0; i < 12; i++) {
-          const ang = (i / 12) * PI2;
-          const ax = cx + Math.cos(ang) * 6.1, az = cz + Math.sin(ang) * 6.1;
-          Bx(mb, ax - 0.7, ax + 0.7, cy + 24.0, cy + 25.8, az - 0.7, az + 0.7);
-        }
-
-        // Mástil y bandera de Nürburg
-        mb.mat(1); col(mb, 0.85, 0.85, 0.85);
-        mb.cyl(cx, cy + 24.0, cz, 0.12, cy + 34.0, 0.06, 6, false, true);
-        mb.mat(17); col(mb, 0.85, 0.15, 0.12);
-        Bx(mb, cx, cx + 3.2, cy + 30.5, cy + 33.5, cz - 0.05, cz + 0.05);
-
-        // Muralla almenada cuadrangular circundante (45m x 38m)
-        const hw_wall = 22.0, hd_wall = 19.0, h_wall = 8.5;
-        mb.mat(3); col(mb, 0.40, 0.38, 0.36);
-        Bx(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz - hd_wall + 2.5); // Norte
-        Bx(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz + hd_wall - 2.5, cz + hd_wall); // Sur
-        Bx(mb, cx - hw_wall, cx - hw_wall + 2.5, cy, cy + h_wall, cz - hd_wall, cz + hd_wall); // Oeste
-        Bx(mb, cx + hw_wall - 2.5, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz + hd_wall); // Este
-
-        // Torreones esquineros de la muralla
-        for (const [tx, tz] of [[-hw_wall, -hd_wall], [hw_wall, -hd_wall], [hw_wall, hd_wall], [-hw_wall, hd_wall]]) {
-          mb.cyl(cx + tx, cy, cz + tz, 3.2, cy + 11.0, 3.0, 10, true, true);
-        }
-
-        S1.add(mb, cstI0, 7, 5000); // Visible hasta 5.000 m en el horizonte
-      }
-
-      // -----------------------------------------------------------------------
-      // 5. BORDILLOS DISUASORIOS (SAUSAGE KERBS) EN CHICANE VEEDOL (T13 - T14)
-      // Rampas trapezoidales amarillas en los vértices interiores de corte
-      // -----------------------------------------------------------------------
-      {
-        const skI0 = mb.ni;
-        for (const [sK, sideK] of [[4045, -1], [4095, 1]]) {
-          const pApex = P(sK, sideK * (hw + 0.95));
-          mb.push(frame(sK, sideK * (hw + 0.95), 0, 0));
-          mb.mat(2, 240, 0); col(mb, 0.98, 0.85, 0.02); // Amarillo disuasorio
-          Bx(mb, -4.5, 4.5, 0.0, 0.075, -0.45, 0.45);
-          mb.pop();
-        }
-        S1.add(mb, skI0, 7, 650);
-      }
-
-      // -----------------------------------------------------------------------
-      // 6. LOGÍSTICA DE PADDOCK Y CAMIONES DE EQUIPOS GT3
-      // -----------------------------------------------------------------------
-      {
-        const padI0 = mb.ni;
-        const truck = (m, c) => {
-          if (typeof PropFactory !== 'undefined' && typeof PropFactory.createPaddockTruck === 'function') {
-            PropFactory.createPaddockTruck({ mb: m }, { color: c });
-            return;
-          }
-          m.mat(2, 89, 51); col(m, c[0], c[1], c[2]);
-          Bx(m, -6.5, 3.2, 1.25, 4.0, -1.25, 1.25);
-          col(m, 0.88, 0.88, 0.88);
-          Bx(m, 3.6, 5.9, 0.9, 3.3, -1.2, 1.2);
-          m.mat(2, 153, 76); col(m, 0.1, 0.1, 0.12);
-          Bx(m, -6.3, 5.6, 0.75, 1.25, -1.1, 1.1);
-        };
-        const truckCols = [colBilsteinBlue, colAdacYellow, [0.85, 0.85, 0.85], [0.12, 0.12, 0.14]];
-        [[-48, 42, 0.04], [-18, 43, -0.03], [15, 41.5, 3.12], [48, 43, 0.02]].forEach(([s, d, yaw], q) => {
-          at(mb, s, d, yaw, m => truck(m, truckCols[q]));
-        });
-        S1.add(mb, padI0, 7, 1400);
-      }
-
-      // -----------------------------------------------------------------------
-      // 7. CARTELERÍA OFICIAL FIA DE DISTANCIA DE FRENADA (200m, 150m, 100m, 50m)
-      // Instalados perpendicularmente al flujo de pista en las grandes frenadas
-      // -----------------------------------------------------------------------
-      {
-        const brkI0 = mb.ni, brkD0 = md.ni;
-        const addBrakingZone = (sApex, side) => {
-          for (const dM of [200, 150, 100, 50]) {
-            const sB = sApex - dM;
-            const p = P(sB, side * (hw + 2.4));
-            const tx = p[3], tz = p[4];
-            // Normal exterior
-            const inX = tz * side, inZ = -tx * side;
-            const outX = -inX, outZ = -inZ;
-            const x = p[0], y = p[1], z = p[2];
-
-            // Mástil de acero galvanizado
-            mb.mat(1); col(mb, 0.76, 0.77, 0.80);
-            mb.cyl(x, y, z, 0.07, y + 1.85, 0.07, 6, true, true);
-
-            // Panel blanco reflectante perpendicular a la pista
-            const bW = 0.65, bH = 0.95;
-            const yB = y + 0.85;
-            const pL_x = x - outX * bW, pL_z = z - outZ * bW;
-            const pR_x = x + outX * bW, pR_z = z + outZ * bW;
-
-            // Cara frontal mirando hacia los bólidos en aproximación
-            md.mat(2, 240, 240); col(md, 0.96, 0.97, 0.98);
-            md.quad(pL_x, yB, pL_z, pR_x, yB, pR_z, pR_x, yB + bH, pR_z, pL_x, yB + bH, pL_z);
-
-            // Marco y bandas de contraste
-            md.mat(4); col(md, 0.08, 0.08, 0.10);
-            md.quad(pL_x, yB + bH - 0.08, pL_z, pR_x, yB + bH - 0.08, pR_z, pR_x, yB + bH, pR_z, pL_x, yB + bH, pL_z);
-            md.quad(pL_x, yB, pL_z, pR_x, yB, pR_z, pR_x, yB + 0.08, pR_z, pL_x, yB + 0.08, pL_z);
-          }
-        };
-
-        // Curva 1: Yokohama-S (frenada exterior izquierdo side = -1)
-        addBrakingZone(524, -1);
-        // Curva 7: Dunlop-Kehre (frenada exterior derecho side = 1)
-        addBrakingZone(2121, 1);
-        // Curva 13: Chicane Veedol (frenada exterior izquierdo side = -1)
-        addBrakingZone(4029, -1);
-
-        S1.add(mb, brkI0, 7, 1200);
-        S2.add(md, brkD0, 7, 1200);
-      }
-
-      // -----------------------------------------------------------------------
-      // 8. BARRERAS DE SEGURIDAD FIA: GUARDARRAÍL ARMCO METÁLICO BAJO
-      // Escapatorias exteriores (con postes y cables finos, sin muros opacos que tapen la vista)
-      // -----------------------------------------------------------------------
-      {
-        const fiaI0 = mb.ni, fiaD0 = md.ni;
-        const zones = [
-          [510, 640, -1],   // Yokohama-S exterior
-          [1620, 1720, 1],  // Ford-Kurve exterior
-          [2100, 2300, 1],  // Dunlop-Kehre exterior
-          [2520, 2740, -1], // Schumacher-S exterior
-          [4010, 4170, -1]  // Chicane Veedol exterior
-        ];
-
-        for (const [zS0, zS1, side] of zones) {
-          const segStep = 5.0;
-          const nSeg = Math.round((zS1 - zS0) / segStep);
-          for (let st = 0; st < nSeg; st++) {
-            const s0 = zS0 + st * segStep, s1 = zS0 + (st + 1) * segStep;
-            const d = side * (hw + 4.2);
-            const p0 = P(s0, d), p1 = P(s1, d);
-
-            // Guardarraíl metálico bajo de 0.85m (Armco)
-            mb.mat(1); col(mb, 0.72, 0.74, 0.78);
-            mb.quad(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p1[0], p1[1] + 0.85, p1[2], p0[0], p0[1] + 0.85, p0[2]);
-
-            // Postes de acero galvanizado
-            mb.cyl(p0[0], p0[1], p0[2], 0.06, p0[1] + 1.85, 0.06, 6, true, true);
-
-            // Cables tensores horizontales delgados (completamente transparentes)
-            mb.tube([[p0[0], p0[1] + 1.25, p0[2]], [p1[0], p1[1] + 1.25, p1[2]]], 0.015, 4);
-            mb.tube([[p0[0], p0[1] + 1.75, p0[2]], [p1[0], p1[1] + 1.75, p1[2]]], 0.015, 4);
-          }
-        }
-        S1.add(mb, fiaI0, 7, 1800);
-        S2.add(md, fiaD0, 7, 1800);
-      }
-
-      function at(targetMB, s, d, yaw, fn) {
-        const p = P(s, d);
+      if (typeof PropFactory === 'undefined') return;
+      const { TRK } = ctx;
+
+      // 1. HAUPTTRIBÜNE (Grada principal de recta de meta)
+      PropFactory.createGrandstand(ctx, {
+        s0: TRK.stand.s0,
+        s1: TRK.stand.s1,
+        d0: TRK.stand.d0,
+        nRows: 22,
+        nSec: 6,
+        aisle: 2.4,
+        withRoof: true,
+        withCrowd: true,
+        seatColors: [[0.78, 0.12, 0.12], [0.94, 0.94, 0.95]]
+      });
+
+      // 2. MERCEDES-BENZ TRIBÜNE (T4 en Mercedes-Arena)
+      PropFactory.createMercedesArenaGrandstand(ctx, { s0: 865, s1: 1055, d: -25.0 });
+
+      // 3. EDIFICIO OFICIAL DE BOXES Y TORRE DE CONTROL DE NÜRBURGRING
+      PropFactory.createPitBuilding(ctx, { s0: -75, s1: 95, d0: 22.8, d1: 38.0 });
+
+      // 4. BURG NÜRBURG (Castillo medieval en el horizonte sur de Eifel)
+      PropFactory.createMedievalCastle(ctx, { x: 1050, y: 115, z: -2150 });
+
+      // 5. BORDILLOS DISUASORIOS (Sausage Kerbs) en Chicane Veedol
+      PropFactory.createSausageKerbs(ctx, { kerbs: [[4045, -1], [4095, 1]] });
+
+      // 6. LOGÍSTICA DE PADDOCK Y CAMIONES GT3
+      const truckCols = [[0.08, 0.32, 0.75], [0.98, 0.82, 0.02], [0.85, 0.85, 0.85], [0.12, 0.12, 0.14]];
+      const truckLocs = [[-48, 42, 0.04], [-18, 43, -0.03], [15, 41.5, 3.12], [48, 43, 0.02]];
+      const padI0 = ctx.mb.ni;
+      truckLocs.forEach(([s, d, yaw], q) => {
+        const p = ctx.P(s, d);
         let tx = p[3], tz = p[4];
         if (yaw) {
           const c = Math.cos(yaw), sn = Math.sin(yaw);
@@ -788,10 +192,31 @@
           tx = a; tz = b;
         }
         const m = m4basis(m4(), tx, 0, tz, 0, 1, 0, -tz, 0, tx, p[0], p[1], p[2]);
-        targetMB.push(m);
-        fn(targetMB);
-        targetMB.pop();
-      }
+        ctx.mb.push(m);
+        PropFactory.createPaddockTruck({ mb: ctx.mb }, { color: truckCols[q] });
+        ctx.mb.pop();
+      });
+      if (ctx.S1) ctx.S1.add(ctx.mb, padI0, 7, 1400);
+
+      // 7. CARTELERÍA OFICIAL FIA DE DISTANCIA DE FRENADA (200m, 150m, 100m, 50m)
+      PropFactory.createBrakeDistanceSigns(ctx, {
+        zones: [
+          { sApex: 524, side: -1 },
+          { sApex: 2121, side: 1 },
+          { sApex: 4029, side: -1 }
+        ]
+      });
+
+      // 8. BARRERAS DE SEGURIDAD FIA: GUARDARRAÍL ARMCO METÁLICO BAJO
+      PropFactory.createArmcoGuardrail(ctx, {
+        zones: [
+          [510, 640, -1],
+          [1620, 1720, 1],
+          [2100, 2300, 1],
+          [2520, 2740, -1],
+          [4010, 4170, -1]
+        ]
+      });
     }
   });
 })();
