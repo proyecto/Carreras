@@ -130,7 +130,7 @@ function runRivalTestSuite() {
 
   // 5. Verificación de selección de modelo real al azar para el rival
   const manifest = ctx.window.CAR_MANIFEST || [];
-  assert(manifest.length >= 13, `Catálogo de modelos reales completo (${manifest.length} modelos disponibles)`);
+  assert(manifest.length >= 12, `Catálogo de modelos reales completo (${manifest.length} modelos disponibles)`);
   const playerCarId = 'ford-mustang-gt3-2024';
   const availableRivals = manifest.filter(c => c.id !== playerCarId);
   assert(availableRivals.length === manifest.length - 1, 'Pool de rivales excluye el coche del jugador');

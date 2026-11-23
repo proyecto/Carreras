@@ -19,14 +19,6 @@ window.CAR_MANIFEST = [
     accent: '#002244'
   },
   {
-    file: 'uno-mille-1996.js',
-    id: 'uno-mille-1996',
-    name: 'Uno con escalera',
-    subtitle: 'Fiat Uno Mille EP 1996',
-    specs: '900 kg · 5 marchas · FWD · Escalera en el techo',
-    accent: '#4a7eb8'
-  },
-  {
     file: 'porsche-911-1979.js',
     id: 'porsche-911-1979',
     name: 'Porsche 911 / 935 Turbo',

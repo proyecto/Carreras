@@ -41,7 +41,6 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 10. **McLaren 650S GT3 (2015)**: 500 CV · V8 3.8L Biturbo · Campeón de Bathurst 12H y Blancpain GT.
 11. **McLaren Ultimate Vision GT (2018)**: 1150 CV · Tracción total híbrida AWD · Concepto de máxima carga aerodinámica.
 12. **Porsche 911 / 935 Turbo (1979)**: 650 CV · Bóxer Turbo Clásico · Tracción trasera salvaje y respuesta instantánea.
-13. **Uno con escalera (1996)**: 58 CV · Clásico utilitario con baca portaequipajes y escalera.
 
 ---
 

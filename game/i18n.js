@@ -123,11 +123,6 @@ const I18N = {
           subtitle: '1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD',
           specs: '1025 kg · 750 HP · Aero Downforce · Rear Engine · RWD',
         },
-        'uno-mille-1996': {
-          name: 'Uno with Ladder',
-          subtitle: 'Fiat Uno Mille EP 1996',
-          specs: '900 kg · 5 gears · FWD · Roof ladder',
-        },
         'mclaren-x2-2018': {
           name: 'McLaren Ultimate Vision GT',
           subtitle: '2018 Vision Gran Turismo Concept · 4.0L Twin-Turbo V8 Hybrid · AWD',
@@ -302,11 +297,6 @@ const I18N = {
           name: 'Porsche 911 / 935 Turbo',
           subtitle: '1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD',
           specs: '1025 kg · 750 CV · Carga Aerodinámica · Motor trasero · RWD',
-        },
-        'uno-mille-1996': {
-          name: 'Uno con escalera',
-          subtitle: 'Fiat Uno Mille EP 1996',
-          specs: '900 kg · 5 marchas · FWD · Escalera en el techo',
         },
         'mclaren-x2-2018': {
           name: 'McLaren Ultimate Vision GT',

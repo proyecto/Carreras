@@ -21,7 +21,6 @@ function runCarsTestSuite() {
   const root = path.resolve(__dirname, '..');
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const carFactoryCode = fs.readFileSync(path.join(root, 'engine/car-factory.js'), 'utf8');
-  const carUnoShaderCode = fs.readFileSync(path.join(root, 'shaders/car-uno.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
 
@@ -45,14 +44,13 @@ function runCarsTestSuite() {
   vm.createContext(ctx);
   vm.runInContext(mathCode, ctx);
   vm.runInContext(carFactoryCode, ctx);
-  vm.runInContext(carUnoShaderCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const carList = ctx.window.CAR_LIST || [];
   const carManifest = ctx.window.CAR_MANIFEST || [];
-  assert(carList.length === 13, `Se esperan 13 coches en CAR_LIST, se encontraron ${carList.length}`);
-  assert(carManifest.length === 13, `Se esperan 13 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);
+  assert(carList.length === 12, `Se esperan 12 coches en CAR_LIST, se encontraron ${carList.length}`);
+  assert(carManifest.length === 12, `Se esperan 12 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);
   for (const m of carManifest) {
     assert(typeof m.id === 'string' && m.id.length > 0, `[manifest] ID válido: ${m.id}`);
     assert(typeof m.file === 'string' && m.file.endsWith('.js'), `[manifest] Archivo JS válido: ${m.file}`);
