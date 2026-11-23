@@ -26,7 +26,7 @@ const LAP = new Float64Array(4);
 const PADV = new Float64Array(3);
 
 // Semáforo de salida FIA: delegado en raceDirectorInstance si está disponible
-const RACE_START = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : {
+var RACE_START = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : {
   active: false,
   state: 'idle',
   t: 0,

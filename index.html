@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Carreras</title>
-  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v2">
+  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v4">
   <script>
     window.addEventListener('error', function (e) {
       var st = document.getElementById('loading-status');
@@ -272,34 +272,34 @@
   </div>
 
   <!-- 1. Shaders WGSL del núcleo y mundo -->
-  <script src="shaders/core.js?v=racing_mirror_f1_v2"></script>
-  <script src="shaders/lighting.js?v=racing_mirror_f1_v2"></script>
-  <script src="shaders/post.js?v=racing_mirror_f1_v2"></script>
-  <script src="shaders/world.js?v=racing_mirror_f1_v2"></script>
-  <script src="shaders/glass.js?v=racing_mirror_f1_v2"></script>
+  <script src="shaders/core.js?v=racing_mirror_f1_v4"></script>
+  <script src="shaders/lighting.js?v=racing_mirror_f1_v4"></script>
+  <script src="shaders/post.js?v=racing_mirror_f1_v4"></script>
+  <script src="shaders/world.js?v=racing_mirror_f1_v4"></script>
+  <script src="shaders/glass.js?v=racing_mirror_f1_v4"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/gpu.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/mesh.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/registry.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/renderer.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/post.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/sky.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/forward.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/perf.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/patterns.js?v=racing_mirror_f1_v2"></script>
-  <script src="engine/car-factory.js?v=racing_mirror_f1_v2"></script>
+  <script src="engine/math.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/gpu.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/mesh.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/registry.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/renderer.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/post.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/sky.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/forward.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/perf.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/patterns.js?v=racing_mirror_f1_v4"></script>
+  <script src="engine/car-factory.js?v=racing_mirror_f1_v4"></script>
 
   <!-- 3. Constructores base del mundo (pista, terreno, objetos base) -->
-  <script src="world/track-builder.js?v=racing_mirror_f1_v2"></script>
-  <script src="world/track-mesh.js?v=racing_mirror_f1_v2"></script>
-  <script src="world/props.js?v=racing_mirror_f1_v2"></script>
-  <script src="world/track-glb.js?v=racing_mirror_f1_v2"></script>
+  <script src="world/track-builder.js?v=racing_mirror_f1_v4"></script>
+  <script src="world/track-mesh.js?v=racing_mirror_f1_v4"></script>
+  <script src="world/props.js?v=racing_mirror_f1_v4"></script>
+  <script src="world/track-glb.js?v=racing_mirror_f1_v4"></script>
 
   <!-- 4. Catálogos y carga bajo demanda condicionada por el circuito y vehículo seleccionados -->
-  <script src="tracks/manifest.js?v=racing_mirror_f1_v2"></script>
-  <script src="cars/manifest.js?v=racing_mirror_f1_v2"></script>
+  <script src="tracks/manifest.js?v=racing_mirror_f1_v4"></script>
+  <script src="cars/manifest.js?v=racing_mirror_f1_v4"></script>
   <script>
     (() => {
       let carId = null;
@@ -326,27 +326,27 @@
       const trackEntry = (trackId && trackManifest.find(t => t.id === trackId)) || trackManifest[0];
       window.__activeTrackEntry = trackEntry;
       if (trackEntry && trackEntry.file) {
-        document.write('<script src="tracks/' + trackEntry.file + '?v=racing_mirror_f1_v2"><\/script>');
+        document.write('<script src="tracks/' + trackEntry.file + '?v=racing_mirror_f1_v4"><\/script>');
       }
 
       // --- B. Vegetación condicional: solo se carga en circuitos naturales (Nürburgring, Spa), no en Las Vegas ---
       const hasVegetation = !(trackEntry && trackEntry.noVegetation);
       if (hasVegetation) {
-        document.write('<script src="shaders/vegetation.js?v=racing_mirror_f1_v2"><\/script>');
-        document.write('<script src="world/vegetation.js?v=racing_mirror_f1_v2"><\/script>');
+        document.write('<script src="shaders/vegetation.js?v=racing_mirror_f1_v4"><\/script>');
+        document.write('<script src="world/vegetation.js?v=racing_mirror_f1_v4"><\/script>');
       }
 
       // --- C. Props exclusivos de Las Vegas (Noria High Roller, MSG Sphere, Rascacielos): solo en Las Vegas ---
       const isVegas = Boolean(trackEntry && (trackEntry.id === 'las-vegas-strip' || trackEntry.urban));
       if (isVegas) {
-        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v2"><\/script>');
+        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v4"><\/script>');
       }
 
       // --- D. Coche activo y rival IA bajo demanda ---
       const carManifest = window.CAR_MANIFEST || [];
       const carEntry = (carId && carManifest.find(c => c.id === carId)) || carManifest[0];
       if (carEntry && carEntry.file) {
-        document.write('<script src="cars/' + carEntry.file + '?v=racing_mirror_f1_v2"><\/script>');
+        document.write('<script src="cars/' + carEntry.file + '?v=racing_mirror_f1_v4"><\/script>');
       }
 
       const rivalEnabled = rivalParam !== null
@@ -366,27 +366,27 @@
         }
         window.__rivalCarId = chosenRival ? chosenRival.id : null;
         if (chosenRival && chosenRival.file && chosenRival.file !== (carEntry && carEntry.file)) {
-          document.write('<script src="cars/' + chosenRival.file + '?v=racing_mirror_f1_v2"><\/script>');
+          document.write('<script src="cars/' + chosenRival.file + '?v=racing_mirror_f1_v4"><\/script>');
         }
       }
     })();
   </script>
 
   <!-- 5. Física, IA, red, directores y componentes del juego -->
-  <script src="game/i18n.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/physics.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/ai.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/network.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/fx.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/race-director.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/camera-system.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/grid-manager.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/game.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/audio.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/hud-components.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/hud.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/ui.js?v=racing_mirror_f1_v2"></script>
-  <script src="game/main.js?v=racing_mirror_f1_v2"></script>
+  <script src="game/i18n.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/physics.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/ai.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/network.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/fx.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/race-director.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/camera-system.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/grid-manager.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/game.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/audio.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/hud-components.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/hud.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/ui.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/main.js?v=racing_mirror_f1_v4"></script>
 </body>
 
 </html>

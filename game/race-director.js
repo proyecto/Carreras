@@ -117,7 +117,7 @@ class RaceDirector {
 const raceDirectorInstance = new RaceDirector();
 
 // Interfaz global compatible para integración directa
-const RACE_START = raceDirectorInstance;
+var RACE_START = raceDirectorInstance;
 function raceStartTrigger() {
   raceDirectorInstance.triggerStart();
 }

@@ -268,7 +268,6 @@ function hudDrawMinimap() {
   // ---------------------------------------------------------------------------
   // SECCIÓN 1: SIGUIENTE CURVA (Top: 0 a yS1)
   // ---------------------------------------------------------------------------
-  const yS1 = Math.round(Hh * 0.29);
   const lookAhead = 260;
   const curS = Math.floor(curM);
   let maxK = 0, apexDist = 0, apexK = 0;
