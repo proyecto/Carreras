@@ -24,6 +24,7 @@ function runTracksTestSuite() {
   const propFactoryCode = fs.readFileSync(path.join(root, 'engine/prop-factory.js'), 'utf8');
   const atlasFactoryCode = fs.readFileSync(path.join(root, 'engine/atlas-factory.js'), 'utf8');
   const landmarkFactoryCode = fs.readFileSync(path.join(root, 'engine/landmark-factory.js'), 'utf8');
+  const vegetationFactoryCode = fs.readFileSync(path.join(root, 'engine/vegetation-factory.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
 
   const ctx = {
@@ -45,6 +46,7 @@ function runTracksTestSuite() {
   vm.runInContext(propFactoryCode, ctx);
   vm.runInContext(atlasFactoryCode, ctx);
   vm.runInContext(landmarkFactoryCode, ctx);
+  vm.runInContext(vegetationFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
@@ -243,6 +245,16 @@ function runTracksTestSuite() {
   assert(typeof LF.createVenetianResort === 'function', 'LandmarkFactory.createVenetianResort definido');
   assert(typeof LF.createStripHotels === 'function', 'LandmarkFactory.createStripHotels definido');
   assert(typeof LF.createPaddockBuildingF1 === 'function', 'LandmarkFactory.createPaddockBuildingF1 definido');
+
+  // 13. Validación de VegetationFactory (engine/vegetation-factory.js)
+  assert(indexHtml.includes('engine/vegetation-factory.js'), 'index.html incluye el módulo unificado VegetationFactory');
+  const VF = ctx.window.VegetationFactory || ctx.VegetationFactory;
+  assert(VF && typeof VF === 'object', 'VegetationFactory exportado y accesible');
+  assert(typeof VF.buildAtlas === 'function', 'VegetationFactory.buildAtlas definido');
+  assert(typeof VF.buildArchetypes === 'function', 'VegetationFactory.buildArchetypes definido');
+  assert(VF.VEG_TS === 1024 && VF.VEG_TW === 4 && VF.VEG_TH === 2, 'VegetationFactory dimensiones de atlas correctas');
+  assert(VF.VEG_NT === 6 && VF.VEG_NA === 9, 'VegetationFactory número de arquetipos correcto');
+  assert(typeof VF.VegLeafBuf === 'function', 'VegetationFactory.VegLeafBuf definido');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

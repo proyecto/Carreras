@@ -25,7 +25,7 @@ function runShaderTests() {
   });
 
   const files = [
-    'shaders/core.js', 'shaders/lighting.js', 'shaders/post.js', 'shaders/world.js', 'shaders/vegetation.js', 'shaders/glass.js',
+    'shaders/core.js', 'shaders/lighting.js', 'shaders/post.js', 'shaders/world.js', 'shaders/vegetation.js', 'shaders/glass.js', 'shaders/car-uno.js',
     'engine/math.js', 'engine/gpu.js', 'engine/mesh.js', 'engine/renderer.js', 'engine/forward.js', 'world/track-glb.js'
   ];
 
@@ -56,7 +56,9 @@ function runShaderTests() {
     { name: '__fwd_glassMul', defs: { GLASS_MUL: '', PASS_FWD: '' }, setup: () => { ctx.WGSL['__fwd_glassMul'] = '#include common\n#include gbuf\n#include glass\n#include entry_fwd\n'; } },
     { name: '__fwd_glassAdd', defs: { GLASS_ADD: '', PASS_FWD: '' }, setup: () => { ctx.WGSL['__fwd_glassAdd'] = '#include common\n#include gbuf\n#include glass\n#include entry_fwd\n'; } },
     { name: '__fam_glb_track (GBUF)', defs: { PASS_GBUF: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } },
-    { name: '__fam_glb_track (Shadow)', defs: { PASS_SHADOW: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } }
+    { name: '__fam_glb_track (Shadow)', defs: { PASS_SHADOW: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } },
+    { name: '__mat_car (GBUF)', defs: { PASS_GBUF: '' }, key: '__mat_car', setup: () => { ctx.WGSL['__mat_car'] = '#include common\n#include gbuf\n#include mat_car\n#include entry\n'; } },
+    { name: '__mat_car (Shadow)', defs: { PASS_SHADOW: '' }, key: '__mat_car', setup: () => { ctx.WGSL['__mat_car'] = '#include common\n#include gbuf\n#include mat_car\n#include entry\n'; } }
   ];
 
   for (const p of pipelines) {
