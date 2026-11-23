@@ -539,6 +539,10 @@ function propsBuild() {
 
   // ---- pórtico ----
   const gantry = (s, dL, dR, nameReg, lights, local) => {
+    if (typeof PropFactory !== 'undefined' && typeof PropFactory.createStartGantry === 'function') {
+      PropFactory.createStartGantry({ mb, md, S1, S2, REG, toStraight }, { s, dL, dR, nameReg, lights, local });
+      return;
+    }
     const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, yB = 6.1, yT = 7.3, hwB = 0.5;
     // colunas treliçadas com painéis nas faces
     for (const d of [dL, dR]) {
@@ -905,6 +909,10 @@ function propsBuild() {
   // ---- paddock: caminhões, tendas, postes de luz; cones na entrada dos boxes ----
   {
     const truck = (m, c) => {
+      if (typeof PropFactory !== 'undefined' && typeof PropFactory.createPaddockTruck === 'function') {
+        PropFactory.createPaddockTruck({ mb: m }, { color: c });
+        return;
+      }
       m.mat(2, 89, 51); col(m, c[0], c[1], c[2]); Bx(m, -6.5, 3.2, 1.25, 4.0, -1.25, 1.25);
       col(m, 0.85, 0.85, 0.85); Bx(m, 3.6, 5.9, 0.9, 3.3, -1.2, 1.2);
       m.mat(5); col(m, 1, 1, 1); m.quad(5.92, 2.0, 1.1, 5.92, 2.0, -1.1, 5.92, 3.1, -1.1, 5.92, 3.1, 1.1, 0.2, 0.2, 1.5, 1.2);

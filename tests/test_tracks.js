@@ -21,6 +21,7 @@ function runTracksTestSuite() {
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
+  const propFactoryCode = fs.readFileSync(path.join(root, 'engine/prop-factory.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
 
   const ctx = {
@@ -39,6 +40,7 @@ function runTracksTestSuite() {
   vm.runInContext(mathCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(trackFactoryCode, ctx);
+  vm.runInContext(propFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
@@ -177,6 +179,34 @@ function runTracksTestSuite() {
   const testCorners = [{ s: 200, name: 'Curva 1', ang: 45, R: 60 }, { s: 500, name: 'Curva 2', ang: -30, R: 80 }];
   const nextC = TF.findNextCorner(150, testCorners, 200);
   assert(nextC && nextC.name === 'Curva 1' && nextC.distance === 50, 'TrackFactory.findNextCorner detecta curva entrante en lookahead');
+
+  // 10. Validación de PropFactory (engine/prop-factory.js)
+  assert(indexHtml.includes('engine/prop-factory.js'), 'index.html incluye el módulo unificado PropFactory');
+  const PF = ctx.window.PropFactory || ctx.PropFactory;
+  assert(PF && typeof PF === 'object', 'PropFactory exportado y accesible');
+  assert(typeof PF.createStartGantry === 'function', 'PropFactory.createStartGantry definido');
+  assert(typeof PF.createTecproBarrier === 'function', 'PropFactory.createTecproBarrier definido');
+  assert(typeof PF.createPaddockTruck === 'function', 'PropFactory.createPaddockTruck definido');
+  assert(typeof PF.createPaddockTent === 'function', 'PropFactory.createPaddockTent definido');
+  assert(typeof PF.createWallFence === 'function', 'PropFactory.createWallFence definido');
+  assert(typeof PF.boxMinMax === 'function', 'PropFactory.boxMinMax definido');
+
+  // Simulación mock de MeshBuilder para verificar constructores de PropFactory
+  const mockMB = {
+    nv: 0, ni: 0,
+    mat() {}, color() {},
+    box() { this.ni += 36; },
+    cyl() { this.ni += 60; },
+    tube() { this.ni += 48; },
+    quad() { this.ni += 6; },
+    push() {}, pop() {}
+  };
+  PF.createPaddockTruck({ mb: mockMB }, { color: [0.1, 0.2, 0.3] });
+  assert(mockMB.ni > 0, 'PropFactory.createPaddockTruck genera geometría 3D');
+
+  const prevNi = mockMB.ni;
+  PF.createPaddockTent({ mb: mockMB }, { color: [1, 1, 1] });
+  assert(mockMB.ni > prevNi, 'PropFactory.createPaddockTent genera geometría 3D');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

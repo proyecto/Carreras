@@ -675,6 +675,10 @@
       {
         const padI0 = mb.ni;
         const truck = (m, c) => {
+          if (typeof PropFactory !== 'undefined' && typeof PropFactory.createPaddockTruck === 'function') {
+            PropFactory.createPaddockTruck({ mb: m }, { color: c });
+            return;
+          }
           m.mat(2, 89, 51); col(m, c[0], c[1], c[2]);
           Bx(m, -6.5, 3.2, 1.25, 4.0, -1.25, 1.25);
           col(m, 0.88, 0.88, 0.88);
