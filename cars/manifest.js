@@ -97,6 +97,30 @@ window.CAR_MANIFEST = [
     subtitle: '2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD',
     specs: '1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero',
     accent: '#ff5500'
+  },
+  {
+    file: 'mercedes-amg-gt4-2020.js',
+    id: 'mercedes-amg-gt4-2020',
+    name: 'Mercedes-AMG GT4',
+    subtitle: '2020 GT4 Spec · 4.0L Biturbo V8 M178 · 510 CV · RWD',
+    specs: '1390 kg · 510 CV · 6-vel seq · RWD · AMG Customer Racing Aero',
+    accent: '#00a3e0'
+  },
+  {
+    file: 'ferrari-296-challenge-2024.js',
+    id: 'ferrari-296-challenge-2024',
+    name: 'Ferrari 296 Challenge',
+    subtitle: '2024 Trofeo Pirelli & GT Spec · 3.0L Twin-Turbo 120° V6 · 700 CV · RWD',
+    specs: '1330 kg · 700 CV · F1 7-vel doble embrague · RWD · Carbon High-Downforce Aero',
+    accent: '#d40000'
+  },
+  {
+    file: 'bmw-z4-gt3-2011.js',
+    id: 'bmw-z4-gt3-2011',
+    name: 'BMW Z4 GT3 (2011)',
+    subtitle: '2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 CV · RWD',
+    specs: '1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Crowne Plaza Livery',
+    accent: '#1c69d4'
   }
 ];
 

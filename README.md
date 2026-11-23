@@ -27,7 +27,7 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 
 ---
 
-## 🚗 Catálogo de Vehículos (13 Modelos)
+## 🚗 Catálogo de Vehículos (15 Modelos)
 
 1. **Mercedes-AMG GT3 Evo (2020)**: 550 CV · V8 6.2L · Chasis de competición GT3 balanceado.
 2. **Porsche 911 GT3 R (992 - 2024)**: 565 CV · Bóxer 4.2L · Suspensión delantera de doble trapecio.
@@ -41,6 +41,9 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 10. **McLaren 650S GT3 (2015)**: 500 CV · V8 3.8L Biturbo · Campeón de Bathurst 12H y Blancpain GT.
 11. **McLaren Ultimate Vision GT (2018)**: 1150 CV · Tracción total híbrida AWD · Concepto de máxima carga aerodinámica.
 12. **Porsche 911 / 935 Turbo (1979)**: 650 CV · Bóxer Turbo Clásico · Tracción trasera salvaje y respuesta instantánea.
+13. **Mercedes-AMG GT4 (2020)**: 510 CV · V8 4.0L Biturbo M178 · Transmisión transaxle secuencial de 6 velocidades y aerodinámica Customer Racing.
+14. **Ferrari 296 Challenge (2024)**: 700 CV · V6 120° 3.0L Twin-Turbo (234 CV/L) · Cambio F1 doble embrague 7-vel y frenos Brembo CCM-R EVO.
+15. **BMW Z4 GT3 (2011)**: 515 CV · V8 4.4L Atmosférico P65B44 a 8.200 RPM · Transmisión Xtrac secuencial y decoración Crowne Plaza.
 
 ---
 

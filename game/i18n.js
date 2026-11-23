@@ -158,6 +158,41 @@ const I18N = {
           subtitle: 'Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD',
           specs: '1270 kg · 535 HP · 6-speed seq · RWD · Multimatic Carbon Aero',
         },
+        'mclaren-720s-gt3-2020': {
+          name: 'McLaren 720S GT3',
+          subtitle: '2020 GT3 Spec · 4.0L Twin-Turbo V8 M840T · RWD',
+          specs: '1220 kg · 500 HP · 6-speed seq · RWD · MonoCage II Aero',
+        },
+        'audi-r8-lms-evo-2020': {
+          name: 'Audi R8 LMS Evo',
+          subtitle: '2020 GT3 Spec · 5.2L Naturally-Aspirated V10 · RWD',
+          specs: '1225 kg · 585 HP · 6-speed seq · RWD · Audi Sport Aero',
+        },
+        'bmw-m3-touring-2026': {
+          name: 'BMW M3 Touring 24H',
+          subtitle: '2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD',
+          specs: '1560 kg · 530 HP · 8-speed M Steptronic · RWD · Shell Helix Aero',
+        },
+        'mclaren-650s-gt3-2015': {
+          name: 'McLaren 650S GT3',
+          subtitle: '2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD',
+          specs: '1240 kg · 500 HP · 6-speed seq · RWD · MonoCell Aero',
+        },
+        'mercedes-amg-gt4-2020': {
+          name: 'Mercedes-AMG GT4',
+          subtitle: '2020 GT4 Spec · 4.0L Biturbo V8 M178 · 510 HP · RWD',
+          specs: '1390 kg · 510 HP · 6-speed seq · RWD · AMG Customer Racing Aero',
+        },
+        'ferrari-296-challenge-2024': {
+          name: 'Ferrari 296 Challenge',
+          subtitle: '2024 Trofeo Pirelli & GT Spec · 3.0L Twin-Turbo 120° V6 · 700 HP · RWD',
+          specs: '1330 kg · 700 HP · F1 7-speed dual-clutch · RWD · Carbon High-Downforce Aero',
+        },
+        'bmw-z4-gt3-2011': {
+          name: 'BMW Z4 GT3 (2011)',
+          subtitle: '2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 HP · RWD',
+          specs: '1190 kg · 515 HP · Xtrac 6-speed seq · RWD · Crowne Plaza Livery',
+        },
       },
 
       // Circuitos
@@ -332,6 +367,41 @@ const I18N = {
           name: 'Ford Mustang GT3',
           subtitle: 'Ford Performance GT3 · 5.4L V8 · Carbon Spec · RWD',
           specs: '1270 kg · 535 CV · 6 marchas sec · RWD · Aero Carbono Multimatic',
+        },
+        'mclaren-720s-gt3-2020': {
+          name: 'McLaren 720S GT3',
+          subtitle: '2020 Homologación GT3 · 4.0L V8 Biturbo M840T · RWD',
+          specs: '1220 kg · 500 CV · 6-vel seq · RWD · MonoCage II Aero',
+        },
+        'audi-r8-lms-evo-2020': {
+          name: 'Audi R8 LMS Evo',
+          subtitle: '2020 Homologación GT3 · 5.2L V10 Atmosférico · RWD',
+          specs: '1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Aero',
+        },
+        'bmw-m3-touring-2026': {
+          name: 'BMW M3 Touring 24H',
+          subtitle: '2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD',
+          specs: '1560 kg · 530 CV · 8-vel M Steptronic · RWD · Shell Helix Aero',
+        },
+        'mclaren-650s-gt3-2015': {
+          name: 'McLaren 650S GT3',
+          subtitle: '2015 Homologación GT3 · 3.8L V8 Biturbo M838T · RWD',
+          specs: '1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero',
+        },
+        'mercedes-amg-gt4-2020': {
+          name: 'Mercedes-AMG GT4',
+          subtitle: '2020 Homologación GT4 · 4.0L V8 Biturbo M178 · 510 CV · RWD',
+          specs: '1390 kg · 510 CV · 6-vel seq · RWD · Aerodinámica AMG Customer Racing',
+        },
+        'ferrari-296-challenge-2024': {
+          name: 'Ferrari 296 Challenge',
+          subtitle: '2024 Trofeo Pirelli & GT Spec · 3.0L V6 120° Twin-Turbo · 700 CV · RWD',
+          specs: '1330 kg · 700 CV · F1 doble embrague 7-vel · RWD · Carga aerodinámica de carbono',
+        },
+        'bmw-z4-gt3-2011': {
+          name: 'BMW Z4 GT3 (2011)',
+          subtitle: '2011 Homologación FIA GT3 · 4.4L V8 Atmosférico P65B44 · 515 CV · RWD',
+          specs: '1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Decoración Crowne Plaza',
         },
       },
 
