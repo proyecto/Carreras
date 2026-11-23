@@ -23,6 +23,7 @@ function runTracksTestSuite() {
   const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
   const propFactoryCode = fs.readFileSync(path.join(root, 'engine/prop-factory.js'), 'utf8');
   const atlasFactoryCode = fs.readFileSync(path.join(root, 'engine/atlas-factory.js'), 'utf8');
+  const landmarkFactoryCode = fs.readFileSync(path.join(root, 'engine/landmark-factory.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
 
   const ctx = {
@@ -43,6 +44,7 @@ function runTracksTestSuite() {
   vm.runInContext(trackFactoryCode, ctx);
   vm.runInContext(propFactoryCode, ctx);
   vm.runInContext(atlasFactoryCode, ctx);
+  vm.runInContext(landmarkFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
@@ -107,15 +109,18 @@ function runTracksTestSuite() {
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 
-  // 6. Validación de patrocinio y escenografía de boxes (engine/atlas-factory.js + world/props.js + world/props-vegas.js)
+  // 6. Validación de patrocinio y escenografía de boxes (engine/atlas-factory.js + engine/landmark-factory.js + world/props.js + world/props-vegas.js)
   const atlasFactoryPath = path.join(root, 'engine/atlas-factory.js');
   assert(fs.existsSync(atlasFactoryPath), 'Módulo separado de AtlasFactory (engine/atlas-factory.js) presente');
   const atlasCode = fs.existsSync(atlasFactoryPath) ? fs.readFileSync(atlasFactoryPath, 'utf8') : '';
+  const landmarkPath = path.join(root, 'engine/landmark-factory.js');
+  assert(fs.existsSync(landmarkPath), 'Módulo separado de LandmarkFactory (engine/landmark-factory.js) presente');
+  const landmarkCode = fs.existsSync(landmarkPath) ? fs.readFileSync(landmarkPath, 'utf8') : '';
   const propsBaseCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
   const vegasPropsPath = path.join(root, 'world/props-vegas.js');
   assert(fs.existsSync(vegasPropsPath), 'Módulo separado de props de Las Vegas (world/props-vegas.js) presente para carga condicional');
   const vegasPropsCode = fs.existsSync(vegasPropsPath) ? fs.readFileSync(vegasPropsPath, 'utf8') : '';
-  const propsCode = atlasCode + '\n' + propsBaseCode + '\n' + vegasPropsCode;
+  const propsCode = atlasCode + '\n' + landmarkCode + '\n' + propsBaseCode + '\n' + vegasPropsCode;
 
   assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
   assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');
@@ -225,6 +230,19 @@ function runTracksTestSuite() {
   AF.buildPropsAtlas({ regions: mockRegions });
   assert(mockRegions.name && mockRegions.chev && mockRegions.boxes, 'AtlasFactory genera regiones UV de pista');
   assert(mockRegions.b0 && mockRegions.d150 && mockRegions.p0 && mockRegions.s0, 'AtlasFactory genera regiones de patrocinadores, carteles y multitud');
+
+  // 12. Validación de LandmarkFactory (engine/landmark-factory.js)
+  assert(indexHtml.includes('engine/landmark-factory.js'), 'index.html incluye el módulo unificado LandmarkFactory');
+  const LF = ctx.window.LandmarkFactory || ctx.LandmarkFactory;
+  assert(LF && typeof LF === 'object', 'LandmarkFactory exportado y accesible');
+  assert(typeof LF.createMsgSphere === 'function', 'LandmarkFactory.createMsgSphere definido');
+  assert(typeof LF.createHighRoller === 'function', 'LandmarkFactory.createHighRoller definido');
+  assert(typeof LF.createTriWingTower === 'function', 'LandmarkFactory.createTriWingTower definido');
+  assert(typeof LF.createEiffelTowerAndBalloon === 'function', 'LandmarkFactory.createEiffelTowerAndBalloon definido');
+  assert(typeof LF.createBellagioFountains === 'function', 'LandmarkFactory.createBellagioFountains definido');
+  assert(typeof LF.createVenetianResort === 'function', 'LandmarkFactory.createVenetianResort definido');
+  assert(typeof LF.createStripHotels === 'function', 'LandmarkFactory.createStripHotels definido');
+  assert(typeof LF.createPaddockBuildingF1 === 'function', 'LandmarkFactory.createPaddockBuildingF1 definido');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };
