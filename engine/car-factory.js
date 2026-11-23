@@ -6,25 +6,45 @@
 
 const CarFactory = {
   /**
+   * Decodificador canónico base64 a Uint8Array compatible con Browser (atob) y Node (Buffer).
+   */
+  _decodeB64(b64) {
+    if (!b64) return new Uint8Array(0);
+    if (typeof atob === 'function') {
+      const bin = atob(b64);
+      const len = bin.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+    if (typeof Buffer !== 'undefined') {
+      return new Uint8Array(Buffer.from(b64, 'base64'));
+    }
+    return new Uint8Array(0);
+  },
+
+  /**
    * Decodifica una cadena base64 en Float32Array (para vértices).
    */
   b64ToF32(b64) {
-    const bin = atob(b64);
-    const len = bin.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
-    return new Float32Array(bytes.buffer, bytes.byteOffset, len / 4);
+    const bytes = CarFactory._decodeB64(b64);
+    return new Float32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 4));
   },
 
   /**
    * Decodifica una cadena base64 en Uint32Array (para índices).
    */
   b64ToU32(b64) {
-    const bin = atob(b64);
-    const len = bin.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
-    return new Uint32Array(bytes.buffer, bytes.byteOffset, len / 4);
+    const bytes = CarFactory._decodeB64(b64);
+    return new Uint32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 4));
+  },
+
+  /**
+   * Decodifica una cadena base64 en Uint16Array (para índices compactos de 16 bits).
+   */
+  b64ToU16(b64) {
+    const bytes = CarFactory._decodeB64(b64);
+    return new Uint16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
   },
 
   /**
@@ -262,6 +282,23 @@ const CarFactory = {
   }
 };
 
+// Funciones globales canónicas para retrocompatibilidad directa con vehículos modulares (DRY)
+function b64ToF32(b64) { return CarFactory.b64ToF32(b64); }
+function b64ToU32(b64) { return CarFactory.b64ToU32(b64); }
+function b64ToU16(b64) { return CarFactory.b64ToU16(b64); }
+
 if (typeof window !== 'undefined') {
   window.CarFactory = CarFactory;
+  window.b64ToF32 = b64ToF32;
+  window.b64ToU32 = b64ToU32;
+  window.b64ToU16 = b64ToU16;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.CarFactory = CarFactory;
+  globalThis.b64ToF32 = b64ToF32;
+  globalThis.b64ToU32 = b64ToU32;
+  globalThis.b64ToU16 = b64ToU16;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { CarFactory, b64ToF32, b64ToU32, b64ToU16 };
 }

@@ -53,7 +53,7 @@ function hudStrip(cv, labels, widths, units, At, px, o) {
   return f;
 }
 
-// Pre-renderiza la base visual de la columna lateral (Curva, Posición y Minimapa vertical)
+// Pre-renderiza la base visual de la columna lateral (Curva, Telemetría, Posición y Minimapa vertical)
 function hudBuildMap(W, Hh, r) {
   const H = HUD;
   const fc = H.bgMap = document.createElement('canvas');
@@ -69,33 +69,27 @@ function hudBuildMap(W, Hh, r) {
   g.strokeStyle = 'rgba(255, 255, 255, 0.16)';
   g.stroke();
 
-  // Divisores horizontales entre secciones
-  const yS1 = Math.round(Hh * 0.29);
-  const yS2 = Math.round(Hh * 0.55);
+  // Divisores horizontales entre las 4 secciones modulares
+  const yS1 = Math.round(r * 0.46); // Fin aviso de curva
+  const yS2 = Math.round(r * 0.98); // Fin telemetría de vuelta
+  const yS3 = Math.round(r * 1.62); // Fin torre de clasificación
 
   g.beginPath();
   g.moveTo(Math.round(r * 0.10), yS1);
   g.lineTo(W - Math.round(r * 0.10), yS1);
   g.moveTo(Math.round(r * 0.10), yS2);
   g.lineTo(W - Math.round(r * 0.10), yS2);
+  g.moveTo(Math.round(r * 0.10), yS3);
+  g.lineTo(W - Math.round(r * 0.10), yS3);
   g.strokeStyle = 'rgba(255, 255, 255, 0.12)';
   g.lineWidth = Math.max(1, Math.round(r * 0.012));
   g.stroke();
 
-  // Encabezados estáticos sutiles
-  g.fillStyle = 'rgba(255, 255, 255, 0.40)';
-  g.font = '600 ' + Math.round(r * 0.088) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  g.textAlign = 'left';
-  g.textBaseline = 'top';
-  g.fillText('SIGUIENTE CURVA', Math.round(r * 0.14), Math.round(r * 0.08));
-  g.fillText('POSICIÓN EN CARRERA', Math.round(r * 0.14), yS1 + Math.round(r * 0.08));
+  // (Nota de arquitectura: Los textos y títulos se delegan a HudComponents para garantizar
+  // tipografía dinámica de alta legibilidad sin solapamientos entre capas de canvas)
 
+  // Trazado del circuito en la Sección 4 (Minimapa inferior)
   const trk = (typeof TRK !== 'undefined' ? TRK : null);
-  const trackName = (trk && trk.spec && (trk.spec.name || trk.spec.id)) || 'CIRCUITO';
-  g.textAlign = 'right';
-  g.fillText(trackName.toUpperCase(), W - Math.round(r * 0.14), yS2 + Math.round(r * 0.08));
-
-  // Trazado del circuito en la Sección 3 (Minimapa inferior)
   if (trk && trk.N > 1 && trk.x && trk.z) {
     let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     for (let i = 0; i < trk.N; i += 2) {
@@ -105,13 +99,13 @@ function hudBuildMap(W, Hh, r) {
     }
     const mapMargin = Math.round(r * 0.16);
     const boxW = W - mapMargin * 2;
-    const y3Top = yS2 + Math.round(r * 0.22);
-    const boxH = Hh - y3Top - mapMargin;
+    const y4Top = yS3 + Math.round(r * 0.18);
+    const boxH = Hh - y4Top - mapMargin;
     const spanX = Math.max(10, maxX - minX);
     const spanZ = Math.max(10, maxZ - minZ);
     const scale = Math.min(boxW / spanX, boxH / spanZ);
     const cX = mapMargin + boxW * 0.5;
-    const cZ = y3Top + boxH * 0.5;
+    const cZ = y4Top + boxH * 0.5;
     const midTrackX = (minX + maxX) * 0.5;
     const midTrackZ = (minZ + maxZ) * 0.5;
 
@@ -188,9 +182,9 @@ function hudLayout() {
   H.bgS = hudStrip(H.cs, sLabels, [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   H.K.fill(-9);
 
-  // Columna lateral izquierda (Siguiente curva arriba, Posición en medio, Minimapa abajo)
+  // Columna lateral izquierda (Siguiente curva, Telemetría de vuelta, Posición F1, Minimapa)
   if (H.cm) {
-    const mW = Math.round(r * 2.25), mH = Math.round(r * 3.65);
+    const mW = Math.round(r * 2.50), mH = Math.round(r * 5.00);
     H.cm.width = mW; H.cm.height = mH;
     H.cm.style.width = mW / dpr + 'px'; H.cm.style.height = mH / dpr + 'px';
     H.cm.style.top = '1.6vh';
@@ -227,46 +221,66 @@ function hudDec(g, A, v10, x, y) {
   hudInt(g, A, (v10 / 10) | 0, 3, x, y, 1); hudCh(g, A, 12, x + w * 3, y, 1); hudCh(g, A, v10 % 10, x + w * 3 + A.w[12], y, 1);
 }
 
-// Renderiza la columna lateral (Curva arriba, Clasificación en medio, Minimapa abajo)
+// Renderiza la columna lateral (Curva arriba, Telemetría de vuelta, Clasificación F1, Minimapa abajo)
 function hudDrawMinimap() {
   const H = HUD, m = H.m, trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (!H.cm || !m || !H.bgMap || !trk || trk.N < 2) return;
   const W = H.cm.width, Hh = H.cm.height, r = H.L[3];
   const curM = typeof VEH !== 'undefined' ? VEH.s : 0;
   const curTrackS = ((curM % trk.L) + trk.L) % trk.L;
-  const yS1 = Math.round(Hh * 0.29);
+
+  const yS1 = Math.round(r * 0.46);
+  const yS2 = Math.round(r * 0.98);
+  const yS3 = Math.round(r * 1.62);
 
   m.clearRect(0, 0, W, Hh);
   m.drawImage(H.bgMap, 0, 0);
 
+  // Datos de tiempos de vuelta
+  const curLapSec = (typeof LAP !== 'undefined' && LAP[3] === 1 && typeof VEH !== 'undefined') ? Math.max(0, VEH.time - LAP[0]) : 0;
+  const lastLapSec = (typeof LAP !== 'undefined' && LAP[1] > 0) ? LAP[1] : -1;
+  const bestLapSec = (typeof LAP !== 'undefined' && LAP[2] > 0) ? LAP[2] : -1;
+  const lapCount = (typeof VEH !== 'undefined' && VEH.laps !== undefined) ? VEH.laps : 0;
+
+  // Lista de rivales para torre de posiciones y minimapa
+  const rivals = [];
+  if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+    for (const rCar of gridManagerInstance.rivals) {
+      if (rCar.veh) rivals.push(rCar);
+    }
+  } else {
+    if (typeof VEH_RIVAL !== 'undefined') rivals.push({ veh: VEH_RIVAL, name: 'RIVAL #7', col: '#facc15' });
+    if (typeof VEH_RIVAL2 !== 'undefined') rivals.push({ veh: VEH_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' });
+    if (typeof VEH_RIVAL3 !== 'undefined') rivals.push({ veh: VEH_RIVAL3, name: 'RIVAL #99', col: '#ef4444' });
+  }
+
   // Delegación modular con HudComponents (Patrón Composite/Component)
   if (typeof HudComponents !== 'undefined') {
-    // SECCIÓN 1: Aviso de próxima curva oficial
+    // SECCIÓN 1: Aviso de próxima curva oficial (0 a yS1)
     HudComponents.CornerAdvisory.draw(m, r, Hh, W, trk, curM);
 
-    // SECCIÓN 2: Torre de clasificación F1
-    const rivals = [];
-    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
-      for (const rCar of gridManagerInstance.rivals) {
-        if (rCar.veh) rivals.push(rCar);
-      }
-    } else {
-      if (typeof VEH_RIVAL !== 'undefined') rivals.push({ veh: VEH_RIVAL, name: 'RIVAL #7', col: '#facc15' });
-      if (typeof VEH_RIVAL2 !== 'undefined') rivals.push({ veh: VEH_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' });
-      if (typeof VEH_RIVAL3 !== 'undefined') rivals.push({ veh: VEH_RIVAL3, name: 'RIVAL #99', col: '#ef4444' });
-    }
+    // SECCIÓN 2: Telemetría de cronometraje de vuelta (yS1 a yS2)
+    HudComponents.LapTelemetry.draw(m, r, Hh, W, yS1, {
+      curTime: curLapSec,
+      lastTime: lastLapSec,
+      bestTime: bestLapSec,
+      lapCount: lapCount
+    });
+
+    // SECCIÓN 3: Torre de clasificación F1 (yS2 a yS3)
     const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
     const carName = (typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name.split(' ')[0] : 'GT3';
-    HudComponents.TimingTower.draw(m, r, Hh, W, yS1, trk, curProg, rivals, carName);
+    HudComponents.TimingTower.draw(m, r, Hh, W, yS2, trk, curProg, rivals, carName);
 
-    // SECCIÓN 3: Minimapa del circuito con radar de rivales
+    // SECCIÓN 4: Minimapa del circuito con radar de rivales (yS3 a Hh)
+    const trackName = (trk.spec && (trk.spec.name || trk.spec.id)) || 'CIRCUITO';
     const distText = ((curM * 0.001) % (trk.L * 0.001)).toFixed(1) + ' / ' + (trk.L * 0.001).toFixed(1) + ' km';
-    HudComponents.Minimap.draw(m, r, Hh, W, H.mapTrans, [GS.cx, GS.cy, GS.cz], rivals, (typeof VEH !== 'undefined' ? VEH.time : 0), distText);
+    HudComponents.Minimap.draw(m, r, Hh, W, yS3, H.mapTrans, [GS.cx, GS.cy, GS.cz], rivals, (typeof VEH !== 'undefined' ? VEH.time : 0), trackName, distText);
     return;
   }
 
   // ---------------------------------------------------------------------------
-  // SECCIÓN 1: SIGUIENTE CURVA (Top: 0 a yS1)
+  // RUTA DE FALLBACK (en caso de no disponer de HudComponents)
   // ---------------------------------------------------------------------------
   const lookAhead = 260;
   const curS = Math.floor(curM);
@@ -277,11 +291,7 @@ function hudDrawMinimap() {
       if (sIdx < 0) sIdx += trk.N;
       const k = trk.k[sIdx];
       const absK = Math.abs(k);
-      if (absK > maxK) {
-        maxK = absK;
-        apexK = k;
-        apexDist = ds;
-      }
+      if (absK > maxK) { maxK = absK; apexK = k; apexDist = ds; }
     }
   }
 
@@ -306,174 +316,45 @@ function hudDrawMinimap() {
     }
   }
 
-  // Nombre de la curva
+  const padX = Math.round(r * 0.14);
+  m.textAlign = 'left';
+  m.textBaseline = 'top';
+
+  // 1. Curva
+  m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  m.fillText(inCorner ? 'EN CURVA' : 'PRÓXIMA CURVA', padX, Math.round(r * 0.075));
+
   let cornerTitle = 'RECTA';
-  let titleColor = 'rgba(255, 255, 255, 0.50)';
-  if (inCorner) {
-    cornerTitle = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA';
-    titleColor = '#facc15';
-  } else if (nextCorner) {
-    cornerTitle = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE';
-    titleColor = '#38bdf8';
-  } else if (maxK > 0.004) {
-    cornerTitle = 'CURVA ADELANTE';
-    titleColor = 'rgba(255, 255, 255, 0.85)';
-  }
+  let titleColor = 'rgba(255, 255, 255, 0.70)';
+  if (inCorner) { cornerTitle = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA'; titleColor = '#facc15'; }
+  else if (nextCorner) { cornerTitle = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE'; titleColor = '#38bdf8'; }
 
-  m.textAlign = 'left';
-  m.textBaseline = 'top';
-  let titleFontSz = Math.round(r * 0.125);
-  m.font = '700 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  const maxTitleW = W - Math.round(r * 0.28);
-  while (titleFontSz > 7 && m.measureText(cornerTitle).width > maxTitleW) {
-    titleFontSz -= 0.5;
-    m.font = '700 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  }
+  m.font = '800 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = titleColor;
-  m.fillText(cornerTitle, Math.round(r * 0.14), Math.round(r * 0.13));
+  m.fillText(cornerTitle, padX, Math.round(r * 0.180));
 
-  // Dirección, radio y distancia
-  if (inCorner) {
-    const k = inCorner.k ?? (trk.k ? trk.k[Math.floor(curTrackS) % trk.N] : 0);
-    const isRight = k >= 0;
-    const radius = Math.round(inCorner.R || (maxK > 0 ? (1 / maxK) : 60));
-    const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
-    const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
-    m.fillStyle = badgeColor;
-    m.font = '700 ' + Math.round(r * 0.108) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillText(arrow + ' EN EL ÁPICE (' + radius + 'm)', Math.round(r * 0.14), Math.round(r * 0.21));
-  } else if (nextCorner || maxK > 0.004) {
-    const isRight = nextCorner ? (nextCorner.k >= 0) : (apexK > 0);
-    const radius = Math.round(nextCorner ? (nextCorner.R || (maxK > 0 ? 1 / maxK : 60)) : (1 / maxK));
-    const distM = nextCorner ? Math.round(minNextDist) : apexDist;
-    const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
-    const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
-    m.fillStyle = badgeColor;
-    m.font = '700 ' + Math.round(r * 0.108) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillText(arrow + ' ' + distM + 'm (' + radius + 'm)', Math.round(r * 0.14), Math.round(r * 0.21));
-  } else {
-    m.fillStyle = 'rgba(255, 255, 255, 0.40)';
-    m.font = '600 ' + Math.round(r * 0.102) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillText('GAS A FONDO', Math.round(r * 0.14), Math.round(r * 0.21));
-  }
+  // 2. Telemetría de vueltas
+  m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  m.fillText('TIEMPOS DE VUELTA', padX, yS1 + Math.round(r * 0.075));
 
-  // ---------------------------------------------------------------------------
-  // SECCIÓN 2: TORRE DE CLASIFICACIÓN / POSICIÓN (yS1 a yS2)
-  // ---------------------------------------------------------------------------
-  const yS2 = Math.round(Hh * 0.58);
-  const pProg = typeof VEH !== 'undefined' ? (VEH.laps * trk.L + VEH.lapS) : 0;
-  const carShortName = (typeof CAR !== 'undefined' && CAR.shortName) ? CAR.shortName : 'GT3';
+  // 3. Torre de clasificación
+  m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  m.fillText('POSICIÓN EN CARRERA', padX, yS2 + Math.round(r * 0.075));
 
-  const allCars = [
-    { name: `TÚ (${carShortName})`, prog: pProg, isPlayer: true, col: '#ff5a36' },
-    { name: 'RIVAL #7', prog: (typeof VEH_RIVAL !== 'undefined' ? (VEH_RIVAL.laps * trk.L + VEH_RIVAL.lapS) : -1e8), isPlayer: false, col: '#facc15' },
-    { name: 'RIVAL #12', prog: (typeof VEH_RIVAL2 !== 'undefined' ? (VEH_RIVAL2.laps * trk.L + VEH_RIVAL2.lapS) : -2e8), isPlayer: false, col: '#38bdf8' },
-    { name: 'RIVAL #99', prog: (typeof VEH_RIVAL3 !== 'undefined' ? (VEH_RIVAL3.laps * trk.L + VEH_RIVAL3.lapS) : -3e8), isPlayer: false, col: '#f87171' }
-  ];
-  allCars.sort((a, b) => b.prog - a.prog);
-  const playerIdx = allCars.findIndex(c => c.isPlayer);
-  const playerPos = playerIdx + 1;
-  const leaderProg = allCars[0].prog;
-  const refSpeed = Math.max(15, (typeof VEH !== 'undefined' && VEH.speed > 5) ? VEH.speed : 30);
-
-  // Badge grande de posición (P1..P4)
-  const posBadgeX = W - Math.round(r * 0.14);
-  const posBadgeY = yS1 + Math.round(r * 0.14);
-  m.textAlign = 'right';
-  m.textBaseline = 'top';
-  m.font = '800 ' + Math.round(r * 0.17) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
-  m.fillText('P' + playerPos, posBadgeX, posBadgeY);
-
-  // Filas de clasificación estilo F1 Timing Tower (4 posiciones)
-  const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
-  const rowStartY = yS1 + Math.round(r * 0.08);
-  const rowStepY = Math.round(r * 0.105);
-
-  m.textAlign = 'left';
-  m.textBaseline = 'top';
-
-  for (let i = 0; i < allCars.length; i++) {
-    const cObj = allCars[i];
-    const rowY = rowStartY + i * rowStepY;
-    const isLead = (i === 0);
-    const gapM = Math.max(0, leaderProg - cObj.prog);
-    const gapSec = (gapM / refSpeed).toFixed(1);
-
-    // Número de posición
-    m.font = '800 ' + Math.round(r * 0.085) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillStyle = posColors[i] || '#ffffff';
-    m.fillText(String(i + 1), Math.round(r * 0.14), rowY);
-
-    // Nombre del coche (resaltado si es el jugador)
-    m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.085) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillStyle = cObj.isPlayer ? '#ff5a36' : '#ffffff';
-    m.fillText(cObj.name, Math.round(r * 0.28), rowY);
-
-    // Intervalo de tiempo respecto al líder
-    m.font = '700 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    if (isLead) {
-      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      m.fillText('LÍDER', Math.round(r * 1.34), rowY);
-    } else {
-      m.fillStyle = cObj.isPlayer ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
-      m.fillText('+' + gapSec + 's', Math.round(r * 1.34), rowY);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // SECCIÓN 3: MINIMAPA DEL CIRCUITO (yS2 a Hh)
-  // ---------------------------------------------------------------------------
+  // 4. Radar Minimapa
   const cX = H.mapTrans[0], cZ = H.mapTrans[1];
   const midTrackX = H.mapTrans[2], midTrackZ = H.mapTrans[3];
   const scale = H.mapTrans[4];
-
-  // Punto del jugador en el mapa
   const px = cX + (GS.cx - midTrackX) * scale;
   const py = cZ + (GS.cz - midTrackZ) * scale;
-
-  const pulse = 0.5 + 0.5 * Math.sin((typeof VEH !== 'undefined' ? VEH.time : 0) * 6.0);
-  m.beginPath();
-  m.arc(px, py, r * (0.052 + pulse * 0.02), 0, TAU);
-  m.fillStyle = 'rgba(255, 90, 54, 0.38)';
-  m.fill();
 
   m.beginPath();
   m.arc(px, py, Math.max(2, r * 0.038), 0, TAU);
   m.fillStyle = '#ff5a36';
   m.fill();
-  m.lineWidth = Math.max(1, r * 0.012);
-  m.strokeStyle = '#ffffff';
-  m.stroke();
-
-  // Puntos de los rivales en el mapa
-  if (typeof GAME === 'undefined' || GAME.rivalEnabled !== false) {
-    const rDots = [
-      { v: (typeof VEH_RIVAL !== 'undefined' ? VEH_RIVAL : null), col: '#facc15' },
-      { v: (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null), col: '#38bdf8' },
-      { v: (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null), col: '#f87171' }
-    ];
-    for (const rd of rDots) {
-      if (!rd.v) continue;
-      const rx = cX + (rd.v.x - midTrackX) * scale;
-      const ry = cZ + (rd.v.z - midTrackZ) * scale;
-      m.beginPath();
-      m.arc(rx, ry, Math.max(2, r * 0.035), 0, TAU);
-      m.fillStyle = rd.col;
-      m.fill();
-      m.lineWidth = Math.max(1, r * 0.012);
-      m.strokeStyle = '#000000';
-      m.stroke();
-    }
-  }
-
-  // Distancia recorrida de la vuelta en la base del minimapa
-  m.font = '600 ' + Math.round(r * 0.09) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  m.fillStyle = 'rgba(255, 255, 255, 0.55)';
-  m.textAlign = 'right';
-  m.textBaseline = 'bottom';
-  const distText = ((curM * 0.001) % (trk.L * 0.001)).toFixed(1) + ' / ' + (trk.L * 0.001).toFixed(1) + ' km';
-  m.fillText(distText, W - Math.round(r * 0.14), Hh - Math.round(r * 0.09));
 }
 
 // Renderiza el semáforo de salida FIA de 5 luces rojas/verdes

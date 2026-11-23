@@ -20,6 +20,7 @@ function runCarsTestSuite() {
   // Entorno de ejecución simulado
   const root = path.resolve(__dirname, '..');
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
+  const carFactoryCode = fs.readFileSync(path.join(root, 'engine/car-factory.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
 
@@ -28,9 +29,11 @@ function runCarsTestSuite() {
     document: { createElement: () => ({ getContext: () => ({}) }) },
     Float32Array,
     Uint32Array,
+    Uint16Array,
     Int32Array,
     Float64Array,
     Uint8Array,
+    ArrayBuffer,
     Math,
     WGSL: {},
     mkTex: () => ({}),
@@ -40,6 +43,7 @@ function runCarsTestSuite() {
   };
   vm.createContext(ctx);
   vm.runInContext(mathCode, ctx);
+  vm.runInContext(carFactoryCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(manifest, ctx);
 

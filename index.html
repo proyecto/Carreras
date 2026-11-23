@@ -339,14 +339,14 @@
       // --- C. Props exclusivos de Las Vegas (Noria High Roller, MSG Sphere, Rascacielos): solo en Las Vegas ---
       const isVegas = Boolean(trackEntry && (trackEntry.id === 'las-vegas-strip' || trackEntry.urban));
       if (isVegas) {
-        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v4"><\/script>');
+        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v5"><\/script>');
       }
 
       // --- D. Coche activo y rival IA bajo demanda ---
       const carManifest = window.CAR_MANIFEST || [];
       const carEntry = (carId && carManifest.find(c => c.id === carId)) || carManifest[0];
       if (carEntry && carEntry.file) {
-        document.write('<script src="cars/' + carEntry.file + '?v=racing_mirror_f1_v4"><\/script>');
+        document.write('<script src="cars/' + carEntry.file + '?v=racing_mirror_f1_v5"><\/script>');
       }
 
       const rivalEnabled = rivalParam !== null
@@ -366,27 +366,27 @@
         }
         window.__rivalCarId = chosenRival ? chosenRival.id : null;
         if (chosenRival && chosenRival.file && chosenRival.file !== (carEntry && carEntry.file)) {
-          document.write('<script src="cars/' + chosenRival.file + '?v=racing_mirror_f1_v4"><\/script>');
+          document.write('<script src="cars/' + chosenRival.file + '?v=racing_mirror_f1_v5"><\/script>');
         }
       }
     })();
   </script>
 
   <!-- 5. Física, IA, red, directores y componentes del juego -->
-  <script src="game/i18n.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/physics.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/ai.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/network.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/fx.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/race-director.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/camera-system.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/grid-manager.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/game.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/audio.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/hud-components.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/hud.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/ui.js?v=racing_mirror_f1_v4"></script>
-  <script src="game/main.js?v=racing_mirror_f1_v4"></script>
+  <script src="game/i18n.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/physics.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/ai.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/network.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/fx.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/race-director.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/camera-system.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/grid-manager.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/game.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/audio.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/hud-components.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/hud.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/ui.js?v=racing_mirror_f1_v5"></script>
+  <script src="game/main.js?v=racing_mirror_f1_v5"></script>
 </body>
 
 </html>

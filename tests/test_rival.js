@@ -19,6 +19,7 @@ function runRivalTestSuite() {
 
   const root = path.resolve(__dirname, '..');
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
+  const carFactoryCode = fs.readFileSync(path.join(root, 'engine/car-factory.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const tbCode = fs.readFileSync(path.join(root, 'world/track-builder.js'), 'utf8');
   const trackGpCode = fs.readFileSync(path.join(root, 'tracks/nurburgring-gp.js'), 'utf8');
@@ -31,9 +32,11 @@ function runRivalTestSuite() {
     document: { createElement: () => ({ getContext: () => ({}) }) },
     Float32Array,
     Uint32Array,
+    Uint16Array,
     Int32Array,
     Float64Array,
     Uint8Array,
+    ArrayBuffer,
     Math,
     console: { log: () => {} },
     WGSL: {},
@@ -41,6 +44,7 @@ function runRivalTestSuite() {
   };
   vm.createContext(ctx);
   vm.runInContext(mathCode, ctx);
+  vm.runInContext(carFactoryCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(tbCode, ctx);
   vm.runInContext("this.TRK = TRK; this.trackBuild = trackBuild;", ctx);

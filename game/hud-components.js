@@ -6,12 +6,35 @@
  * Patrón: COMPOSITE / COMPONENT
  * Responsabilidad Única (SRP):
  * - Cada componente renderiza su sección específica del HUD de manera aislada,
- *   reutilizable y sin efectos colaterales.
+ *   con tipografía espaciada sin solapamientos, modular y reutilizable.
+ * - Componentes:
+ *   1. CornerAdvisory: Próxima curva (nombre oficial, severidad, distancia y radio).
+ *   2. LapTelemetry: Cronometraje de vuelta (vuelta actual, última y mejor vuelta).
+ *   3. TimingTower: Torre de clasificación F1 (posiciones P1..P4, deltas y líder).
+ *   4. Minimap: Trazado 2D con radar de rivales y distancia recorrida.
+ *   5. StartLights: Semáforo oficial FIA de salida.
  */
 
 const HudComponents = {
   /**
-   * Componente 1: Aviso de Próxima Curva (Sección Superior del HUD Lateral)
+   * Formatea un tiempo en segundos o centésimas a formato m:ss.cc
+   * @param {number} val - Tiempo en segundos (e.g. 173.02) o centésimas
+   * @returns {string} - Cadena formateada e.g. "2:53.02" o "-:--.--"
+   */
+  formatLapTime(val) {
+    if (val === undefined || val === null || val < 0) return '-:--.--';
+    const totalCs = Math.round(val > 10000 ? val : val * 100);
+    if (totalCs <= 0) return '0:00.00';
+    if (totalCs > 599999) return '99:59.99';
+    const m = Math.floor(totalCs / 6000);
+    const s = Math.floor((totalCs % 6000) / 100);
+    const c = Math.floor(totalCs % 100);
+    return `${m}:${s < 10 ? '0' : ''}${s}.${c < 10 ? '0' : ''}${c}`;
+  },
+
+  /**
+   * Componente 1: Aviso de Próxima Curva (Sección 1 del HUD Lateral)
+   * Altura nominal: 0 a yS1
    */
   CornerAdvisory: {
     draw(m, r, Hh, W, trk, s) {
@@ -19,6 +42,8 @@ const HudComponents = {
       const N = trk.N, ds = trk.ds, kl = trk.lineK || trk.k;
       if (!kl) return;
 
+      const padX = Math.round(r * 0.14);
+      const curTrackS = ((s % trk.L) + trk.L) % trk.L;
       const i0 = ((Math.floor(s / ds) % N) + N) % N;
       let maxK = 0, apexDist = 0, apexK = 0;
       for (let q = 1; q < 50; q++) {
@@ -30,17 +55,28 @@ const HudComponents = {
         }
       }
 
-      // Búsqueda de nombre de curva oficial
-      let nextCorner = null, minNextDist = 1e9;
+      // Detección de curva oficial FIA
+      let inCorner = null, nextCorner = null, minNextDist = 1e9;
       if (Array.isArray(trk.corners)) {
         for (let c = 0; c < trk.corners.length; c++) {
           const corner = trk.corners[c];
-          let d = corner.s - s;
-          while (d < -trk.L * 0.5) d += trk.L;
-          while (d > trk.L * 0.5) d -= trk.L;
-          if (d >= -15 && d < 280 && d < minNextDist) {
-            minNextDist = d;
-            nextCorner = corner;
+          if (corner.s0 !== undefined && corner.s1 !== undefined) {
+            if (corner.s0 <= corner.s1) {
+              if (curTrackS >= corner.s0 - 6 && curTrackS <= corner.s1 + 6) { inCorner = corner; break; }
+            } else {
+              if (curTrackS >= corner.s0 - 6 || curTrackS <= corner.s1 + 6) { inCorner = corner; break; }
+            }
+          }
+        }
+        if (!inCorner) {
+          for (let c = 0; c < trk.corners.length; c++) {
+            const corner = trk.corners[c];
+            const cS = corner.s0 !== undefined ? corner.s0 : corner.s;
+            let d = (cS - curTrackS + trk.L) % trk.L;
+            if (d > 0 && d < 340 && d < minNextDist) {
+              minNextDist = d;
+              nextCorner = corner;
+            }
           }
         }
       }
@@ -48,43 +84,112 @@ const HudComponents = {
       m.textAlign = 'left';
       m.textBaseline = 'top';
 
-      // Nombre de la curva
-      m.font = '800 ' + Math.round(r * 0.115) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-      m.fillStyle = '#ffffff';
-      const cornerName = nextCorner ? nextCorner.name.toUpperCase() : (maxK > 0.005 ? 'CURVA' : 'RECTA');
-      m.fillText(cornerName, Math.round(r * 0.14), Math.round(r * 0.08));
+      // 1. Etiqueta de encabezado superior (no solapada)
+      m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      m.fillText(inCorner ? 'EN CURVA' : 'PRÓXIMA CURVA', padX, Math.round(r * 0.075));
 
-      // Indicador de severidad / radio
-      if (nextCorner && minNextDist < 12 && minNextDist > -12) {
-        const isRight = nextCorner.k >= 0;
-        const radius = Math.round(nextCorner.R || (maxK > 0 ? 1 / maxK : 60));
+      // 2. Nombre prominente de la curva (línea intermedia)
+      let cornerName = 'RECTA';
+      let nameColor = '#ffffff';
+      if (inCorner) {
+        cornerName = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA';
+        nameColor = '#facc15';
+      } else if (nextCorner) {
+        cornerName = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE';
+        nameColor = '#38bdf8';
+      } else if (maxK > 0.005) {
+        cornerName = 'CURVA ADELANTE';
+        nameColor = 'rgba(255, 255, 255, 0.9)';
+      }
+      m.font = '800 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = nameColor;
+      m.fillText(cornerName, padX, Math.round(r * 0.180));
+
+      // 3. Indicador de severidad / radio / distancia (línea inferior)
+      if (inCorner) {
+        const isRight = inCorner.ang !== undefined ? inCorner.ang > 0 : (inCorner.k >= 0);
+        const radius = Math.round(inCorner.R || (maxK > 0 ? 1 / maxK : 60));
         const arrow = isRight ? '⤹ R' : '⤸ L';
         const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
         m.fillStyle = badgeColor;
-        m.font = '700 ' + Math.round(r * 0.108) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillText(arrow + ' EN EL ÁPICE (' + radius + 'm)', Math.round(r * 0.14), Math.round(r * 0.21));
+        m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillText(arrow + ' ÁPICE · R ' + radius + 'm', padX, Math.round(r * 0.320));
       } else if (nextCorner || maxK > 0.004) {
-        const isRight = nextCorner ? (nextCorner.k >= 0) : (apexK > 0);
+        const isRight = nextCorner ? (nextCorner.ang !== undefined ? nextCorner.ang > 0 : nextCorner.k >= 0) : (apexK > 0);
         const radius = Math.round(nextCorner ? (nextCorner.R || (maxK > 0 ? 1 / maxK : 60)) : (1 / maxK));
         const distM = nextCorner ? Math.round(minNextDist) : apexDist;
         const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
         const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
         m.fillStyle = badgeColor;
-        m.font = '700 ' + Math.round(r * 0.108) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillText(arrow + ' ' + distM + 'm (' + radius + 'm)', Math.round(r * 0.14), Math.round(r * 0.21));
+        m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillText(arrow + ' EN ' + distM + 'm (R ' + radius + 'm)', padX, Math.round(r * 0.320));
       } else {
-        m.fillStyle = 'rgba(255, 255, 255, 0.40)';
-        m.font = '600 ' + Math.round(r * 0.102) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillText('GAS A FONDO', Math.round(r * 0.14), Math.round(r * 0.21));
+        m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        m.font = '600 ' + Math.round(r * 0.095) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillText('GAS A FONDO', padX, Math.round(r * 0.320));
       }
     }
   },
 
   /**
-   * Componente 2: Torre de Clasificación F1 (Sección Central del HUD Lateral)
+   * Componente 2: Cronometraje y Tiempos de Vuelta (Sección 2 del HUD Lateral)
+   * Altura nominal: yS1 a yS2
+   */
+  LapTelemetry: {
+    draw(m, r, Hh, W, yStart, lapData = {}) {
+      const padX = Math.round(r * 0.14);
+      m.textAlign = 'left';
+      m.textBaseline = 'top';
+
+      // Encabezado de sección
+      m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      m.fillText('TIEMPOS DE VUELTA', padX, yStart + Math.round(r * 0.075));
+
+      const lapNumber = (lapData.lapCount !== undefined) ? (lapData.lapCount + 1) : 1;
+      m.textAlign = 'right';
+      m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = '#ff5a36';
+      m.fillText('VUELTA ' + lapNumber, W - padX, yStart + Math.round(r * 0.075));
+
+      // Filas de cronometraje perfectamente espaciadas
+      const rowStep = Math.round(r * 0.105);
+      const rowY0 = yStart + Math.round(r * 0.175);
+
+      const rows = [
+        { label: 'VUELTA', time: lapData.curTime, col: '#ffffff' },
+        { label: 'ÚLTIMA', time: lapData.lastTime, col: 'rgba(255, 255, 255, 0.85)' },
+        { label: 'MEJOR',  time: lapData.bestTime, col: '#c084fc' }
+      ];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const ry = rowY0 + i * rowStep;
+
+        // Etiqueta a la izquierda
+        m.textAlign = 'left';
+        m.font = '700 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillStyle = 'rgba(255, 255, 255, 0.50)';
+        m.fillText(row.label, padX, ry);
+
+        // Tiempo numérico formateado a la derecha
+        m.textAlign = 'right';
+        m.font = '800 ' + Math.round(r * 0.092) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillStyle = row.col;
+        const timeStr = HudComponents.formatLapTime(row.time);
+        m.fillText(timeStr, W - padX, ry);
+      }
+    }
+  },
+
+  /**
+   * Componente 3: Torre de Clasificación F1 (Sección 3 del HUD Lateral)
+   * Altura nominal: yS2 a yS3
    */
   TimingTower: {
-    draw(m, r, Hh, W, yS1, trk, pProg, rivals = [], carShortName = 'GT3') {
+    draw(m, r, Hh, W, yStart, trk, pProg, rivals = [], carShortName = 'GT3') {
+      const padX = Math.round(r * 0.14);
       const allCars = [
         { name: `TÚ (${carShortName})`, prog: pProg, isPlayer: true, col: '#ff5a36' }
       ];
@@ -103,22 +208,23 @@ const HudComponents = {
       const leaderProg = allCars[0].prog;
       const refSpeed = Math.max(15, (typeof VEH !== 'undefined' && VEH.speed > 5) ? VEH.speed : 30);
 
-      // Badge grande de posición (P1..P4)
-      const posBadgeX = W - Math.round(r * 0.14);
-      const posBadgeY = yS1 + Math.round(r * 0.14);
-      m.textAlign = 'right';
-      m.textBaseline = 'top';
-      m.font = '800 ' + Math.round(r * 0.17) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-      m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
-      m.fillText('P' + playerPos, posBadgeX, posBadgeY);
-
-      // Filas de clasificación estilo F1 Timing Tower
-      const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
-      const rowStartY = yS1 + Math.round(r * 0.08);
-      const rowStepY = Math.round(r * 0.105);
-
+      // Encabezado de sección
       m.textAlign = 'left';
       m.textBaseline = 'top';
+      m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      m.fillText('POSICIÓN EN CARRERA', padX, yStart + Math.round(r * 0.075));
+
+      // Badge de posición grande a la derecha (P1..P4)
+      m.textAlign = 'right';
+      m.font = '800 ' + Math.round(r * 0.135) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
+      m.fillText('P' + playerPos, W - padX, yStart + Math.round(r * 0.045));
+
+      // Filas de clasificación estilo F1 Timing Tower (inician DEBAJO del encabezado)
+      const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
+      const rowStartY = yStart + Math.round(r * 0.185);
+      const rowStepY = Math.round(r * 0.098);
 
       for (let i = 0; i < allCars.length; i++) {
         const cObj = allCars[i];
@@ -128,54 +234,93 @@ const HudComponents = {
         const gapSec = (gapM / refSpeed).toFixed(1);
 
         // Posición
-        m.font = '800 ' + Math.round(r * 0.085) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.textAlign = 'left';
+        m.font = '800 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         m.fillStyle = posColors[i] || '#ffffff';
-        m.fillText(String(i + 1), Math.round(r * 0.14), rowY);
+        m.fillText(String(i + 1), padX, rowY);
 
         // Nombre
-        m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.085) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         m.fillStyle = cObj.isPlayer ? '#ff5a36' : '#ffffff';
-        m.fillText(cObj.name, Math.round(r * 0.28), rowY);
+        m.fillText(cObj.name, padX + Math.round(r * 0.14), rowY);
 
         // Delta
-        m.font = '700 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.textAlign = 'right';
+        m.font = '700 ' + Math.round(r * 0.080) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         if (isLead) {
           m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-          m.fillText('LÍDER', Math.round(r * 1.34), rowY);
+          m.fillText('LÍDER', W - padX, rowY);
         } else {
           m.fillStyle = cObj.isPlayer ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
-          m.fillText('+' + gapSec + 's', Math.round(r * 1.34), rowY);
+          m.fillText('+' + gapSec + 's', W - padX, rowY);
         }
       }
     }
   },
 
   /**
-   * Componente 3: Minimapa del Circuito (Sección Inferior del HUD Lateral)
+   * Componente 4: Minimapa del Circuito (Sección 4 del HUD Lateral)
+   * Altura nominal: yS3 a Hh
    */
   Minimap: {
-    draw(m, r, Hh, W, mapTrans, playerPos, rivals = [], vehTime = 0, lapProgressStr = '') {
+    draw(m, r, Hh, W, p5, p6, p7, p8, p9, p10, p11) {
+      let yStart = 0, mapTrans, playerPos, rivals = [], vehTime = 0, trackName = '', lapProgressStr = '';
+      if (typeof p5 === 'number') {
+        yStart = p5;
+        mapTrans = p6;
+        playerPos = p7;
+        rivals = p8 || [];
+        vehTime = p9 || 0;
+        trackName = p10 || '';
+        lapProgressStr = p11 || '';
+      } else {
+        mapTrans = p5;
+        playerPos = p6;
+        rivals = p7 || [];
+        vehTime = p8 || 0;
+        lapProgressStr = p9 || '';
+      }
+
+      const padX = Math.round(r * 0.14);
+      m.textAlign = 'left';
+      m.textBaseline = 'top';
+
+      // Encabezado
+      m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      m.fillText('CIRCUITO', padX, yStart + Math.round(r * 0.075));
+
+      if (trackName) {
+        m.textAlign = 'right';
+        m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        m.fillText(trackName.toUpperCase(), W - padX, yStart + Math.round(r * 0.075));
+      }
+
+      if (!mapTrans) return;
       const cX = mapTrans[0], cZ = mapTrans[1];
       const midTrackX = mapTrans[2], midTrackZ = mapTrans[3];
       const scale = mapTrans[4];
 
       // Punto del jugador (pulsante)
-      const px = cX + (playerPos[0] - midTrackX) * scale;
-      const py = cZ + (playerPos[2] - midTrackZ) * scale;
-      const pulse = 0.5 + 0.5 * Math.sin(vehTime * 6.0);
+      if (playerPos) {
+        const px = cX + (playerPos[0] - midTrackX) * scale;
+        const py = cZ + (playerPos[2] - midTrackZ) * scale;
+        const pulse = 0.5 + 0.5 * Math.sin(vehTime * 6.0);
 
-      m.beginPath();
-      m.arc(px, py, r * (0.052 + pulse * 0.02), 0, Math.PI * 2);
-      m.fillStyle = 'rgba(255, 90, 54, 0.38)';
-      m.fill();
+        m.beginPath();
+        m.arc(px, py, r * (0.052 + pulse * 0.02), 0, Math.PI * 2);
+        m.fillStyle = 'rgba(255, 90, 54, 0.38)';
+        m.fill();
 
-      m.beginPath();
-      m.arc(px, py, Math.max(2, r * 0.038), 0, Math.PI * 2);
-      m.fillStyle = '#ff5a36';
-      m.fill();
-      m.lineWidth = Math.max(1, r * 0.012);
-      m.strokeStyle = '#ffffff';
-      m.stroke();
+        m.beginPath();
+        m.arc(px, py, Math.max(2, r * 0.038), 0, Math.PI * 2);
+        m.fillStyle = '#ff5a36';
+        m.fill();
+        m.lineWidth = Math.max(1, r * 0.012);
+        m.strokeStyle = '#ffffff';
+        m.stroke();
+      }
 
       // Puntos de los rivales
       for (let i = 0; i < rivals.length; i++) {
@@ -194,17 +339,17 @@ const HudComponents = {
 
       // Distancia de vuelta en la base
       if (lapProgressStr) {
-        m.font = '600 ' + Math.round(r * 0.09) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.font = '600 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         m.fillStyle = 'rgba(255, 255, 255, 0.55)';
         m.textAlign = 'right';
         m.textBaseline = 'bottom';
-        m.fillText(lapProgressStr, W - Math.round(r * 0.14), Hh - Math.round(r * 0.08));
+        m.fillText(lapProgressStr, W - padX, Hh - Math.round(r * 0.08));
       }
     }
   },
 
   /**
-   * Componente 4: Semáforo Oficial FIA (5 focos + viseras parasol)
+   * Componente 5: Semáforo Oficial FIA (5 focos + viseras parasol)
    */
   StartLights: {
     draw(ctx, clights, raceStart) {

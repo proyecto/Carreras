@@ -106,7 +106,13 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
 
 // 4. HudComponents (Component Pattern)
 {
+  testAssert(typeof HudComponents.formatLapTime === 'function', 'formatLapTime helper existe');
+  testAssert(HudComponents.formatLapTime(-1) === '-:--.--', 'formatLapTime maneja tiempo ausente (-:--.--)');
+  testAssert(HudComponents.formatLapTime(173.02) === '2:53.02', 'formatLapTime formatea 2:53.02 correctamente');
+  testAssert(HudComponents.formatLapTime(0) === '0:00.00', 'formatLapTime formatea 0:00.00 correctamente');
+
   testAssert(typeof HudComponents.CornerAdvisory.draw === 'function', 'CornerAdvisory.draw existe');
+  testAssert(typeof HudComponents.LapTelemetry.draw === 'function', 'LapTelemetry.draw existe');
   testAssert(typeof HudComponents.TimingTower.draw === 'function', 'TimingTower.draw existe');
   testAssert(typeof HudComponents.Minimap.draw === 'function', 'Minimap.draw existe');
   testAssert(typeof HudComponents.StartLights.draw === 'function', 'StartLights.draw existe');
@@ -126,9 +132,10 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
 
   let drawThrew = false;
   try {
-    HudComponents.CornerAdvisory.draw(mockCtx, 100, 300, 180, mockTrk, 25);
-    HudComponents.TimingTower.draw(mockCtx, 100, 300, 180, 80, mockTrk, 120, [], 'GT3');
-    HudComponents.Minimap.draw(mockCtx, 100, 300, 180, [90, 200, 0, 0, 0.2], [10, 0, 20], [], 5, '0.5 / 5.0 km');
+    HudComponents.CornerAdvisory.draw(mockCtx, 100, 500, 250, mockTrk, 25);
+    HudComponents.LapTelemetry.draw(mockCtx, 100, 500, 250, 46, { curTime: 45.2, lastTime: 92.1, bestTime: 91.5, lapCount: 2 });
+    HudComponents.TimingTower.draw(mockCtx, 100, 500, 250, 98, mockTrk, 120, [], 'GT3');
+    HudComponents.Minimap.draw(mockCtx, 100, 500, 250, 162, [125, 300, 0, 0, 0.2], [10, 0, 20], [], 5, 'Nürburgring GP', '0.5 / 5.0 km');
     HudComponents.StartLights.draw(mockCtx, { width: 400, height: 100, style: {} }, { active: true, state: 'countdown', lightsCount: 3 });
   } catch (err) {
     drawThrew = true;
