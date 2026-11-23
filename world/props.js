@@ -2,326 +2,30 @@
 // ---- 32_props.js
 // Elementos de pista: guardarraíles, barreras de neumáticos, muros, vallas, semáforo de salida, gradas, boxes, torre,
 // puestos de comisarios, señalización, paneles de patrocinio y paddock.
-const PROPS = { sets: [], regions: {} };
+const PROPS = (typeof window !== 'undefined' && window.PROPS) || { sets: [], regions: {} };
+if (typeof window !== 'undefined') window.PROPS = PROPS;
 
-// ---------- letras desenhadas por caminhos (retas + curvas de Bézier) numa caixa 4x6; traço grosso de ponta redonda ----------
-const GLY = {
-  A: 'M0,0L2,6L4,0M.8,2L3.2,2', B: 'M0,0L0,6L2.2,6C4.2,6 4.2,3.2 2.2,3.2L0,3.2M2.2,3.2C4.7,3.2 4.7,0 2.2,0L0,0', C: 'M4,4.6C3.4,6.4 0,6.6 0,3C0,-.6 3.4,-.4 4,1.4',
-  D: 'M0,0L0,6L1.6,6C5,6 5,0 1.6,0L0,0', E: 'M4,6L0,6L0,0L4,0M0,3.1L3.2,3.1', F: 'M4,6L0,6L0,0M0,3.1L3.2,3.1', G: 'M4,4.6C3.4,6.4 0,6.6 0,3C0,-.6 3.6,-.5 4,1.2L4,2.8L2.2,2.8',
-  H: 'M0,0L0,6M4,0L4,6M0,3.1L4,3.1', I: 'M1.1,0L1.1,6M0,0L2.2,0M0,6L2.2,6', J: 'M3.6,6L3.6,1.8C3.6,-.6 .2,-.6 .2,1.6', K: 'M0,0L0,6M4,6L0,2.4M1.5,3.7L4,0', L: 'M0,6L0,0L3.8,0',
-  M: 'M0,0L0,6L2.35,2.2L4.7,6L4.7,0', N: 'M0,0L0,6L4,0L4,6', O: 'M2,6C-.7,6 -.7,0 2,0C4.7,0 4.7,6 2,6Z', P: 'M0,0L0,6L2.2,6C4.6,6 4.6,2.8 2.2,2.8L0,2.8',
-  Q: 'M2,6C-.7,6 -.7,0 2,0C4.7,0 4.7,6 2,6ZM2.6,1.4L4.2,-.4', R: 'M0,0L0,6L2.2,6C4.6,6 4.6,2.8 2.2,2.8L0,2.8M2.2,2.8L4,0', S: 'M3.8,4.8C3.4,6.4 .2,6.5 .2,4.5C.2,2.6 3.9,3.5 3.9,1.5C3.9,-.6 .4,-.4 0,1.3',
-  T: 'M0,6L4,6M2,6L2,0', U: 'M0,6L0,2C0,-.7 4,-.7 4,2L4,6', V: 'M0,6L2,0L4,6', W: 'M0,6L1.25,0L2.5,4.2L3.75,0L5,6', X: 'M0,0L4,6M0,6L4,0', Y: 'M0,6L2,3L4,6M2,3L2,0', Z: 'M0,6L4,6L0,0L4,0',
-  0: 'M2,6C-.4,6 -.4,0 2,0C4.4,0 4.4,6 2,6Z', 1: 'M.1,4.6L1.5,6L1.5,0M.1,0L2.9,0', 2: 'M.2,4.6C.4,6.6 3.9,6.5 3.9,4.4C3.9,2.8 .2,1.6 .1,0L4,0',
-  3: 'M.2,5C.8,6.5 3.8,6.5 3.8,4.6C3.8,3.3 2.6,3.2 1.6,3.2C2.8,3.2 4,3 4,1.6C4,-.5 .6,-.5 0,1.2', 4: 'M3,0L3,6L0,1.8L4.2,1.8', 5: 'M3.8,6L.5,6L.3,3.4C1.6,4.2 4,3.9 4,1.8C4,-.5 .6,-.5 0,1.1',
-  6: 'M3.6,5.4C2.6,6.6 .1,6.2 .1,2.8C.1,-.7 4,-.6 4,1.9C4,4.2 .6,4.2 .1,2.4', 7: 'M0,6L4,6L1.4,0', 8: 'M2,3.2C-.2,3.2 -.2,6 2,6C4.2,6 4.2,3.2 2,3.2C-.6,3.2 -.6,0 2,0C4.6,0 4.6,3.2 2,3.2Z',
-  9: 'M.4,.6C1.4,-.6 3.9,-.2 3.9,3.2C3.9,6.7 0,6.6 0,4.1C0,1.8 3.4,1.8 3.9,3.6', '-': 'M.2,2.8L2.6,2.8', '.': 'M.55,.05L.65,.05',
-};
-// Fuente proporcional con interletraje
-const GWID = { I: 2.2, 1: 3.0, ' ': 1.9, '-': 2.8, '.': 1.2, J: 3.7, L: 3.8, M: 4.7, W: 5.0, E: 3.9, F: 3.8, T: 4.0, C: 4.0, S: 3.95 };
-const gAdv = ch => (GWID[ch] === undefined ? 4.1 : GWID[ch]) + 1.05;
-function textW(txt, h) { let w = 0; for (const ch of txt) w += gAdv(ch); return (w - 1.05) * h / 6; }
-function strokeText(g, txt, x, y, h, color, weight, skew) {
-  const u = h / 6; g.save(); g.translate(x, y + h); if (skew) g.transform(1, 0, -skew, 1, 0, 0);
-  g.strokeStyle = color; g.lineWidth = u * (weight || 1.0); g.lineCap = 'round'; g.lineJoin = 'round';
-  let cx = 0;
-  for (const ch of txt) {
-    const gl = GLY[ch];
-    if (gl) {
-      g.beginPath();
-      for (const m of gl.matchAll(/([MLCZ])([^MLCZ]*)/g)) {
-        const n = m[2].trim().split(/[ ,]+/).filter(t => t.length).map(Number), X = k => cx + n[k] * u, Y = k => -n[k] * u;
-        if (m[1] === 'M') g.moveTo(X(0), Y(1)); else if (m[1] === 'L') g.lineTo(X(0), Y(1)); else if (m[1] === 'C') g.bezierCurveTo(X(0), Y(1), X(2), Y(3), X(4), Y(5)); else g.closePath();
-      }
-      g.stroke();
-    }
-    cx += u * gAdv(ch);
-  }
-  g.restore();
-}
-// Figuras humanas en el atlas para público y comisarios
-// Canales: sombreado, máscara de vestimenta y recorte
-// Filtrado anti-aliasing con bordes limpios sin halos
-// kind 0 = sentada (160x224), kind 1 = em pé (104x288). Coordenadas lógicas; o canvas está em escala 2x.
-// ---------- gente pintada: figura humana desenhada por caminhos (curvas de Bézier, gradientes, sombras) ----------
-// Canais do desenho: R = sombreamento pintado (claro/escuro) | G = máscara da roupa de cima (recebe a tinta da instância)
-// | B = máscara de cabelo/calça/sapato. Pele: G = B = 0. kind 0 = sentada (vista de frente, cortada no colo), 1 = em pé.
-function personSprite(g, ox, oy, W, H, kind, rnd) {
-  const C = (r, m) => `rgb(${r | 0},${m === 1 ? 255 : 0},${m === 2 ? 255 : 0})`, CA = (r, m, a) => `rgba(${r | 0},${m === 1 ? 255 : 0},${m === 2 ? 255 : 0},${a})`;
-  const grad = (x0, y0, x1, y1, r0, r1, m) => { const q = g.createLinearGradient(x0, y0, x1, y1); q.addColorStop(0, C(r0, m)); q.addColorStop(1, C(r1, m)); return q; };
-  g.lineCap = 'round'; g.lineJoin = 'round'; g.globalCompositeOperation = 'source-over';
-  const fem = rnd() < 0.42, u = (kind ? 35 : 31) * (0.93 + rnd() * 0.14), big = 0.9 + rnd() * 0.26;
-  const cx = ox + W / 2 + (rnd() - 0.5) * 6, lean = (rnd() - 0.5) * (kind ? 3 : 9), look = (rnd() - 0.5) * 0.9;
-  const ty = oy + (kind ? 10 : 16) + rnd() * 8, hx = cx + lean, hy = ty + u * 0.5, rx = u * 0.36, ry = u * 0.5;
-  const sy = ty + u * 1.2, shw = u * (fem ? 0.84 : 1.0) * big, wy = sy + u * 1.7, ww = shw * (fem ? 0.74 : 0.9), hipY = wy + u * 0.38, hipW = shw * (fem ? 0.98 : 0.92);
-  const sx = cx + lean * 0.45;                                    // eixo do tronco (inclina menos que a cabeça)
-  const sleeve = rnd() < 0.45 ? 0 : 1, pose = rnd();              // manga curta/comprida; pose dos braços
-  // ---- pernas ----
-  if (kind) {
-    const footY = oy + H - 8, kneeY = hipY + (footY - hipY) * 0.5;
-    for (const sd of [-1, 1]) {
-      const lx = sx + sd * hipW * 0.5, fx = lx + sd * (2 + rnd() * 3);
-      g.fillStyle = grad(0, hipY, 0, footY, 150, 78, 2); g.beginPath(); g.moveTo(lx - hipW * 0.5, hipY - 4); g.bezierCurveTo(lx - hipW * 0.5, kneeY, fx - u * 0.2, kneeY, fx - u * 0.17, footY - 6);
-      g.lineTo(fx + u * 0.17, footY - 6); g.bezierCurveTo(fx + u * 0.22, kneeY, lx + hipW * 0.5, kneeY, lx + hipW * 0.5, hipY - 4); g.closePath(); g.fill();
-      g.fillStyle = C(38, 2); g.beginPath(); g.ellipse(fx + sd * 2, footY - 3, u * 0.24, 6, 0, 0, TAU); g.fill();
-    }
-    g.strokeStyle = CA(60, 2, 0.5); g.lineWidth = 2; g.beginPath(); g.moveTo(sx, hipY + 6); g.lineTo(sx, hipY + u * 1.6); g.stroke();   // vão entre as pernas
-  } else {
-    const kY = Math.min(oy + H - 6, hipY + u * 0.95);
-    for (const sd of [-1, 1]) {
-      const kx = sx + sd * hipW * 0.62;
-      g.fillStyle = grad(0, hipY - 6, 0, kY, 165, 88, 2); g.beginPath(); g.moveTo(sx - sd * 2, hipY - 8); g.lineTo(sx + sd * hipW * 1.02, hipY - 8);
-      g.bezierCurveTo(sx + sd * hipW * 1.1, hipY + u * 0.5, kx + sd * u * 0.32, kY, kx, kY); g.bezierCurveTo(kx - sd * u * 0.34, kY, sx - sd * 3, hipY + u * 0.5, sx - sd * 2, hipY - 8); g.closePath(); g.fill();
-      const kg = g.createRadialGradient(kx, kY - u * 0.3, 1, kx, kY - u * 0.3, u * 0.36); kg.addColorStop(0, CA(205, 2, 0.75)); kg.addColorStop(1, CA(205, 2, 0)); g.fillStyle = kg; g.beginPath(); g.arc(kx, kY - u * 0.3, u * 0.36, 0, TAU); g.fill();   // joelho pegando luz
-    }
-  }
-  // ---- tronco: trapézio do pescoço, ombros caídos, cintura ----
-  const torso = () => {
-    g.beginPath(); g.moveTo(sx - u * 0.2, sy - u * 0.12); g.bezierCurveTo(sx - shw * 0.55, sy - u * 0.08, sx - shw * 0.95, sy + u * 0.02, sx - shw, sy + u * 0.24);
-    g.bezierCurveTo(sx - shw * 1.02, sy + u * 0.9, sx - ww, wy - u * 0.3, sx - ww, wy); g.bezierCurveTo(sx - ww, wy + u * 0.2, sx - hipW, hipY - u * 0.1, sx - hipW, hipY);
-    g.lineTo(sx + hipW, hipY); g.bezierCurveTo(sx + hipW, hipY - u * 0.1, sx + ww, wy + u * 0.2, sx + ww, wy); g.bezierCurveTo(sx + ww, wy - u * 0.3, sx + shw * 1.02, sy + u * 0.9, sx + shw, sy + u * 0.24);
-    g.bezierCurveTo(sx + shw * 0.95, sy + u * 0.02, sx + shw * 0.55, sy - u * 0.08, sx + u * 0.2, sy - u * 0.12); g.closePath();
-  };
-  g.fillStyle = grad(0, sy - u * 0.1, 0, hipY, 238, 138, 1); torso(); g.fill();
-  g.save(); torso(); g.clip();
-  // volume: laterais mais escuras, sombra sob o peito/barriga, dobras do tecido
-  for (const sd of [-1, 1]) { const q = g.createLinearGradient(sx + sd * shw * 1.02, 0, sx + sd * shw * 0.35, 0); q.addColorStop(0, CA(70, 1, 0.6)); q.addColorStop(1, CA(70, 1, 0)); g.fillStyle = q; g.fillRect(sx + (sd < 0 ? -shw * 1.1 : shw * 0.3), sy - u * 0.2, shw * 0.8, hipY - sy + u * 0.3); }
-  { const q = g.createLinearGradient(0, wy - u * 0.5, 0, hipY); q.addColorStop(0, CA(80, 1, 0)); q.addColorStop(1, CA(80, 1, 0.45)); g.fillStyle = q; g.fillRect(sx - shw * 1.1, wy - u * 0.5, shw * 2.2, hipY - wy + u * 0.5); }
-  g.lineWidth = 2.2; for (let k = 0; k < 5; k++) {
-    const fy = sy + u * (0.5 + rnd() * 1.4), fx = sx + (rnd() - 0.5) * shw * 1.3, fl = u * (0.25 + rnd() * 0.35), sg = rnd() < 0.5 ? -1 : 1;
-    g.strokeStyle = CA(95, 1, 0.3); g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + sg * fl * 0.5, fy + fl * 0.5, fx + sg * fl, fy + fl * 0.25); g.stroke();
-    g.strokeStyle = CA(250, 1, 0.22); g.beginPath(); g.moveTo(fx, fy - 2.5); g.quadraticCurveTo(fx + sg * fl * 0.5, fy + fl * 0.5 - 2.5, fx + sg * fl, fy + fl * 0.25 - 2.5); g.stroke();
-  }
-  if (rnd() < 0.3) { g.strokeStyle = CA(105, 1, 0.5); g.lineWidth = 1.6; g.beginPath(); g.moveTo(sx, sy + u * 0.1); g.lineTo(sx + lean * 0.1, hipY); g.stroke(); }      // abertura de jaqueta/camisa
-  g.restore();
-  // decote/gola: pele em V ou redondo, ou gola polo clara
-  const neckT = rnd();
-  g.fillStyle = C(178, 0); g.beginPath(); if (neckT < 0.45) { g.moveTo(sx - u * 0.19, sy - u * 0.13); g.lineTo(sx, sy + u * (0.12 + rnd() * 0.2)); g.lineTo(sx + u * 0.19, sy - u * 0.13); } else g.ellipse(sx, sy - u * 0.1, u * 0.2, u * 0.12, 0, 0, PI); g.fill();
-  if (neckT > 0.75) { g.strokeStyle = C(250, 1); g.lineWidth = 3; g.beginPath(); g.moveTo(sx - u * 0.24, sy - u * 0.14); g.lineTo(sx - u * 0.06, sy + u * 0.1); g.moveTo(sx + u * 0.24, sy - u * 0.14); g.lineTo(sx + u * 0.06, sy + u * 0.1); g.stroke(); }
-  // ---- braços: braço (manga) + antebraço + mão, em poses variadas ----
-  const limb = (x0, y0, x1, y1, w0, w1, r0, r1, m) => {
-    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
-    g.fillStyle = grad(x0, y0, x1, y1, r0, r1, m); g.beginPath(); g.moveTo(x0 + nx * w0, y0 + ny * w0); g.lineTo(x1 + nx * w1, y1 + ny * w1); g.arc(x1, y1, w1, Math.atan2(ny, nx), Math.atan2(-ny, -nx), dx * ny - dy * nx > 0);
-    g.lineTo(x0 - nx * w0, y0 - ny * w0); g.arc(x0, y0, w0, Math.atan2(-ny, -nx), Math.atan2(ny, nx), dx * ny - dy * nx > 0); g.closePath(); g.fill();
-    g.strokeStyle = CA(60, m, 0.35); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0 - nx * w0, y0 - ny * w0); g.lineTo(x1 - nx * w1, y1 - ny * w1); g.stroke();
-  };
-  const aw = u * (fem ? 0.14 : 0.17) * big, raise = !kind && pose > 0.86 ? (rnd() < 0.5 ? -1 : 1) : 0, crossed = pose < 0.2, hips = kind && pose > 0.55 && pose < 0.75;
-  for (const sd of [-1, 1]) {
-    const ax = sx + sd * (shw - aw * 0.7), ay = sy + u * 0.3; let ex, ey, fx, fy;
-    if (raise === sd) { ex = ax + sd * u * 0.42; ey = ay - u * 0.55; fx = ex + sd * u * 0.1; fy = ey - u * 0.85; }
-    else if (crossed) { ex = ax + sd * u * 0.08; ey = ay + u * 0.95; fx = sx - sd * shw * 0.35; fy = ey - u * 0.12 + sd * 3; }
-    else if (hips) { ex = ax + sd * u * 0.42; ey = ay + u * 0.8; fx = sx + sd * ww * 0.95; fy = wy + u * 0.15; }
-    else if (kind) { ex = ax + sd * u * 0.1; ey = ay + u * 0.98; fx = ex - sd * u * 0.02; fy = ey + u * 0.88; }
-    else if (pose > 0.6) { ex = ax + sd * u * 0.12; ey = ay + u * 0.92; fx = sx + sd * u * 0.12; fy = sy + u * (0.9 + rnd() * 0.3); }            // mãos juntas no peito (celular, copo)
-    else { ex = ax + sd * u * 0.1; ey = ay + u * 0.95; fx = sx + sd * hipW * (0.35 + rnd() * 0.3); fy = hipY + u * (0.25 + rnd() * 0.2); }        // mãos no colo
-    const mx = sleeve ? ex : ax + (ex - ax) * 0.55, my = sleeve ? ey : ay + (ey - ay) * 0.55;
-    limb(ax, ay, mx, my, aw * 1.12, aw, 225, 150, 1);
-    if (!sleeve) limb(mx, my, ex, ey, aw * 0.86, aw * 0.8, 215, 170, 0);
-    limb(ex, ey, fx, fy, aw * (sleeve ? 0.95 : 0.78), aw * (sleeve ? 0.8 : 0.66), sleeve ? 205 : 210, sleeve ? 150 : 172, sleeve ? 1 : 0);
-    g.fillStyle = C(205, 0); g.beginPath(); g.ellipse(fx + (fx - ex) * 0.12, fy + (fy - ey) * 0.12, aw * 0.78, aw * 0.95, Math.atan2(fy - ey, fx - ex) + PI / 2, 0, TAU); g.fill();   // mão
-  }
-  // ---- pescoço e cabeça ----
-  g.fillStyle = grad(0, hy + ry * 0.5, 0, sy, 150, 190, 0); g.beginPath(); g.moveTo(hx - u * 0.17, hy + ry * 0.55); g.lineTo(sx - u * 0.19, sy - u * 0.08); g.lineTo(sx + u * 0.19, sy - u * 0.08); g.lineTo(hx + u * 0.17, hy + ry * 0.55); g.closePath(); g.fill();
-  g.fillStyle = CA(95, 0, 0.6); g.beginPath(); g.ellipse(hx, hy + ry * 0.92, u * 0.19, u * 0.1, 0, 0, TAU); g.fill();        // sombra do queixo no pescoço
-  // orelhas, crânio oval com queixo mais estreito
-  g.fillStyle = C(185, 0); for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(hx + sd * rx * 0.98 - look * 2, hy + ry * 0.08, rx * 0.16, ry * 0.2, 0, 0, TAU); g.fill(); }
-  const hg = g.createRadialGradient(hx - rx * 0.3 + look * 3, hy - ry * 0.35, 1, hx, hy, ry * 1.25); hg.addColorStop(0, C(246, 0)); hg.addColorStop(0.65, C(205, 0)); hg.addColorStop(1, C(150, 0));
-  const skull = () => {
-    g.beginPath(); g.moveTo(hx, hy - ry); g.bezierCurveTo(hx + rx * 1.1, hy - ry, hx + rx * 1.12, hy + ry * 0.1, hx + rx * 0.82, hy + ry * 0.55); g.bezierCurveTo(hx + rx * 0.55, hy + ry * 1.0, hx - rx * 0.55, hy + ry * 1.0, hx - rx * 0.82, hy + ry * 0.55);
-    g.bezierCurveTo(hx - rx * 1.12, hy + ry * 0.1, hx - rx * 1.1, hy - ry, hx, hy - ry); g.closePath();
-  };
-  g.fillStyle = hg; skull(); g.fill();
-  // rosto sugerido (deslocado conforme o olhar): órbitas sombreadas, sobrancelhas, nariz e boca discretos
-  const fxo = look * rx * 0.3, ey0 = hy - ry * 0.02;
-  g.save(); skull(); g.clip();
-  g.fillStyle = CA(120, 0, 0.42); for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(hx + fxo + sd * rx * 0.42, ey0, rx * 0.26, ry * 0.11, 0, 0, TAU); g.fill(); }
-  g.fillStyle = CA(40, 0, 0.75); for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(hx + fxo + sd * rx * 0.42, ey0 + 0.5, rx * 0.13, ry * 0.05, 0, 0, TAU); g.fill(); }
-  g.strokeStyle = CA(70, 0, 0.6); g.lineWidth = 1.5; for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(hx + fxo + sd * rx * 0.2, ey0 - ry * 0.16); g.lineTo(hx + fxo + sd * rx * 0.66, ey0 - ry * 0.18); g.stroke(); }
-  g.strokeStyle = CA(120, 0, 0.5); g.lineWidth = 1.6; g.beginPath(); g.moveTo(hx + fxo * 1.3 + rx * 0.06, ey0 + ry * 0.05); g.lineTo(hx + fxo * 1.5 + rx * 0.1, ey0 + ry * 0.36); g.lineTo(hx + fxo * 1.3 - rx * 0.06, ey0 + ry * 0.38); g.stroke();
-  g.strokeStyle = CA(105, 0, 0.6); g.lineWidth = 1.7; g.beginPath(); g.moveTo(hx + fxo - rx * 0.26, hy + ry * 0.6); g.quadraticCurveTo(hx + fxo, hy + ry * (0.62 + rnd() * 0.08), hx + fxo + rx * 0.26, hy + ry * 0.6); g.stroke();
-  { const q = g.createLinearGradient(hx - rx, 0, hx + rx, 0); q.addColorStop(0, CA(90, 0, look > 0 ? 0.05 : 0.38)); q.addColorStop(0.5, CA(90, 0, 0)); q.addColorStop(1, CA(90, 0, look > 0 ? 0.38 : 0.05)); g.fillStyle = q; g.fillRect(hx - rx * 1.2, hy - ry, rx * 2.4, ry * 2); }
-  if (!fem && rnd() < 0.3) { g.fillStyle = CA(70, 2, 0.5); g.beginPath(); g.ellipse(hx + fxo, hy + ry * 0.72, rx * 0.62, ry * 0.3, 0, 0, PI); g.fill(); }                    // barba
-  g.restore();
-  // ---- cabelo / boné / chapéu ----
-  const hs = rnd(), hairTop = (lowY) => {
-    g.beginPath(); g.moveTo(hx - rx * 1.08, lowY); g.bezierCurveTo(hx - rx * 1.25, hy - ry * 1.0, hx - rx * 0.6, hy - ry * 1.22, hx, hy - ry * 1.18);
-    g.bezierCurveTo(hx + rx * 0.6, hy - ry * 1.22, hx + rx * 1.25, hy - ry * 1.0, hx + rx * 1.08, lowY);
-  };
-  const fr = hy - ry * (0.48 + rnd() * 0.2);
-  if (fem && hs < 0.7) {       // cabelo comprido caindo sobre os ombros (ou preso)
-    const len = hs < 0.45 ? sy + u * (0.2 + rnd() * 0.5) : hy + ry * 0.7;
-    g.fillStyle = grad(0, hy - ry, 0, len, 215, 110, 2); hairTop(hy); g.bezierCurveTo(hx + rx * 1.35, hy + ry, hx + rx * 1.2, len, hx + rx * 0.75, len); g.lineTo(hx + rx * 0.72, hy + ry * 0.2);
-    g.bezierCurveTo(hx + rx * 0.7, fr, hx - rx * 0.3 + fxo, fr - 4, hx - rx * 0.72, hy + ry * 0.2); g.lineTo(hx - rx * 0.75, len); g.bezierCurveTo(hx - rx * 1.2, len, hx - rx * 1.35, hy + ry, hx - rx * 1.08, hy); g.closePath(); g.fill();
-  } else if (hs < 0.62) {      // cabelo curto
-    g.fillStyle = grad(0, hy - ry * 1.2, 0, hy, 205, 120, 2); const sideY = hy + ry * (rnd() * 0.25 - 0.05); hairTop(sideY);
-    g.bezierCurveTo(hx + rx * 0.9, hy - ry * 0.3, hx + rx * 0.5 + fxo, fr, hx + fxo, fr + 2); g.bezierCurveTo(hx - rx * 0.5 + fxo, fr - 2, hx - rx * 0.9, hy - ry * 0.3, hx - rx * 1.08, sideY); g.closePath(); g.fill();
-  } else if (hs < 0.84) {      // boné (na cor da roupa ou escuro) com aba
-    const m = rnd() < 0.5 ? 1 : 2; g.fillStyle = grad(0, hy - ry * 1.2, 0, hy - ry * 0.3, 235, 150, m); hairTop(hy - ry * 0.38); g.closePath(); g.fill();
-    g.fillStyle = C(120, m); g.beginPath(); g.ellipse(hx + fxo * 2.5, hy - ry * 0.36, rx * 1.25, ry * 0.13, 0, 0, TAU); g.fill();
-    g.fillStyle = CA(70, 0, 0.45); g.beginPath(); g.ellipse(hx + fxo, hy - ry * 0.2, rx * 0.9, ry * 0.14, 0, 0, TAU); g.fill();                                              // sombra da aba no rosto
-  } else if (hs < 0.92) {      // chapéu de aba larga
-    g.fillStyle = grad(0, hy - ry * 1.3, 0, hy - ry * 0.4, 240, 170, 1); g.beginPath(); g.ellipse(hx, hy - ry * 0.5, rx * 1.9, ry * 0.2, 0, 0, TAU); g.fill(); hairTop(hy - ry * 0.5); g.closePath(); g.fill();
-    g.fillStyle = CA(70, 0, 0.5); g.beginPath(); g.ellipse(hx + fxo, hy - ry * 0.28, rx * 0.95, ry * 0.17, 0, 0, TAU); g.fill();
-  } else { g.fillStyle = CA(120, 2, 0.5); hairTop(hy - ry * 0.55); g.closePath(); g.fill(); }                                                                             // careca/raspado
-  if (rnd() < 0.18) { g.strokeStyle = C(30, 2); g.lineWidth = 2.6; g.beginPath(); for (const sd of [-1, 1]) { g.moveTo(hx + fxo + sd * rx * 0.2, ey0); g.lineTo(hx + fxo + sd * rx * 0.68, ey0); } g.stroke(); g.lineWidth = 1.2; g.beginPath(); g.moveTo(hx + fxo - rx * 0.2, ey0); g.lineTo(hx + fxo + rx * 0.2, ey0); g.stroke(); }   // óculos escuros
-}
-// desenha n figuras lado a lado e devolve os pixels (alfa reto) prontos para writeTexture
-function personStrip(n, kind, seed, pw, ph) {
-  const W = n * pw * 2, H = ph * 2, mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
-  const cm = mk(), gm = cm.getContext('2d'); gm.scale(2, 2);
-  const rnd = mkRng(seed); for (let i = 0; i < n; i++) { gm.save(); gm.beginPath(); gm.rect(i * pw + 2, 2, pw - 4, ph - 4); gm.clip(); personSprite(gm, i * pw, 0, pw, ph, kind, rnd); gm.restore(); }
-  // cor: a figura dilatada (cópias deslocadas) por baixo da figura nítida
-  const cc = mk(), gc = cc.getContext('2d');
-  for (const r of [10, 6, 3]) for (let a = 0; a < 8; a++) gc.drawImage(cm, Math.cos(a * PI / 4) * r, Math.sin(a * PI / 4) * r);
-  gc.drawImage(cm, 0, 0);
-  const col = gc.getImageData(0, 0, W, H).data, msk = gm.getImageData(0, 0, W, H).data, out = new Uint8Array(W * H * 4);
-  for (let i = 0; i < W * H; i++) { out[i * 4] = col[i * 4]; out[i * 4 + 1] = col[i * 4 + 1]; out[i * 4 + 2] = col[i * 4 + 2]; out[i * 4 + 3] = msk[i * 4 + 3]; }   // getImageData já devolve alfa reto
-  return { data: out, w: W, h: H };
-}
+// Funciones del Atlas delegadas a AtlasFactory para compatibilidad total
+const GLY = typeof AtlasFactory !== 'undefined' ? AtlasFactory.GLY : {};
+const GWID = typeof AtlasFactory !== 'undefined' ? AtlasFactory.GWID : {};
+const gAdv = typeof AtlasFactory !== 'undefined' ? AtlasFactory.gAdv : ch => 5;
+const textW = typeof AtlasFactory !== 'undefined' ? AtlasFactory.textW : () => 0;
+const strokeText = typeof AtlasFactory !== 'undefined' ? AtlasFactory.strokeText : () => {};
+const personSprite = typeof AtlasFactory !== 'undefined' ? AtlasFactory.personSprite : () => {};
+const personStrip = typeof AtlasFactory !== 'undefined' ? AtlasFactory.personStrip : () => ({ data: new Uint8Array(0), w: 0, h: 0 });
+
 function atlasBuild() {
-  // atlas de 4096x2048 (o desenho usa coordenadas lógicas de 2048x1024, em escala 2x: letreiros nítidos de perto)
-  const cv = document.createElement('canvas'); cv.width = 4096; cv.height = 2048; const g = cv.getContext('2d'); g.scale(2, 2);
-  g.fillStyle = '#888'; g.fillRect(0, 0, 2048, 1024);
-  const REG = PROPS.regions, reg = (name, x, y, w, h) => { REG[name] = [x / 2048, y / 1024, (x + w) / 2048, (y + h) / 1024]; };
-  const centered = (txt, x, y, w, h, th, color, weight, skew) => strokeText(g, txt, x + (w - textW(txt, th)) / 2, y + (h - th) / 2, th, color, weight, skew);
-  const isVegas = Boolean(typeof TRK !== 'undefined' && TRK.spec && (TRK.spec.id === 'las-vegas-strip' || TRK.spec.urban));
-  const trackId = (typeof TRK !== 'undefined' && TRK.spec && TRK.spec.id) || '';
-
-  // Nome do circuito
-  if (isVegas) {
-    g.fillStyle = '#070b14'; g.fillRect(0, 0, 1024, 128);
-    g.fillStyle = '#e10600'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
-    g.fillStyle = '#d4af37'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
-    centered('LAS VEGAS STRIP CIRCUIT', 0, 0, 1024, 128, 52, '#ffffff', 1.85, 0.08);
-  } else if (trackId === 'nurburgring-gp') {
-    g.fillStyle = '#09131f'; g.fillRect(0, 0, 1024, 128);
-    g.fillStyle = '#de0000'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
-    g.fillStyle = '#ffcc00'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
-    centered('NÜRBURGRING GP-STRECKE', 0, 0, 1024, 128, 50, '#ffffff', 1.8, 0.08);
-  } else if (trackId === 'spa-francorchamps') {
-    g.fillStyle = '#0b1626'; g.fillRect(0, 0, 1024, 128);
-    g.fillStyle = '#ffcc00'; g.fillRect(0, 0, 1024, 8); g.fillRect(0, 120, 1024, 8);
-    g.fillStyle = '#de0000'; g.fillRect(0, 8, 1024, 4); g.fillRect(0, 116, 1024, 4);
-    centered('SPA-FRANCORCHAMPS', 0, 0, 1024, 128, 52, '#f5f5f5', 1.8, 0.08);
-  } else {
-    const trkTitle = (typeof TRK !== 'undefined' && TRK.spec && TRK.spec.name) ? TRK.spec.name.toUpperCase() : 'CIRCUIT GP';
-    g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, 1024, 128); g.fillStyle = '#e8b21c'; g.fillRect(0, 0, 1024, 10); g.fillRect(0, 118, 1024, 10);
-    centered(trkTitle, 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1);
+  if (typeof AtlasFactory !== 'undefined' && typeof AtlasFactory.buildPropsAtlas === 'function') {
+    return AtlasFactory.buildPropsAtlas({ regions: PROPS.regions });
   }
-  reg('name', 0, 0, 1024, 128);
-
-  // Setas de curva (chevrons)
-  g.fillStyle = '#e9e6dc'; g.fillRect(1024, 0, 512, 128); g.fillStyle = '#b3160f';
-  for (let i = 0; i < 5; i++) { const x = 1034 + i * 102; g.beginPath(); g.moveTo(x, 8); g.lineTo(x + 48, 8); g.lineTo(x + 92, 64); g.lineTo(x + 48, 120); g.lineTo(x, 120); g.lineTo(x + 44, 64); g.closePath(); g.fill(); }
-  reg('chev', 1024, 0, 512, 128);
-
-  // Faixa "PIT LANE" / "BOXENGASSE" / "BOXES"
-  g.fillStyle = '#161a22'; g.fillRect(1536, 0, 512, 128);
-  g.fillStyle = isVegas ? '#00a3e0' : '#e8b21c'; g.fillRect(1536, 0, 512, 8); g.fillRect(1536, 120, 512, 8);
-  centered(isVegas ? 'PIT LANE' : (trackId === 'nurburgring-gp' ? 'BOXENGASSE' : 'PIT LANE'), 1536, 0, 512, 128, 68, '#ffffff', 1.8, 0.08);
-  reg('boxes', 1536, 0, 512, 128);
-
-  // Marcas patrocinadoras oficiais de competición
-  let brands;
-  if (isVegas) {
-    brands = [
-      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
-      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
-      ['ARAMCO', '#002044', '#00A3E0', 3],
-      ['DHL', '#D40511', '#FFCC00', 4],
-      ['PIRELLI', '#D52B1E', '#FFD100', 6],
-      ['ROLEX', '#004d30', '#c8a85c', 5],
-      ['CAESARS PALACE', '#221230', '#e5c158', 3],
-      ['BELLAGIO', '#0e1e36', '#e5c158', 2],
-      ['MGM GRAND', '#0a2e1d', '#e5c158', 0],
-      ['WYNN LAS VEGAS', '#45131b', '#f5d688', 1],
-      ['LVMH', '#141416', '#f5f5f5', 5],
-      ['F1 LAS VEGAS', '#e10600', '#ffffff', 4],
-    ];
-  } else if (trackId === 'nurburgring-gp') {
-    brands = [
-      ['BILSTEIN', '#005bac', '#ffd000', 0],
-      ['ADAC', '#ffcc00', '#111111', 1],
-      ['RAVENOL', '#003087', '#ffd100', 3],
-      ['BBS', '#15171c', '#c8c8c8', 6],
-      ['MICHELIN', '#002060', '#ffea00', 2],
-      ['DEKRA', '#008754', '#ffffff', 4],
-      ['TOTAL ENERGIES', '#da291c', '#ffffff', 5],
-      ['RECARO', '#16181d', '#e30613', 0],
-      ['H&R SPRINGS', '#16181d', '#ed1c24', 1],
-      ['ROWE MOTOR OIL', '#002f6c', '#ff6600', 3],
-      ['PUMA MOTORSPORT', '#111111', '#ffffff', 2],
-      ['BOSCH', '#e2001a', '#ffffff', 4],
-    ];
-  } else if (trackId === 'spa-francorchamps') {
-    brands = [
-      ['ROLEX', '#004d30', '#c8a85c', 5],
-      ['TOTAL ENERGIES', '#da291c', '#ffffff', 2],
-      ['PIRELLI', '#D52B1E', '#FFD100', 6],
-      ['MOOBLUZ', '#0c1e38', '#ffffff', 3],
-      ['DHL', '#D40511', '#FFCC00', 4],
-      ['ARAMCO', '#002044', '#00A3E0', 1],
-      ['SPA-FRANCORCHAMPS', '#162238', '#dfba60', 0],
-      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
-      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
-      ['MICHELIN', '#002060', '#ffea00', 2],
-      ['AWS', '#1b2432', '#ff9900', 5],
-      ['LIQUI MOLY', '#003e7e', '#e30613', 3],
-    ];
-  } else {
-    brands = [
-      ['PIRELLI', '#D52B1E', '#FFD100', 6],
-      ['TAG HEUER', '#0d0f12', '#00d2be', 1],
-      ['ARAMCO', '#002044', '#00A3E0', 3],
-      ['DHL', '#D40511', '#FFCC00', 4],
-      ['MICHELIN', '#002060', '#ffea00', 2],
-      ['ROLEX', '#004d30', '#c8a85c', 5],
-      ['TOTAL ENERGIES', '#da291c', '#ffffff', 2],
-      ['BILSTEIN', '#005bac', '#ffd000', 0],
-      ['BOSCH', '#e2001a', '#ffffff', 4],
-      ['BBS', '#15171c', '#c8c8c8', 6],
-      ['PUMA', '#111111', '#ffffff', 1],
-      ['HEINEKEN 0.0', '#007A33', '#ffffff', 0],
-    ];
-  }
-  brands.forEach((b, i) => {
-    const x = (i % 4) * 512, y = 128 + Math.floor(i / 4) * 128; g.fillStyle = b[1]; g.fillRect(x, y, 512, 128);
-    g.fillStyle = b[2]; g.strokeStyle = b[2]; g.lineWidth = 7;
-    const ic = b[3], ix = x + 62, iy = y + 64;
-    if (ic === 0) { g.beginPath(); g.arc(ix, iy, 36, 0, TAU); g.stroke(); g.beginPath(); g.arc(ix, iy, 14, 0, TAU); g.fill(); }
-    else if (ic === 1) { g.beginPath(); g.moveTo(ix - 34, iy + 32); g.lineTo(ix + 4, iy - 36); g.lineTo(ix + 2, iy - 2); g.lineTo(ix + 34, iy - 32); g.lineTo(ix - 2, iy + 36); g.lineTo(ix, iy + 4); g.closePath(); g.fill(); }
-    else if (ic === 2) { g.beginPath(); g.ellipse(ix, iy, 26, 38, 0.5, 0, TAU); g.fill(); g.strokeStyle = b[1]; g.lineWidth = 5; g.beginPath(); g.moveTo(ix - 12, iy + 30); g.quadraticCurveTo(ix + 10, iy, ix + 8, iy - 34); g.stroke(); }
-    else if (ic === 3) { g.beginPath(); g.moveTo(ix, iy - 40); g.lineTo(ix + 36, iy - 22); g.lineTo(ix + 30, iy + 18); g.lineTo(ix, iy + 40); g.lineTo(ix - 30, iy + 18); g.lineTo(ix - 36, iy - 22); g.closePath(); g.stroke(); }
-    else if (ic === 4) { g.beginPath(); g.moveTo(ix - 36, iy + 34); g.lineTo(ix, iy - 38); g.lineTo(ix + 36, iy + 34); g.closePath(); g.fill(); }
-    else if (ic === 5) { g.lineWidth = 8; g.beginPath(); g.moveTo(ix - 22, iy - 40); g.lineTo(ix - 22, iy + 40); g.moveTo(ix + 22, iy - 40); g.lineTo(ix + 22, iy + 40); for (let k = -2; k <= 2; k++) { g.moveTo(ix - 22, iy + k * 16); g.lineTo(ix + 22, iy + k * 16); } g.stroke(); }
-    else { for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(ix - 40 + k * 18, iy + 38); g.lineTo(ix - 22 + k * 18, iy - 38); g.lineTo(ix - 12 + k * 18, iy - 38); g.lineTo(ix - 30 + k * 18, iy + 38); g.closePath(); g.fill(); } }
-    const th = Math.min(62, 376 / textW(b[0], 1)); centered(b[0], x + 116, y, 388, 128, th, b[2], 1.8, 0.1);
-    reg('b' + i, x, y, 512, 128);
-    if (b[0].startsWith('HEINEKEN')) reg('heineken', x, y, 512, 128);
-  });
-  PROPS.nBrands = brands.length;
-  // placas de distância: chapa de 256x208 com margem; número em traço grosso contínuo
-  ['150', '100', '50'].forEach((t, i) => { const x = 960 + i * 256, y = 512; g.fillStyle = '#f1efe6'; g.fillRect(x, y, 256, 208); g.strokeStyle = '#141414'; g.lineWidth = 9; g.strokeRect(x + 10, y + 10, 236, 188); centered(t, x, y, 256, 208, t.length > 2 ? 78 : 104, '#141414', 1.75, 0); reg('d' + t, x, y, 256, 208); });
-  // números das garagens
-  for (let i = 0; i < 20; i++) { const x = (i % 10) * 96, y = 640 + Math.floor(i / 10) * 64; g.fillStyle = '#16181c'; g.fillRect(x, y, 96, 64); centered((i < 9 ? '0' : '') + (i + 1), x, y, 96, 64, 40, '#f2c318', 1.4, 0); reg('g' + i, x, y, 96, 64); }
-  // faixas genéricas: listras diagonais (cavaletes) e cor lisa
-  g.fillStyle = '#e9e6dc'; g.fillRect(480, 512, 256, 128); g.fillStyle = '#c9281c'; for (let k = -2; k < 8; k++) { g.beginPath(); g.moveTo(480 + k * 48, 640); g.lineTo(504 + k * 48, 640); g.lineTo(552 + k * 48, 512); g.lineTo(528 + k * 48, 512); g.closePath(); g.fill(); }
-  reg('stripe', 484, 516, 248, 120);
-  const tex = mkTex(4096, 2048, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 12 });
-  G.dev.queue.copyExternalImageToTexture({ source: cv }, { texture: tex }, [4096, 2048]);
-  // gente: 16 figuras sentadas (128x224 lógicos = 256x448 px) e 3 em pé (104x288 = 208x576 px), pintadas por caminhos, enviadas em alfa reto por cima do atlas
-  const sit = personStrip(16, 0, 31, 128, 224), std = personStrip(3, 1, 57, 104, 288);
-  G.dev.queue.writeTexture({ texture: tex, origin: [0, 1600] }, sit.data, { bytesPerRow: sit.w * 4 }, [sit.w, sit.h]);
-  G.dev.queue.writeTexture({ texture: tex, origin: [3456, 1024] }, std.data, { bytesPerRow: std.w * 4 }, [std.w, std.h]);
-  for (let i = 0; i < 16; i++) reg('p' + i, i * 128 + 3, 803, 122, 218);
-  for (let i = 0; i < 3; i++) reg('s' + i, 1728 + i * 104 + 3, 515, 98, 282);
-  genMips(tex, 'rgba8unorm-srgb');
-  return tex;
+  return null;
 }
 
 function propsBuild() {
   const hw = TRK.hw, N = TRK.N, ds = TRK.ds, pit = TRK.pit, REG = PROPS.regions;
-  const atlas = atlasBuild();
+  const atlas = (typeof AtlasFactory !== 'undefined' && typeof AtlasFactory.buildPropsAtlas === 'function')
+    ? AtlasFactory.buildPropsAtlas({ regions: REG })
+    : atlasBuild();
   const fam = mkFamily('props', { src: 'mat_props' }), famDS = mkFamily('propsDS', { src: 'mat_props', cull: 'none' });
   const bg3 = G.dev.createBindGroup({ layout: fam.bgl3, entries: [{ binding: 0, resource: atlas.createView() }] });
   const S1 = new RangeSet(fam, bg3), S2 = new RangeSet(famDS, bg3);     // S1: sólidos (culling de face); S2: chapas de dupla face
@@ -537,253 +241,36 @@ function propsBuild() {
   // En pie en (u, y del suelo, v)
   const stander = (u, y, v, shirt, ao) => figure(u, y - 0.02, v, 's' + Math.floor(rng() * 3) % 3, 1.72 * (0.88 + rng() * 0.2), shirt, ao);
 
-  // ---- pórtico ----
+  // ---- pórtico de salida FIA ----
   const gantry = (s, dL, dR, nameReg, lights, local) => {
     if (typeof PropFactory !== 'undefined' && typeof PropFactory.createStartGantry === 'function') {
       PropFactory.createStartGantry({ mb, md, S1, S2, REG, toStraight }, { s, dL, dR, nameReg, lights, local });
-      return;
     }
-    const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, yB = 6.1, yT = 7.3, hwB = 0.5;
-    // colunas treliçadas com painéis nas faces
-    for (const d of [dL, dR]) {
-      mb.mat(2, 120, 70); col(mb, 0.17, 0.25, 0.36);
-      for (const [a, b] of [[-0.42, -0.42], [0.42, -0.42], [0.42, 0.42], [-0.42, 0.42]]) mb.cyl(s + a, 0, d + b, 0.095, yT, 0.095, 10, false, true);
-      for (let y = 0.5; y < yB; y += 0.95) for (const [a0, b0, a1, b1] of [[-0.42, -0.42, 0.42, -0.42], [0.42, -0.42, 0.42, 0.42], [0.42, 0.42, -0.42, 0.42], [-0.42, 0.42, -0.42, -0.42]]) { mb.tube([[s + a0, y, d + b0], [s + a1, y + 0.95, d + b1]], 0.05, 6); mb.tube([[s + a0, y, d + b0], [s + a1, y, d + b1]], 0.045, 6); }
-      // nós da treliça (chapas de ligação em cada nível) e sapata de concreto com chapa de base
-      mb.mat(2, 130, 60); col(mb, 0.11, 0.16, 0.24);
-      for (let y = 0.5; y <= yB + 0.01; y += 0.95) for (const [a, b] of [[-0.42, -0.42], [0.42, -0.42], [0.42, 0.42], [-0.42, 0.42]]) mb.box(s + a, y, d + b, 0.2, 0.14, 0.2);
-      Bx(mb, s - 0.62, s + 0.62, 0.33, 0.4, d - 0.62, d + 0.62);
-      mb.mat(3); col(mb, 0.3, 0.3, 0.29); Bx(mb, s - 0.8, s + 0.8, -0.4, 0.35, d - 0.8, d + 0.8);
-      mb.mat(1); col(mb, 1, 1, 1); for (const [a2, b2] of [[-0.54, -0.54], [0.54, -0.54], [0.54, 0.54], [-0.54, 0.54], [0, -0.56], [0, 0.56], [-0.56, 0], [0.56, 0]]) mb.cyl(s + a2, 0.4, d + b2, 0.028, 0.47, 0.028, 6, false, true);   // chumbadores
-    }
-    // viga-caixa treliçada
-    mb.mat(2, 120, 70); col(mb, 0.17, 0.25, 0.36);
-    for (const a of [-hwB, hwB]) for (const y of [yB, yT]) mb.tube([[s + a, y, dL], [s + a, y, dR]], 0.085, 8);
-    const nb = Math.round((dR - dL) / 1.25);
-    for (let k = 0; k <= nb; k++) {
-      const d = lerp(dL, dR, k / nb), d2 = lerp(dL, dR, Math.min(1, (k + 1) / nb));
-      for (const a of [-hwB, hwB]) { mb.tube([[s + a, yB, d], [s + a, yT, d]], 0.045, 5); if (k < nb) mb.tube([[s + a, k & 1 ? yT : yB, d], [s + a, k & 1 ? yB : yT, d2]], 0.045, 5); }
-      mb.tube([[s - hwB, yT, d], [s + hwB, yT, d]], 0.045, 5); mb.tube([[s - hwB, yB, d], [s + hwB, yB, d]], 0.045, 5);
-      if (k < nb) mb.tube([[s - hwB, yT, d], [s + hwB, yT, d2]], 0.035, 4);
-    }
-    // faixas com o nome nas duas faces (cobrem a treliça de frente: nada de fio fino piscando ao longe)
-    const r = REG[nameReg || 'name']; md.mat(7); col(md, 1, 1, 1);
-    if (nameReg) md.quad(s - hwB - 0.07, yB - 0.1, dL + 0.3, s - hwB - 0.07, yB - 0.1, dR - 0.3, s - hwB - 0.07, yT + 0.1, dR - 0.3, s - hwB - 0.07, yT + 0.1, dL + 0.3, r[0], r[3], r[2], r[1]);
-    if (nameReg) md.quad(s + hwB + 0.07, yB - 0.1, dR - 0.3, s + hwB + 0.07, yB - 0.1, dL + 0.3, s + hwB + 0.07, yT + 0.1, dL + 0.3, s + hwB + 0.07, yT + 0.1, dR - 0.3, r[0], r[3], r[2], r[1]);
-    if (lights) {
-      // panel de semáforos de salida, orientado hacia la parrilla de salida
-      mb.mat(2, 153, 51); col(mb, 0.03, 0.03, 0.035); Bx(mb, s - hwB - 0.45, s - hwB - 0.2, 5.0, 5.75, -2.6, 2.6);
-      for (const d of [-2.6, 2.6]) mb.tube([[s - hwB - 0.32, 5.7, d * 0.9], [s - hwB, yB, d * 0.9]], 0.03, 4);
-      // carcaça com viseira e moldura clara; lâmpadas vermelhas acesas (emissivas)
-      mb.mat(2, 153, 51); col(mb, 0.03, 0.03, 0.035); Bx(mb, s - hwB - 0.75, s - hwB - 0.45, 5.75, 5.8, -2.7, 2.7);
-      mb.mat(2, 128, 128); col(mb, 0.7, 0.7, 0.68); Bx(mb, s - hwB - 0.47, s - hwB - 0.45, 4.96, 5.0, -2.64, 2.64); for (const z of [-2.62, 2.62]) Bx(mb, s - hwB - 0.47, s - hwB - 0.45, 5.0, 5.75, z - 0.02, z + 0.02);
-      for (let k = 0; k < 5; k++) for (const y of [5.2, 5.55]) {
-        mb.push(m4mul(m4(), m4translate(mt, s - hwB - 0.46, y, -2.0 + k), m4rotZ(m4(), PI / 2)));
-        mb.mat(2, 150, 60); col(mb, 0.02, 0.02, 0.022); mb.cyl(0, 0, 0, 0.165, 0.2, 0.175, 14, false, false); mb.cyl(0, 0, 0, 0.15, 0.2, 0.16, 14, false, false);   // viseira (tubo curto)
-        mb.mat(18, 80, 0); col(mb, 0.9, 0.012, 0.004); mb.cyl(0, 0, 0, 0.14, 0.035, 0.12, 14, false, true);                                                // lente abaulada
-        mb.pop();
-      }
-    }
-    if (lights) { mb.mat(2, 128, 128); col(mb, 0.08, 0.08, 0.09); Bx(mb, s - 0.08, s + 0.08, yT, yT + 1.1, -1.28, -1.12); Bx(mb, s - 0.16, s + 0.16, yT + 1.1, yT + 1.4, -1.36, -1.04); }
-    if (local) return;
-    toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 3, 900); S2.add(md, k0, 5, 1500);   // la pancarta (lona microperforada) no proyecta sombra: solo la celosía marca el asfalto
   };
   const gantryDL = isVegas ? -(hw + 2.2) : -7.7;
   const gantryDR = isVegas ? (pit.wallD - 0.6) : 7.05;
   gantry(0, gantryDL, gantryDR, 'name', true);
 
-  // ---- prédio dos boxes clássico e arquibancada (circuitos rurais sem buildProps próprio) ----
+  // ---- boxes clásicos y gradas (circuitos rurales delegados a PropFactory) ----
   if (!isVegas && (!TRK.spec || typeof TRK.spec.buildProps !== 'function')) {
-    // ---- prédio dos boxes clássico ----
-    const u0 = pit.bldS0, u1 = pit.bldS1, vF = pit.bldD0, vB = pit.bldD1, nBay = 20, bw = (u1 - u0) / nBay, hG = 3.7, hS = 4.5, hT = 8.2;
-    const wallC = [0.6, 0.6, 0.58], darkC = [0.1, 0.11, 0.12];
-    for (let part = 0; part < 4; part++) {
-      const b0 = part * 5, b1 = b0 + 5, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, pv0 = mp.nv, pi0 = mp.ni;
-      for (let b = b0; b < b1; b++) {
-        const a = u0 + b * bw, c = a + bw, closed = rng() < 0.4;
-        // pilar e testeira
-        mb.mat(3); col(mb, wallC[0], wallC[1], wallC[2]); Bx(mb, a - 0.25, a + 0.25, -0.5, hG, vF - 0.1, vF + 0.4); if (b === nBay - 1) Bx(mb, c - 0.25, c + 0.25, -0.5, hG, vF - 0.1, vF + 0.4);
-        mb.mat(17); col(mb, 0.1, 0.18, 0.4); Bx(mb, a, c, hG, hS, vF - 0.1, vF + 0.4);
-        // batente metálico da porta, luminária sobre ela, pilastra do andar de cima e tubo de queda no pilar
-        mb.mat(2, 110, 150); col(mb, 0.16, 0.17, 0.19); Bx(mb, a + 0.25, a + 0.37, 0, hG, vF - 0.13, vF + 0.05); Bx(mb, c - 0.37, c - 0.25, 0, hG, vF - 0.13, vF + 0.05); Bx(mb, a + 0.25, c - 0.25, hG - 0.1, hG, vF - 0.13, vF + 0.05);
-        mb.mat(2, 128, 128); col(mb, 0.1, 0.1, 0.11); Bx(mb, a + bw / 2 - 0.4, a + bw / 2 + 0.4, hG - 0.62, hG - 0.52, vF - 0.42, vF - 0.14);
-        mb.mat(6, 150, 0); col(mb, 1.0, 0.86, 0.6); Bx(mb, a + bw / 2 - 0.34, a + bw / 2 + 0.34, hG - 0.64, hG - 0.62, vF - 0.4, vF - 0.18);
-        mb.mat(2, 110, 150); col(mb, 0.2, 0.21, 0.23); Bx(mb, a - 0.11, a + 0.11, hS + 0.3, hT, vF + 0.74, vF + 0.92); if (b === nBay - 1) Bx(mb, c - 0.11, c + 0.11, hS + 0.3, hT, vF + 0.74, vF + 0.92);
-        if (b % 5 === 2) { mb.mat(1, 0, 0, 60); col(mb, 1, 1, 1); mb.cyl(a + 0.36, 0, vF - 0.17, 0.055, hS + 0.3, 0.055, 6, false, false); }
-        sign(md, a + bw / 2 + 0.75, hG + 0.12, vF - 0.13, -1.5, 0, 0, 0.56, 'g' + b);
-        // interior da garagem (faces para dentro, escurecidas)
-        mb.mat(3);
-        const dp = 7.2, x0 = a + 0.25, x1 = c - 0.25;
-        col(mb, 0.36, 0.36, 0.35, 0.75); mb.quad(x0, 0.02, vF + dp, x1, 0.02, vF + dp, x1, 0.02, vF, x0, 0.02, vF);                       // piso
-        col(mb, 0.5, 0.5, 0.48, 0.55); mb.quad(x1, 0, vF + dp, x0, 0, vF + dp, x0, hG, vF + dp, x1, hG, vF + dp);                         // fundo
-        mb.quad(x0, 0, vF + dp, x0, 0, vF, x0, hG, vF, x0, hG, vF + dp); mb.quad(x1, 0, vF, x1, 0, vF + dp, x1, hG, vF + dp, x1, hG, vF);  // laterais
-        col(mb, 0.4, 0.4, 0.4, 0.4); mb.quad(x0, hG, vF, x1, hG, vF, x1, hG, vF + dp, x0, hG, vF + dp);                                    // teto
-        // faixa da equipe sobre a porta + toldo curto
-        const tc = SHIRTS[(b * 3 + 1) % SHIRTS.length];
-        mb.mat(2, 150, 0); col(mb, tc[0], tc[1], tc[2]); Bx(mb, x0, x1, hG - 0.42, hG - 0.02, vF - 0.14, vF - 0.1);
-        mb.mat(10); col(mb, tc[0] * 0.9, tc[1] * 0.9, tc[2] * 0.9); mb.quad(x0, hG - 0.05, vF - 0.1, x1, hG - 0.05, vF - 0.1, x1, hG - 0.4, vF - 1.25, x0, hG - 0.4, vF - 1.25);
-        mb.quad(x1, hG - 0.05, vF - 0.1, x0, hG - 0.05, vF - 0.1, x0, hG - 0.4, vF - 1.25, x1, hG - 0.4, vF - 1.25);
-        if (closed) { mb.mat(13); col(mb, 0.62, 0.64, 0.66); mb.quad(x1, 0, vF + 0.12, x0, 0, vF + 0.12, x0, hG, vF + 0.12, x1, hG, vF + 0.12); }
-        else {
-          // Banco de trabajo, carros de herramientas y neumáticos apilados al fondo
-          mb.mat(2, 102, 76); col(mb, 0.5, 0.06, 0.05, 0.7); Bx(mb, x0 + 0.3, x0 + 1.5, 0, 1.0, vF + dp - 1.0, vF + dp - 0.3);
-          col(mb, 0.25, 0.26, 0.28, 0.7); Bx(mb, x1 - 2.6, x1 - 0.3, 0.85, 0.92, vF + dp - 1.1, vF + dp - 0.3); Bx(mb, x1 - 2.5, x1 - 2.4, 0, 0.85, vF + dp - 1.0, vF + dp - 0.4); Bx(mb, x1 - 0.5, x1 - 0.4, 0, 0.85, vF + dp - 1.0, vF + dp - 0.4);
-          mb.mat(4); col(mb, 0.02, 0.02, 0.02, 0.7); for (let q = 0; q < 2; q++) mb.cyl(x0 + 2.4 + q * 0.7, 0, vF + dp - 0.7, 0.32, 0.84, 0.32, 10, false, true);
-          // Mecánicos de boxes y neumáticos de competición
-          const nP = 2 + (rng() < 0.5 ? 1 : 0); const tm = [tc[0] * 0.55 + 0.1, tc[1] * 0.55 + 0.1, tc[2] * 0.55 + 0.1]; for (let q = 0; q < nP; q++) stander(x0 + 0.9 + rng() * (x1 - x0 - 1.8), 0.02, vF - 0.9 + rng() * 2.6, tm, 0.85);
-          mb.mat(4); col(mb, 0.02, 0.02, 0.02, 0.9); mb.cyl(x1 - 0.55, 0, vF - 0.55, 0.3, 0.26 * (2 + Math.floor(rng() * 3)), 0.3, 10, false, true);
-          mb.mat(2, 110, 60); col(mb, tc[0], tc[1], tc[2], 0.85); Bx(mb, x0 + 0.5, x0 + 1.25, 0.12, 0.95, vF - 0.9, vF - 0.4);
-        }
-      }
-      const a = u0 + b0 * bw, c = u0 + b1 * bw;
-      // Voladizo y barandilla de cristal de boxes
-      mb.mat(3); col(mb, 0.55, 0.55, 0.53); Bx(mb, a, c, hS, hS + 0.3, vF - 1.6, vB);
-      mb.mat(5); col(mb, 1, 1, 1); mb.quad(c, hS + 0.3, vF - 1.55, a, hS + 0.3, vF - 1.55, a, hS + 1.35, vF - 1.55, c, hS + 1.35, vF - 1.55, 0, 0, c - a, 1.05);
-      mb.mat(2, 76, 204); col(mb, 0.6, 0.62, 0.64); Bx(mb, a, c, hS + 1.35, hS + 1.41, vF - 1.6, vF - 1.5);
-      // andar envidraçado
-      mb.mat(5); mb.quad(c, hS + 0.3, vF + 0.9, a, hS + 0.3, vF + 0.9, a, hT, vF + 0.9, c, hT, vF + 0.9, a, 0, c, hT - hS - 0.3);
-      // caixilharia em relevo do andar envidraçado: montantes salientes a cada 1,75 m, travessa e peitoril de concreto
-      mb.mat(2, 95, 190); col(mb, 0.5, 0.52, 0.55); for (let x = a + 0.875; x < c - 0.2; x += 1.75) Bx(mb, x - 0.045, x + 0.045, hS + 0.3, hT, vF + 0.76, vF + 0.9);
-      Bx(mb, a, c, hS + 1.12, hS + 1.2, vF + 0.8, vF + 0.9);
-      mb.mat(3); col(mb, 0.56, 0.56, 0.54); Bx(mb, a, c, hS + 0.3, hS + 0.5, vF + 0.72, vF + 0.92);
-      mb.mat(2, 190, 0); col(mb, 0.07, 0.075, 0.085, 0.8); for (let b = b0; b <= b1; b++) { const x = u0 + b * bw; Bx(mb, x - 0.27, x + 0.27, -0.5, 0.42, vF - 0.12, vF + 0.42); }   // rodapé dos pilares
-      // cobertura com beiral e faixa de placas
-      mb.mat(2, 153, 0); col(mb, 0.85, 0.85, 0.83); Bx(mb, a, c, hT, hT + 0.45, vF - 2.0, vB + 0.3);
-      // montantes do guarda-corpo do terraço, condensadores de ar e dutos na cobertura
-      mb.mat(2, 76, 204); col(mb, 0.6, 0.62, 0.64); for (let x = a + 0.1; x < c; x += 1.75) Bx(mb, x - 0.025, x + 0.025, hS + 0.3, hS + 1.36, vF - 1.59, vF - 1.53);
-      for (let q = 0; q < 2; q++) {
-        const x = a + (0.22 + q * 0.5 + rng() * 0.08) * (c - a), z = vF + 4 + rng() * 5;
-        mb.mat(17); col(mb, 0.62, 0.63, 0.63); Bx(mb, x, x + 1.9, hT + 0.46, hT + 1.5, z, z + 1.1);
-        mb.mat(2, 128, 128); col(mb, 0.08, 0.08, 0.09); Bx(mb, x + 0.2, x + 1.7, hT + 1.5, hT + 1.56, z + 0.15, z + 0.95);
-        mb.mat(1); col(mb, 1, 1, 1); mb.tube([[x + 1.9, hT + 0.75, z + 0.55], [x + 4.5, hT + 0.75, z + 0.55], [x + 4.5, hT + 0.75, vB + 0.1]], 0.09, 6);
-      }
-      mb.mat(9); col(mb, 0.5, 0.52, 0.55); mb.quad(a, hT + 0.46, vB + 0.3, c, hT + 0.46, vB + 0.3, c, hT + 0.46, vF - 2.0, a, hT + 0.46, vF - 2.0, 0, 0, c - a, vB - vF + 2.3);
-      for (let q = 0; q < 2; q++) { const x = a + q * (c - a) / 2 + 1.2, w = (c - a) / 2 - 2.4, nm = (part * 2 + q) % 3 === 0 ? 'name' : 'b' + ((part * 2 + q * 3 + 1) % PROPS.nBrands); sign(md, x + w, hT + 0.5, vF - 1.95, -w, 0, 0, nm === 'name' ? w / 8 : w / 4 > 1.6 ? 1.6 : w / 4, nm); mb.mat(2, 128, 128); col(mb, 0.3, 0.3, 0.32); Bx(mb, x + 0.2, x + 0.3, hT + 0.4, hT + 1.4, vF - 1.9, vF - 1.4); Bx(mb, x + w - 0.3, x + w - 0.2, hT + 0.4, hT + 1.4, vF - 1.9, vF - 1.4); }
-      // fundos e empenas
-      mb.mat(3); col(mb, wallC[0], wallC[1], wallC[2]); mb.quad(a, -0.5, vB, c, -0.5, vB, c, hT, vB, a, hT, vB);
-      mb.mat(2, 153, 51); col(mb, darkC[0], darkC[1], darkC[2]); for (let q = 0; q < 5; q++) Bx(mb, a + (q + 0.25) * bw, a + (q + 0.75) * bw, 0, 2.6, vB, vB + 0.06);
-      mb.mat(5); col(mb, 1, 1, 1); mb.quad(a + 0.5, hS + 1.0, vB + 0.02, c - 0.5, hS + 1.0, vB + 0.02, c - 0.5, hT - 0.6, vB + 0.02, a + 0.5, hT - 0.6, vB + 0.02, a, 0, c, 2.3);
-      if (part === 0) { mb.mat(3); col(mb, wallC[0], wallC[1], wallC[2]); mb.quad(a, -0.5, vF, a, -0.5, vB, a, hT, vB, a, hT, vF); }
-      if (part === 3) { mb.mat(3); col(mb, wallC[0], wallC[1], wallC[2]); mb.quad(c, -0.5, vB, c, -0.5, vF, c, hT, vF, c, hT, vB); }
-      toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 7, 1500); S2.add(md, k0, 3, 900);
-      toStraight(mp, pv0); SP.add(mp, pi0, 1, 400);
+    if (typeof PropFactory !== 'undefined' && typeof PropFactory.createPitBuilding === 'function') {
+      PropFactory.createPitBuilding({ mb, md, S1, S2, toStraight, TRK }, {
+        s0: pit.bldS0,
+        s1: pit.bldS1,
+        d0: pit.bldD0,
+        d1: pit.bldD1,
+        nBays: 20
+      });
     }
-    // ---- torre de controle clássica ----
-    const v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, tu0 = u1 + 3, tu1 = u1 + 13, tv0 = vF + 1, tv1 = vF + 11;
-    mb.mat(3); col(mb, 0.62, 0.62, 0.6); Bx(mb, tu0, tu1, -0.5, 13.5, tv0, tv1);
-    mb.mat(5); col(mb, 1, 1, 1);
-    for (let fl = 0; fl < 3; fl++) { const y = 2.2 + fl * 3.6; mb.quad(tu1, y, tv0 - 0.03, tu0, y, tv0 - 0.03, tu0, y + 1.9, tv0 - 0.03, tu1, y + 1.9, tv0 - 0.03, 0, 0.7, 10, 2.6); mb.quad(tu0 - 0.03, y, tv0, tu0 - 0.03, y, tv1, tu0 - 0.03, y + 1.9, tv1, tu0 - 0.03, y + 1.9, tv0, 0, 0.7, 10, 2.6); mb.quad(tu1 + 0.03, y, tv1, tu1 + 0.03, y, tv0, tu1 + 0.03, y + 1.9, tv0, tu1 + 0.03, y + 1.9, tv1, 0, 0.7, 10, 2.6); }
-    // lajes salientes entre os andares, pilastras nos cantos e escada externa nos fundos
-    mb.mat(2, 153, 0); col(mb, 0.82, 0.82, 0.8); for (let fl = 0; fl < 4; fl++) { const y = 1.75 + fl * 3.6; Bx(mb, tu0 - 0.22, tu1 + 0.22, y, y + 0.28, tv0 - 0.22, tv1 + 0.22); }
-    mb.mat(17); col(mb, 0.11, 0.19, 0.4); for (const [x, z] of [[tu0, tv0], [tu1, tv0], [tu0, tv1], [tu1, tv1]]) Bx(mb, x - 0.3, x + 0.3, -0.5, 13.5, z - 0.3, z + 0.3);
-    mb.mat(2, 110, 150); col(mb, 0.2, 0.21, 0.23); for (let k = 0; k < 6; k++) { const y0 = k * 2.2, x0 = k & 1 ? tu1 - 1.2 : tu0 + 1.2, x1 = k & 1 ? tu0 + 1.2 : tu1 - 1.2; mb.tube([[x0, y0, tv1 + 0.9], [x1, y0 + 2.2, tv1 + 0.9]], 0.07, 5); mb.tube([[x0, y0 + 1.0, tv1 + 0.9], [x1, y0 + 3.2, tv1 + 0.9]], 0.035, 4); }
-    Bx(mb, tu0 + 1.0, tu0 + 1.14, 0, 13.5, tv1 + 0.83, tv1 + 0.97); Bx(mb, tu1 - 1.14, tu1 - 1.0, 0, 13.5, tv1 + 0.83, tv1 + 0.97);
-    mb.mat(3); col(mb, 0.56, 0.56, 0.54); for (let x = tu0 + 2.5; x < tu1 - 1; x += 2.5) Bx(mb, x - 0.14, x + 0.14, -0.5, 13.5, tv0 - 0.2, tv0 + 0.05);
-    for (let z = tv0 + 2.5; z < tv1 - 1; z += 2.5) Bx(mb, tu0 - 0.2, tu0 + 0.05, -0.5, 13.5, z - 0.14, z + 0.14);
-    mb.mat(2, 190, 0); col(mb, 0.07, 0.075, 0.085, 0.8); Bx(mb, tu0 - 0.36, tu1 + 0.36, -0.5, 0.6, tv0 - 0.36, tv1 + 0.36);
-    // guarda-corpo e antenas na cobertura
-    mb.mat(2, 110, 150); col(mb, 0.5, 0.52, 0.54); for (const [x0, z0, x1, z1] of [[tu0 - 1.5, tv0 - 1.8, tu1 + 1.5, tv0 - 1.8], [tu1 + 1.5, tv0 - 1.8, tu1 + 1.5, tv1 + 1.2], [tu1 + 1.5, tv1 + 1.2, tu0 - 1.5, tv1 + 1.2], [tu0 - 1.5, tv1 + 1.2, tu0 - 1.5, tv0 - 1.8]]) { mb.tube([[x0, 18.45, z0], [x1, 18.45, z1]], 0.04, 5); mb.tube([[x0, 17.95, z0], [x1, 17.95, z1]], 0.03, 4); }
-    mb.mat(17); col(mb, 0.6, 0.61, 0.62); Bx(mb, tu0 + 1, tu0 + 3.4, 17.45, 18.7, tv0 + 5.5, tv0 + 7.5);
-    mb.mat(2, 128, 128); col(mb, 0.85, 0.85, 0.83); mb.push(m4mul(m4(), m4translate(mt, tu1 - 2.2, 19.0, tv0 + 2.5), m4rotZ(m4(), 0.9))); mb.cyl(0, 0, 0, 0.75, 0.22, 0.2, 14, false, true); mb.pop(); mb.cyl(tu1 - 2.2, 17.45, tv0 + 2.5, 0.06, 19.0, 0.06, 6, false, false);
-    // sala de controle no topo, em balanço
-    mb.mat(2, 153, 0); col(mb, 0.85, 0.85, 0.83); Bx(mb, tu0 - 1.3, tu1 + 1.3, 13.5, 13.9, tv0 - 1.6, tv1 + 1.0); Bx(mb, tu0 - 1.6, tu1 + 1.6, 17.0, 17.45, tv0 - 1.9, tv1 + 1.3);
-    mb.mat(5); col(mb, 1, 1, 1);
-    const cu0 = tu0 - 1.1, cu1 = tu1 + 1.1, cv0 = tv0 - 1.4, cv1 = tv1 + 0.8;
-    mb.quad(cu1, 13.9, cv0, cu0, 13.9, cv0, cu0, 17.0, cv0, cu1, 17.0, cv0, 0, 0, cu1 - cu0, 3.1); mb.quad(cu0, 13.9, cv1, cu1, 13.9, cv1, cu1, 17.0, cv1, cu0, 17.0, cv1, 0, 0, cu1 - cu0, 3.1);
-    mb.quad(cu0, 13.9, cv0, cu0, 13.9, cv1, cu0, 17.0, cv1, cu0, 17.0, cv0, 0, 0, cv1 - cv0, 3.1); mb.quad(cu1, 13.9, cv1, cu1, 13.9, cv0, cu1, 17.0, cv0, cu1, 17.0, cv1, 0, 0, cv1 - cv0, 3.1);
-    mb.mat(2, 102, 178); col(mb, 0.7, 0.7, 0.72); mb.cyl((tu0 + tu1) / 2, 17.45, (tv0 + tv1) / 2, 0.09, 23, 0.04, 6, false, true);
-    sign(md, tu0 + 9.5, 11.2, tv0 - 0.06, -9, 0, 0, 1.125, 'name');
-    toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 7, 2500); S2.add(md, k0, 3, 900);
-  }
-
-  // ---- arquibancada (circuitos rurais) ----
-  if (!isVegas) {
-    const st = TRK.stand, u0 = st.s0, u1 = st.s1, vF = st.d0, nRow = 22, run = 0.85, rise = 0.42, yF = 1.25, vB = vF - 1.0 - nRow * run, yB = yF + nRow * rise;
-    const nSec = 5, aisle = 2.2, secW = (u1 - u0 - (nSec + 1) * aisle) / nSec;
-    const seatCols = [[0.06, 0.12, 0.26], [0.33, 0.29, 0.12], [0.26, 0.27, 0.29]];   // assentos em tons sóbrios (o público é que dá a cor)
-    for (let sec = 0; sec < nSec; sec++) {
-      const a = u0 + aisle + sec * (secW + aisle), c = a + secW, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni;
-      for (let r = 0; r < nRow; r++) {
-        const v = vF - 1.0 - r * run, y = yF + r * rise, ao = 1.0 - 0.4 * (r / nRow);
-        mb.mat(3); col(mb, 0.5, 0.5, 0.48, ao);
-        mb.quad(a, y, v, c, y, v, c, y + rise, v, a, y + rise, v);                    // espelho (voltado para a pista: +v)
-        mb.quad(a, y + rise, v, c, y + rise, v, c, y + rise, v - run, a, y + rise, v - run);   // piso
-        // Asientos de gradas con patrón de color por sector
-        const pc = seatCols[(Math.floor(r / 4) + sec) % 3];
-        md.mat(8); col(md, pc[0], pc[1], pc[2], ao);
-        md.quad(a, y + rise + 0.4, v - 0.5, c, y + rise + 0.4, v - 0.5, c, y + rise + 0.4, v - 0.84, a, y + rise + 0.4, v - 0.84, 0, 0, c - a, 0.34);
-        md.quad(a, y + rise + 0.4, v - 0.8, c, y + rise + 0.4, v - 0.8, c, y + rise + 0.82, v - 0.86, a, y + rise + 0.82, v - 0.86, 0, 0, c - a, 0.42);
-      }
-      // público: ocupação maior no centro e nas fileiras do meio; conjunto próprio (sem sombra; some só bem longe)
-      {
-        const pv0 = mp.nv, pi0 = mp.ni, occ0 = [0.6, 0.76, 0.88, 0.76, 0.6][sec];
-        for (let r = 0; r < nRow; r++) {
-          const v = vF - 1.0 - r * run, y = yF + r * rise, ao = 1.0 - 0.42 * (r / nRow), occ = occ0 * (0.6 + 0.4 * Math.sin((r + 1) / (nRow + 1) * PI));
-          for (let x = a + 0.3; x < c - 0.3; x += 0.52) { if (r >= 6 && r <= 9 && Math.abs(x - (a + c) / 2) < 1.75) continue; if (rng() < occ) { if (rng() < 0.09) stander(x + (rng() - 0.5) * 0.2, y + rise + 0.02, v - 0.62, pick(CROWD), ao); else sitter(x, y + rise + 0.4, v - 0.84, ao); } }   // (sem gente na boca do túnel)
-        }
-        toStraight(mp, pv0); SP.add(mp, pi0, 1, 700);
-      }
-      // escadas dos corredores (rampa clara) de cada lado do setor
-      for (const [x0, x1] of sec === 0 ? [[a - aisle, a], [c, c + aisle]] : [[c, c + aisle]]) {
-        mb.mat(3); col(mb, 0.62, 0.61, 0.58, 0.9);
-        for (let r = 0; r < nRow; r++) { const v = vF - 1.0 - r * run, y = yF + r * rise; mb.quad(x0, y, v, x1, y, v, x1, y + rise, v, x0, y + rise, v); mb.quad(x0, y + rise, v, x1, y + rise, v, x1, y + rise, v - run, x0, y + rise, v - run); }
-        mb.mat(2, 102, 153); col(mb, 0.75, 0.6, 0.1); mb.tube([[(x0 + x1) / 2, yF + 0.95, vF - 1.0], [(x0 + x1) / 2, yB + 0.95, vB]], 0.03, 5);
-      }
-      // mureta frontal com placas, fundo e cobertura do setor
-      const ea = sec === 0 ? u0 : a - aisle / 2, ec = sec === nSec - 1 ? u1 : c + aisle / 2;
-      mb.mat(3); col(mb, 0.55, 0.55, 0.53); Bx(mb, ea, ec, -0.5, yF + 0.9, vF - 1.0, vF - 0.75);
-      const nm = ['b0', 'b5', 'name', 'b2', 'b7'][sec];
-      sign(md, ea + 2, 0.25, vF - 0.73, ec - ea - 4, 0, 0, nm === 'name' ? (ec - ea - 4) / 8 > 1.7 ? 1.7 : (ec - ea - 4) / 8 : 1.7, nm);
-      mb.mat(3); col(mb, 0.5, 0.5, 0.49); mb.quad(ec, -0.5, vB - 0.3, ea, -0.5, vB - 0.3, ea, yB + 5.6, vB - 0.3, ec, yB + 5.6, vB - 0.3);     // parede dos fundos (face externa)
-      mb.quad(ea, yB, vB, ec, yB, vB, ec, yB + 5.6, vB, ea, yB + 5.6, vB);                                                                    // face interna, atrás da última fileira
-      // cobertura em balanço (telha) + vigas + pilares
-      const yr0 = yB + 5.8, yr1 = yB + 3.6, vr1 = vF - 0.2;
-      md.mat(9); col(md, 0.62, 0.64, 0.66); md.quad(ec, yr0, vB - 0.8, ea, yr0, vB - 0.8, ea, yr1, vr1, ec, yr1, vr1, 0, 0, ec - ea, vr1 - vB + 0.8);
-      mb.mat(2, 128, 128); col(mb, 0.2, 0.22, 0.25);
-      for (const x of [ea + 0.4, (ea + ec) / 2, ec - 0.4]) {
-        Bx(mb, x - 0.2, x + 0.2, -0.5, yr0 - 0.1, vB - 0.3, vB + 0.15);
-        const bm = mb.nv; Bx(mb, x - 0.12, x + 0.12, -0.5, 0.0, 0, 1);    // viga: caixa unitária deformada ao longo do balanço
-        for (let q = bm; q < mb.nv; q++) { const t = mb.f32[q * 9 + 2], top = mb.f32[q * 9 + 1] > -0.25; mb.f32[q * 9 + 2] = lerp(vB - 0.3, vr1 - 0.3, t); mb.f32[q * 9 + 1] = lerp(yr0, yr1, t) - (top ? 0.06 : lerp(0.95, 0.3, t)); }
-      }
-      // terças sob a telha, mastros com tirantes sobre cada pilar e montantes entre viga e telha: a cobertura lê como estrutura metálica
-      mb.mat(2, 115, 153, 70); col(mb, 0.55, 0.57, 0.6);
-      for (let q = 1; q <= 5; q++) { const t = q / 6; mb.tube([[ea, lerp(yr0, yr1, t) - 0.13, lerp(vB - 0.8, vr1, t)], [ec, lerp(yr0, yr1, t) - 0.13, lerp(vB - 0.8, vr1, t)]], 0.06, 6); }
-      for (const x of [ea + 0.4, (ea + ec) / 2, ec - 0.4]) {
-        mb.mat(2, 128, 128); col(mb, 0.2, 0.22, 0.25); Bx(mb, x - 0.11, x + 0.11, yr0 - 0.1, yr0 + 2.6, vB - 0.3, vB - 0.08);
-        mb.mat(2, 115, 153, 70); col(mb, 0.6, 0.62, 0.65);
-        for (const t of [0.42, 0.86]) mb.tube([[x, yr0 + 2.55, vB - 0.19], [x, lerp(yr0, yr1, t) + 0.05, lerp(vB - 0.8, vr1, t)]], 0.04, 5);
-        mb.tube([[x, yr0 + 2.55, vB - 0.19], [x, yr0 - 0.6, vB - 2.3]], 0.04, 5);
-        for (let q = 1; q <= 4; q++) { const t = q / 5, yb = lerp(yr0, yr1, t), vv = lerp(vB - 0.3, vr1 - 0.3, t); mb.tube([[x, yb - lerp(0.95, 0.3, t), vv], [x, yb - 0.1, vv + 1.6]], 0.035, 4); }
-      }
-      // boca de túnel (acesso) no meio do setor: caixa de concreto com vão escuro, guarda-corpo em cima e nas laterais
-      {
-        const xc = (a + c) / 2, y6 = yF + 6 * rise, v6 = vF - 1.0 - 6 * run;
-        mb.mat(3); col(mb, 0.52, 0.52, 0.5); Bx(mb, xc - 1.55, xc + 1.55, y6, y6 + 2.45, v6 - 3.6, v6 + 0.05);
-        mb.mat(2, 200, 0); col(mb, 0.012, 0.012, 0.014, 0.25); mb.quad(xc - 1.15, y6 + 0.02, v6 + 0.07, xc + 1.15, y6 + 0.02, v6 + 0.07, xc + 1.15, y6 + 2.05, v6 + 0.07, xc - 1.15, y6 + 2.05, v6 + 0.07);
-        mb.mat(2, 102, 153, 60); col(mb, 0.75, 0.6, 0.1);
-        mb.tube([[xc - 1.5, y6 + 3.4, v6], [xc + 1.5, y6 + 3.4, v6]], 0.03, 5); mb.tube([[xc - 1.5, y6 + 2.95, v6], [xc + 1.5, y6 + 2.95, v6]], 0.022, 4);
-        for (const x of [xc - 1.5, xc, xc + 1.5]) Bx(mb, x - 0.025, x + 0.025, y6 + 2.45, y6 + 3.4, v6 - 0.03, v6 + 0.03);
-      }
-      mb.mat(2, 153, 0); col(mb, 0.8, 0.8, 0.78); Bx(mb, ea, ec, yr1 - 0.35, yr1 + 0.05, vr1 - 0.05, vr1 + 0.1);
-      // corrimão na mureta da frente e testeira da cobertura com faixa
-      mb.mat(2, 102, 153); col(mb, 0.75, 0.6, 0.1); mb.tube([[ea, yF + 1.35, vF - 0.88], [ec, yF + 1.35, vF - 0.88]], 0.03, 5);
-      for (let x = ea + 0.5; x < ec; x += 2.4) Bx(mb, x - 0.025, x + 0.025, yF + 0.9, yF + 1.35, vF - 0.9, vF - 0.86);
-      mb.mat(2, 140, 0); col(mb, 0.06, 0.17, 0.38); Bx(mb, ea, ec, yr1 - 1.25, yr1 - 0.35, vr1 + 0.02, vr1 + 0.1);
-      sign(md, ea + (ec - ea) * 0.5 - 6.4, yr1 - 1.2, vr1 + 0.12, 12.8, 0, 0, 0.8, sec % 2 ? 'b' + (sec * 5 % PROPS.nBrands) : 'name');
-      toStraight(mb, v0); toStraight(md, w0);
-      S1.add(mb, i0, 7, 2000); S2.add(md, k0, 7, 2000);
+    if (typeof PropFactory !== 'undefined' && typeof PropFactory.createGrandstand === 'function') {
+      const st = TRK.stand || { s0: -80, s1: 120, d0: -18 };
+      PropFactory.createGrandstand({ mb, md, mp, S1, S2, SP, toStraight, sign, CROWD, sitter, stander }, {
+        s0: st.s0,
+        s1: st.s1,
+        d0: st.d0,
+        rng
+      });
     }
-    // empenas laterais
-    const v0 = mb.nv, i0 = mb.ni;
-    mb.mat(3); col(mb, 0.52, 0.52, 0.5);
-    for (const [x, sgn] of [[u0, -1], [u1, 1]]) {
-      const a = mb.v(x, -0.5, vF - 0.75, sgn, 0, 0, 0, 0), b = mb.v(x, yF + 0.9, vF - 0.75, sgn, 0, 0, 0, 1), c = mb.v(x, yB + 1.0, vB, sgn, 0, 0, 1, 1), d = mb.v(x, -0.5, vB - 0.3, sgn, 0, 0, 1, 0), e = mb.v(x, yB + 5.6, vB, sgn, 0, 0, 1, 2), f2 = mb.v(x, yB + 5.6, vB - 0.3, sgn, 0, 0, 1, 2);
-      if (sgn < 0) { mb.tri(a, b, c); mb.tri(a, c, d); mb.tri(d, c, e); mb.tri(d, e, f2); } else { mb.tri(a, c, b); mb.tri(a, d, c); mb.tri(d, e, c); mb.tri(d, f2, e); }
-    }
-    // placas grandes nas empenas
-    const w0 = md.nv, k0 = md.ni;
-    sign(md, u0 - 0.05, 4.0, vB + 0.5, 0, 0, 9, 2.25, 'b3'); sign(md, u1 + 0.05, 4.0, vB + 9.5, 0, 0, -9, 2.25, 'b8');
-    toStraight(mb, v0); toStraight(md, w0); S1.add(mb, i0, 7, 2000); S2.add(md, k0, 3, 900);
   }
 
   // ================= objetos ao longo do circuito =================

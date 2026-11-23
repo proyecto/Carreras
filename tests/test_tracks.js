@@ -22,11 +22,12 @@ function runTracksTestSuite() {
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
   const propFactoryCode = fs.readFileSync(path.join(root, 'engine/prop-factory.js'), 'utf8');
+  const atlasFactoryCode = fs.readFileSync(path.join(root, 'engine/atlas-factory.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
 
   const ctx = {
     window: {},
-    document: { createElement: () => ({ getContext: () => ({}) }) },
+    document: { createElement: () => ({ getContext: () => ({ scale() {}, fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, bezierCurveTo() {}, quadraticCurveTo() {}, closePath() {}, fill() {}, stroke() {}, save() {}, restore() {}, translate() {}, transform() {}, createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }), getImageData: () => ({ data: new Uint8Array(4) }), drawImage() {}, rect() {}, clip() {}, arc() {}, ellipse() {} }) }) },
     Float32Array,
     Uint32Array,
     Int32Array,
@@ -41,6 +42,7 @@ function runTracksTestSuite() {
   vm.runInContext(regCode, ctx);
   vm.runInContext(trackFactoryCode, ctx);
   vm.runInContext(propFactoryCode, ctx);
+  vm.runInContext(atlasFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
   const trackList = ctx.window.TRACK_LIST || [];
@@ -105,12 +107,15 @@ function runTracksTestSuite() {
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 
-  // 6. Validación de patrocinio y escenografía de boxes (world/props.js + world/props-vegas.js)
+  // 6. Validación de patrocinio y escenografía de boxes (engine/atlas-factory.js + world/props.js + world/props-vegas.js)
+  const atlasFactoryPath = path.join(root, 'engine/atlas-factory.js');
+  assert(fs.existsSync(atlasFactoryPath), 'Módulo separado de AtlasFactory (engine/atlas-factory.js) presente');
+  const atlasCode = fs.existsSync(atlasFactoryPath) ? fs.readFileSync(atlasFactoryPath, 'utf8') : '';
   const propsBaseCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
   const vegasPropsPath = path.join(root, 'world/props-vegas.js');
   assert(fs.existsSync(vegasPropsPath), 'Módulo separado de props de Las Vegas (world/props-vegas.js) presente para carga condicional');
   const vegasPropsCode = fs.existsSync(vegasPropsPath) ? fs.readFileSync(vegasPropsPath, 'utf8') : '';
-  const propsCode = propsBaseCode + '\n' + vegasPropsCode;
+  const propsCode = atlasCode + '\n' + propsBaseCode + '\n' + vegasPropsCode;
 
   assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
   assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');
@@ -207,6 +212,19 @@ function runTracksTestSuite() {
   const prevNi = mockMB.ni;
   PF.createPaddockTent({ mb: mockMB }, { color: [1, 1, 1] });
   assert(mockMB.ni > prevNi, 'PropFactory.createPaddockTent genera geometría 3D');
+
+  // 11. Validación de AtlasFactory (engine/atlas-factory.js)
+  assert(indexHtml.includes('engine/atlas-factory.js'), 'index.html incluye el módulo unificado AtlasFactory');
+  const AF = ctx.window.AtlasFactory || ctx.AtlasFactory;
+  assert(AF && typeof AF === 'object', 'AtlasFactory exportado y accesible');
+  assert(typeof AF.buildPropsAtlas === 'function', 'AtlasFactory.buildPropsAtlas definido');
+  assert(typeof AF.textW === 'function' && typeof AF.strokeText === 'function', 'Tipografía procedural Bézier definida en AtlasFactory');
+  assert(typeof AF.personSprite === 'function' && typeof AF.personStrip === 'function', 'Generadores de multitud y comisarios definidos en AtlasFactory');
+
+  const mockRegions = {};
+  AF.buildPropsAtlas({ regions: mockRegions });
+  assert(mockRegions.name && mockRegions.chev && mockRegions.boxes, 'AtlasFactory genera regiones UV de pista');
+  assert(mockRegions.b0 && mockRegions.d150 && mockRegions.p0 && mockRegions.s0, 'AtlasFactory genera regiones de patrocinadores, carteles y multitud');
 
   console.log(`Resultado Circuitos: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };
