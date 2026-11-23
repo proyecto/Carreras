@@ -234,9 +234,36 @@ function hudDrawMinimap() {
   const W = H.cm.width, Hh = H.cm.height, r = H.L[3];
   const curM = typeof VEH !== 'undefined' ? VEH.s : 0;
   const curTrackS = ((curM % trk.L) + trk.L) % trk.L;
+  const yS1 = Math.round(Hh * 0.29);
 
   m.clearRect(0, 0, W, Hh);
   m.drawImage(H.bgMap, 0, 0);
+
+  // Delegación modular con HudComponents (Patrón Composite/Component)
+  if (typeof HudComponents !== 'undefined') {
+    // SECCIÓN 1: Aviso de próxima curva oficial
+    HudComponents.CornerAdvisory.draw(m, r, Hh, W, trk, curM);
+
+    // SECCIÓN 2: Torre de clasificación F1
+    const rivals = [];
+    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+      for (const rCar of gridManagerInstance.rivals) {
+        if (rCar.veh) rivals.push(rCar);
+      }
+    } else {
+      if (typeof VEH_RIVAL !== 'undefined') rivals.push({ veh: VEH_RIVAL, name: 'RIVAL #7', col: '#facc15' });
+      if (typeof VEH_RIVAL2 !== 'undefined') rivals.push({ veh: VEH_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' });
+      if (typeof VEH_RIVAL3 !== 'undefined') rivals.push({ veh: VEH_RIVAL3, name: 'RIVAL #99', col: '#ef4444' });
+    }
+    const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
+    const carName = (typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name.split(' ')[0] : 'GT3';
+    HudComponents.TimingTower.draw(m, r, Hh, W, yS1, trk, curProg, rivals, carName);
+
+    // SECCIÓN 3: Minimapa del circuito con radar de rivales
+    const distText = ((curM * 0.001) % (trk.L * 0.001)).toFixed(1) + ' / ' + (trk.L * 0.001).toFixed(1) + ' km';
+    HudComponents.Minimap.draw(m, r, Hh, W, H.mapTrans, [GS.cx, GS.cy, GS.cz], rivals, (typeof VEH !== 'undefined' ? VEH.time : 0), distText);
+    return;
+  }
 
   // ---------------------------------------------------------------------------
   // SECCIÓN 1: SIGUIENTE CURVA (Top: 0 a yS1)
@@ -454,8 +481,14 @@ function hudDrawMinimap() {
 function hudDrawStartLights() {
   const H = HUD;
   if (!H.clights || !H.gl) return;
-  if (typeof RACE_START === 'undefined' || !RACE_START.active) {
+  const rs = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : (typeof RACE_START !== 'undefined' ? RACE_START : null);
+  if (!rs || (!rs.active && rs.state !== 'lights_out')) {
     if (H.clights.style.display !== 'none') H.clights.style.display = 'none';
+    return;
+  }
+  // Delegación modular en HudComponents.StartLights (Patrón Component)
+  if (typeof HudComponents !== 'undefined' && HudComponents.StartLights) {
+    HudComponents.StartLights.draw(H.gl, H.clights, rs);
     return;
   }
   if (H.clights.style.display !== 'block') H.clights.style.display = 'block';

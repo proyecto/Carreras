@@ -25,25 +25,56 @@ const LAP = new Float64Array(4);
 // Entradas Gamepad API: acelerador, freno y dirección analógicos con zona muerta
 const PADV = new Float64Array(3);
 
-// Semáforo de salida FIA: 5 luces rojas progresivas + pausa tensa + apagado/verde (Lights out!)
-const RACE_START = {
+// Semáforo de salida FIA: delegado en raceDirectorInstance si está disponible
+const RACE_START = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : {
   active: false,
-  state: 'idle', // 'idle' | 'countdown' | 'lights_out' | 'racing'
+  state: 'idle',
   t: 0,
   lightsCount: 0,
   goTime: 6.0,
   doneTime: 7.8,
   lastBeep: -1,
+  triggerStart() {
+    this.active = true;
+    this.state = 'countdown';
+    this.t = 0;
+    this.lightsCount = 0;
+    this.lastBeep = -1;
+    this.goTime = 5.0 + 0.8 + Math.random() * 1.2;
+    this.doneTime = this.goTime + 1.8;
+  },
+  step(dt, vehicles = []) {
+    if (!this.active) return;
+    this.t += dt;
+    if (this.state === 'countdown') {
+      const curLight = Math.min(5, Math.floor(this.t));
+      if (curLight !== this.lightsCount) {
+        this.lightsCount = curLight;
+        if (curLight > 0 && curLight !== this.lastBeep) {
+          this.lastBeep = curLight;
+          if (typeof sndBeep === 'function') sndBeep(480, 0.16, 0.28);
+        }
+      }
+      if (this.t >= this.goTime) {
+        this.state = 'lights_out';
+        if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
+        if (typeof LAP !== 'undefined') LAP[0] = performance.now() * 0.001;
+      } else {
+        for (let i = 0; i < vehicles.length; i++) {
+          if (vehicles[i]) { vehicles[i].vx = 0; vehicles[i].vy = 0; vehicles[i].vz = 0; }
+        }
+      }
+    } else if (this.state === 'lights_out') {
+      if (this.t >= this.doneTime) {
+        this.active = false;
+        this.state = 'racing';
+      }
+    }
+  }
 };
 function raceStartTrigger() {
-  RACE_START.active = true;
-  RACE_START.state = 'countdown';
-  RACE_START.t = 0;
-  RACE_START.lightsCount = 0;
-  RACE_START.lastBeep = -1;
-  // 5 luces rojas a los 1s, 2s, 3s, 4s, 5s + intervalo aleatorio FIA (0.8s a 2.0s)
-  RACE_START.goTime = 5.0 + 0.8 + Math.random() * 1.2;
-  RACE_START.doneTime = RACE_START.goTime + 1.8;
+  if (typeof raceDirectorInstance !== 'undefined') raceDirectorInstance.triggerStart();
+  else RACE_START.triggerStart();
 }
 
 const DEFAULT_CONTROLS = {
@@ -416,14 +447,19 @@ function gameRestart() {
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
     const rivals = [
-      { v: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2 },
-      { v: (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null), vin: (typeof VIN_RIVAL2 !== 'undefined' ? VIN_RIVAL2 : null), ds: -16.0, dd: -0.2 },
-      { v: (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null), vin: (typeof VIN_RIVAL3 !== 'undefined' ? VIN_RIVAL3 : null), ds: -24.0, dd: 3.0 }
+      { veh: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2, model: rivalObj(), gs: GS_RIVAL, name: 'RIVAL #7', col: '#facc15' },
+      { veh: (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null), vin: (typeof VIN_RIVAL2 !== 'undefined' ? VIN_RIVAL2 : null), ds: -16.0, dd: -0.2, model: (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), gs: GS_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' },
+      { veh: (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null), vin: (typeof VIN_RIVAL3 !== 'undefined' ? VIN_RIVAL3 : null), ds: -24.0, dd: 3.0, model: (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null), gs: GS_RIVAL3, name: 'RIVAL #99', col: '#ef4444' }
     ];
-    for (const r of rivals) {
-      if (!r.v || !r.vin) continue;
-      const VR = r.v; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
-      vehicleReset(TRK.L + TRK.startS + r.ds, TRK.startD + r.dd, 0, r.v, r.vin);
+    if (typeof gridManagerInstance !== 'undefined') {
+      gridManagerInstance.init(rivals);
+      gridManagerInstance.resetGrid(TRK, TRK.startS, TRK.startD);
+    } else {
+      for (const r of rivals) {
+        if (!r.veh || !r.vin) continue;
+        const VR = r.veh; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
+        vehicleReset(TRK.L + TRK.startS + r.ds, TRK.startD + r.dd, 0, r.veh, r.vin);
+      }
     }
   }
   GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = GS.rivalKeys2 = GS.rivalKeys3 = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
@@ -452,71 +488,68 @@ function gameStep() {
       if (typeof NET !== 'undefined' && NET.connected) {
         NET.sendLocalState(VEH);
       } else {
-        GS.rivalKeys = (t < 0.5 || RACE_START.active) ? 0 : aiKeys(t, VEH_RIVAL);
-        if (typeof VEH_RIVAL2 !== 'undefined') {
-          GS.rivalKeys2 = (VEH_RIVAL2.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL2.time, VEH_RIVAL2);
-        }
-        if (typeof VEH_RIVAL3 !== 'undefined') {
-          GS.rivalKeys3 = (VEH_RIVAL3.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL3.time, VEH_RIVAL3);
+        if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+          gridManagerInstance.stepAi(t, RACE_START.active);
+          GS.rivalKeys = gridManagerInstance.rivals[0] ? gridManagerInstance.rivals[0].keys : 0;
+          GS.rivalKeys2 = gridManagerInstance.rivals[1] ? gridManagerInstance.rivals[1].keys : 0;
+          GS.rivalKeys3 = gridManagerInstance.rivals[2] ? gridManagerInstance.rivals[2].keys : 0;
+        } else {
+          GS.rivalKeys = (t < 0.5 || RACE_START.active) ? 0 : aiKeys(t, VEH_RIVAL);
+          if (typeof VEH_RIVAL2 !== 'undefined') {
+            GS.rivalKeys2 = (VEH_RIVAL2.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL2.time, VEH_RIVAL2);
+          }
+          if (typeof VEH_RIVAL3 !== 'undefined') {
+            GS.rivalKeys3 = (VEH_RIVAL3.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL3.time, VEH_RIVAL3);
+          }
         }
       }
     }
   }
   GS.sub++;
 
-  // Control de salida en parrilla con semáforo FIA
-  if (RACE_START.active) {
-    RACE_START.t += 1 / 120;
-    if (RACE_START.state === 'countdown') {
-      const curLight = Math.min(5, Math.floor(RACE_START.t));
-      if (curLight !== RACE_START.lightsCount) {
-        RACE_START.lightsCount = curLight;
-        if (curLight > 0 && curLight !== RACE_START.lastBeep) {
-          RACE_START.lastBeep = curLight;
-          if (typeof sndBeep === 'function') sndBeep(480, 0.16, 0.28);
-        }
-      }
-      if (RACE_START.t >= RACE_START.goTime) {
-        RACE_START.state = 'lights_out';
-        if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
-        LAP[0] = performance.now() * 0.001;
-      } else {
-        // En parrilla durante la cuenta atrás: el coche no puede desplazarse (Launch Control)
-        VEH.vx = 0; VEH.vy = 0; VEH.vz = 0;
-        if (typeof VEH_RIVAL !== 'undefined') { VEH_RIVAL.vx = 0; VEH_RIVAL.vy = 0; VEH_RIVAL.vz = 0; }
-        if (typeof VEH_RIVAL2 !== 'undefined') { VEH_RIVAL2.vx = 0; VEH_RIVAL2.vy = 0; VEH_RIVAL2.vz = 0; }
-        if (typeof VEH_RIVAL3 !== 'undefined') { VEH_RIVAL3.vx = 0; VEH_RIVAL3.vy = 0; VEH_RIVAL3.vz = 0; }
-      }
-    } else if (RACE_START.state === 'lights_out') {
-      if (RACE_START.t >= RACE_START.doneTime) {
-        RACE_START.active = false;
-        RACE_START.state = 'racing';
-      }
-    }
+  // Control de salida en parrilla con semáforo FIA (delegado en RaceDirector si está disponible)
+  if (typeof raceDirectorInstance !== 'undefined') {
+    raceDirectorInstance.step(1 / 120, [
+      VEH,
+      (typeof VEH_RIVAL !== 'undefined' ? VEH_RIVAL : null),
+      (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null),
+      (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null)
+    ]);
+  } else if (RACE_START.active) {
+    RACE_START.step(1 / 120, [
+      VEH,
+      (typeof VEH_RIVAL !== 'undefined' ? VEH_RIVAL : null),
+      (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null),
+      (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null)
+    ]);
   }
 
   vehicleStep(GS.keys, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
-    if (typeof NET !== 'undefined' && NET.connected) {
-      NET.updateRemoteVehicle(VEH_RIVAL, PHYS_DT);
+    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+      gridManagerInstance.stepPhysics(VEH, (typeof NET !== 'undefined' && NET.connected));
     } else {
-      vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
-      if (typeof VEH_RIVAL2 !== 'undefined' && typeof VIN_RIVAL2 !== 'undefined') {
-        vehicleStep(GS.rivalKeys2 || 0, VEH_RIVAL2, VIN_RIVAL2);
+      if (typeof NET !== 'undefined' && NET.connected) {
+        NET.updateRemoteVehicle(VEH_RIVAL, PHYS_DT);
+      } else {
+        vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
+        if (typeof VEH_RIVAL2 !== 'undefined' && typeof VIN_RIVAL2 !== 'undefined') {
+          vehicleStep(GS.rivalKeys2 || 0, VEH_RIVAL2, VIN_RIVAL2);
+        }
+        if (typeof VEH_RIVAL3 !== 'undefined' && typeof VIN_RIVAL3 !== 'undefined') {
+          vehicleStep(GS.rivalKeys3 || 0, VEH_RIVAL3, VIN_RIVAL3);
+        }
       }
-      if (typeof VEH_RIVAL3 !== 'undefined' && typeof VIN_RIVAL3 !== 'undefined') {
-        vehicleStep(GS.rivalKeys3 || 0, VEH_RIVAL3, VIN_RIVAL3);
+      vehicleCarCollide(VEH, VEH_RIVAL);
+      if (typeof VEH_RIVAL2 !== 'undefined') {
+        vehicleCarCollide(VEH, VEH_RIVAL2);
+        vehicleCarCollide(VEH_RIVAL, VEH_RIVAL2);
       }
-    }
-    vehicleCarCollide(VEH, VEH_RIVAL);
-    if (typeof VEH_RIVAL2 !== 'undefined') {
-      vehicleCarCollide(VEH, VEH_RIVAL2);
-      vehicleCarCollide(VEH_RIVAL, VEH_RIVAL2);
-    }
-    if (typeof VEH_RIVAL3 !== 'undefined') {
-      vehicleCarCollide(VEH, VEH_RIVAL3);
-      vehicleCarCollide(VEH_RIVAL, VEH_RIVAL3);
-      if (typeof VEH_RIVAL2 !== 'undefined') vehicleCarCollide(VEH_RIVAL2, VEH_RIVAL3);
+      if (typeof VEH_RIVAL3 !== 'undefined') {
+        vehicleCarCollide(VEH, VEH_RIVAL3);
+        vehicleCarCollide(VEH_RIVAL, VEH_RIVAL3);
+        if (typeof VEH_RIVAL2 !== 'undefined') vehicleCarCollide(VEH_RIVAL2, VEH_RIVAL3);
+      }
     }
   }
   if (VEH.laps !== GS.lapSeen) lapCross();
@@ -587,9 +620,13 @@ function gamePose() {
 
   // Pose e interpolación de los rivales IA
   if (GAME.rivalEnabled !== false) {
-    if (typeof VEH_RIVAL !== 'undefined') poseRival(rivalObj(), VEH_RIVAL, GS_RIVAL, GS.rivalKeys, al);
-    if (typeof CAR_RIVAL2 !== 'undefined' && typeof VEH_RIVAL2 !== 'undefined') poseRival(CAR_RIVAL2, VEH_RIVAL2, GS_RIVAL2, GS.rivalKeys2 || 0, al);
-    if (typeof CAR_RIVAL3 !== 'undefined' && typeof VEH_RIVAL3 !== 'undefined') poseRival(CAR_RIVAL3, VEH_RIVAL3, GS_RIVAL3, GS.rivalKeys3 || 0, al);
+    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+      gridManagerInstance.poseAll(al);
+    } else {
+      if (typeof VEH_RIVAL !== 'undefined') poseRival(rivalObj(), VEH_RIVAL, GS_RIVAL, GS.rivalKeys, al);
+      if (typeof CAR_RIVAL2 !== 'undefined' && typeof VEH_RIVAL2 !== 'undefined') poseRival(CAR_RIVAL2, VEH_RIVAL2, GS_RIVAL2, GS.rivalKeys2 || 0, al);
+      if (typeof CAR_RIVAL3 !== 'undefined' && typeof VEH_RIVAL3 !== 'undefined') poseRival(CAR_RIVAL3, VEH_RIVAL3, GS_RIVAL3, GS.rivalKeys3 || 0, al);
+    }
   }
 
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
@@ -615,6 +652,10 @@ function rotZQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(
 function rotXQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(0); o[0] = 1; o[5] = c; o[6] = s; o[9] = -s; o[10] = c; o[15] = 1; }
 function camCut() { GS.cut = true; }
 function gameCamera() {
+  if (typeof cameraSystemInstance !== 'undefined' && typeof cameraSystemInstance.updateCamera === 'function') {
+    cameraSystemInstance.updateCamera(GS, VEH, RT[1], CAMQ, (GS.keys & K_V) ? -1 : 1);
+    return;
+  }
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: mirando hacia atrás
   if (GS.cam === 0) {
     // Cámara de persecución (Chase): sigue la orientación con inercia elástica
@@ -657,11 +698,15 @@ BUILD.push(async () => {
   if (GAME.mode === 'test' || GAME.mode === 'car') return;
   if (!CAR) CARP.build();
   if (GAME.rivalEnabled !== false) {
-    const rivals = [rivalObj(), (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null)];
-    for (const rCar of rivals) {
-      if (rCar && typeof rCar.build === 'function') {
-        rCar.build();
-        rCar.built = true;
+    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+      gridManagerInstance.buildAll();
+    } else {
+      const rivals = [rivalObj(), (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null)];
+      for (const rCar of rivals) {
+        if (rCar && typeof rCar.build === 'function') {
+          rCar.build();
+          rCar.built = true;
+        }
       }
     }
   }

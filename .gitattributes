@@ -1,0 +1,15 @@
+# Git configuration to optimize repository performance and comparisons
+# Prevents git from hanging or lagging when computing text diffs on huge embedded base64 assets
+
+# Car 3D meshes and textures (huge embedded base64 strings)
+cars/*.js -diff -merge
+
+# Binary media and 3D model formats
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.glb binary
+*.gltf binary
+*.bin binary

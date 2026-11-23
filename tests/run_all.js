@@ -7,6 +7,7 @@ const { runControlsTestSuite } = require('./test_controls');
 const { runRivalTestSuite } = require('./test_rival');
 const { totalAsserts: patternsAsserts } = require('./test_patterns');
 const { totalAsserts: networkAsserts } = require('./test_network');
+const { totalAsserts: solidAsserts } = require('./test_solid_modules');
 
 console.log('================================================================');
 console.log('  🏎️  CARRERAS - SUITE COMPLETA DE PRUEBAS AUTOMATIZADAS');
@@ -43,6 +44,7 @@ try {
 
   totalPassed += patternsAsserts;
   totalPassed += networkAsserts;
+  totalPassed += solidAsserts;
 } catch (err) {
   console.error('\n❌ ERROR CRÍTICO DURANTE LA EJECUCIÓN DE PRUEBAS:\n', err);
   process.exit(1);
