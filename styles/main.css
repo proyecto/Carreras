@@ -207,6 +207,7 @@ body {
 }
 
 #ht {
+  display: none !important;
   right: 1.6vh;
   top: 1.6vh
 }

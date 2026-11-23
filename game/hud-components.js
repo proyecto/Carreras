@@ -39,41 +39,46 @@ const HudComponents = {
   CornerAdvisory: {
     draw(m, r, Hh, W, trk, s) {
       if (!trk || !trk.N) return;
-      const N = trk.N, ds = trk.ds, kl = trk.lineK || trk.k;
-      if (!kl) return;
-
+      const N = trk.N, ds = trk.ds || 5, kl = trk.lineK || trk.k;
       const padX = Math.round(r * 0.14);
       const curTrackS = ((s % trk.L) + trk.L) % trk.L;
       const i0 = ((Math.floor(s / ds) % N) + N) % N;
+
       let maxK = 0, apexDist = 0, apexK = 0;
-      for (let q = 1; q < 50; q++) {
-        const kVal = kl[(i0 + q) % N], absK = Math.abs(kVal);
-        if (absK > maxK) {
-          maxK = absK;
-          apexDist = Math.round(q * ds);
-          apexK = kVal;
+      if (kl) {
+        for (let q = 1; q < 120; q++) {
+          const kVal = kl[(i0 + q) % N], absK = Math.abs(kVal);
+          if (absK > maxK) {
+            maxK = absK;
+            apexDist = Math.round(q * ds);
+            apexK = kVal;
+          }
         }
       }
 
-      // Detección de curva oficial FIA
+      // Detección de curva oficial FIA (lookahead amplio a 650m)
+      const corners = (trk.corners && trk.corners.length) ? trk.corners : ((trk.spec && trk.spec.corners) || []);
       let inCorner = null, nextCorner = null, minNextDist = 1e9;
-      if (Array.isArray(trk.corners)) {
-        for (let c = 0; c < trk.corners.length; c++) {
-          const corner = trk.corners[c];
-          if (corner.s0 !== undefined && corner.s1 !== undefined) {
-            if (corner.s0 <= corner.s1) {
-              if (curTrackS >= corner.s0 - 6 && curTrackS <= corner.s1 + 6) { inCorner = corner; break; }
+      if (Array.isArray(corners)) {
+        for (let c = 0; c < corners.length; c++) {
+          const corner = corners[c];
+          const s0 = corner.s0 !== undefined ? corner.s0 : corner.s;
+          const s1 = corner.s1 !== undefined ? corner.s1 : (s0 !== undefined ? s0 + 30 : 0);
+          if (s0 !== undefined && s1 !== undefined) {
+            if (s0 <= s1) {
+              if (curTrackS >= s0 - 6 && curTrackS <= s1 + 6) { inCorner = corner; break; }
             } else {
-              if (curTrackS >= corner.s0 - 6 || curTrackS <= corner.s1 + 6) { inCorner = corner; break; }
+              if (curTrackS >= s0 - 6 || curTrackS <= s1 + 6) { inCorner = corner; break; }
             }
           }
         }
         if (!inCorner) {
-          for (let c = 0; c < trk.corners.length; c++) {
-            const corner = trk.corners[c];
+          for (let c = 0; c < corners.length; c++) {
+            const corner = corners[c];
             const cS = corner.s0 !== undefined ? corner.s0 : corner.s;
+            if (cS === undefined) continue;
             let d = (cS - curTrackS + trk.L) % trk.L;
-            if (d > 0 && d < 340 && d < minNextDist) {
+            if (d > 0 && d < 650 && d < minNextDist) {
               minNextDist = d;
               nextCorner = corner;
             }
@@ -87,9 +92,9 @@ const HudComponents = {
       // 1. Etiqueta de encabezado superior (no solapada)
       m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
       m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      m.fillText(inCorner ? 'EN CURVA' : 'PRÓXIMA CURVA', padX, Math.round(r * 0.075));
+      m.fillText(inCorner ? 'EN CURVA' : (nextCorner || maxK > 0.0035 ? 'PRÓXIMA CURVA' : 'TRAMO ACTUAL'), padX, Math.round(r * 0.075));
 
-      // 2. Nombre prominente de la curva (línea intermedia)
+      // 2. Nombre prominente de la curva (línea intermedia con ajuste de ancho)
       let cornerName = 'RECTA';
       let nameColor = '#ffffff';
       if (inCorner) {
@@ -98,35 +103,54 @@ const HudComponents = {
       } else if (nextCorner) {
         cornerName = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE';
         nameColor = '#38bdf8';
-      } else if (maxK > 0.005) {
+      } else if (maxK > 0.0035) {
         cornerName = 'CURVA ADELANTE';
-        nameColor = 'rgba(255, 255, 255, 0.9)';
+        nameColor = 'rgba(255, 255, 255, 0.90)';
       }
-      m.font = '800 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+
+      let titleFontSz = Math.round(r * 0.125);
+      m.font = '800 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      if (typeof m.measureText === 'function') {
+        const maxTitleW = W - padX * 2;
+        while (titleFontSz > 7 && m.measureText(cornerName).width > maxTitleW) {
+          titleFontSz -= 0.5;
+          m.font = '800 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        }
+      }
       m.fillStyle = nameColor;
       m.fillText(cornerName, padX, Math.round(r * 0.180));
 
-      // 3. Indicador de severidad / radio / distancia (línea inferior)
+      // 3. Indicador de severidad / radio / distancia (línea inferior con flecha y color codificado)
       if (inCorner) {
-        const isRight = inCorner.ang !== undefined ? inCorner.ang > 0 : (inCorner.k >= 0);
+        const k = inCorner.k !== undefined ? inCorner.k : (inCorner.ang !== undefined ? (inCorner.ang >= 0 ? 1 : -1) : (kl ? kl[i0] : 0));
+        const isRight = k >= 0;
         const radius = Math.round(inCorner.R || (maxK > 0 ? 1 / maxK : 60));
-        const arrow = isRight ? '⤹ R' : '⤸ L';
-        const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
-        m.fillStyle = badgeColor;
-        m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillText(arrow + ' ÁPICE · R ' + radius + 'm', padX, Math.round(r * 0.320));
-      } else if (nextCorner || maxK > 0.004) {
-        const isRight = nextCorner ? (nextCorner.ang !== undefined ? nextCorner.ang > 0 : nextCorner.k >= 0) : (apexK > 0);
-        const radius = Math.round(nextCorner ? (nextCorner.R || (maxK > 0 ? 1 / maxK : 60)) : (1 / maxK));
-        const distM = nextCorner ? Math.round(minNextDist) : apexDist;
         const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
         const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
         m.fillStyle = badgeColor;
         m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillText(arrow + ' EN ' + distM + 'm (R ' + radius + 'm)', padX, Math.round(r * 0.320));
+        m.fillText(arrow + ' EN EL ÁPICE · R ' + radius + 'm', padX, Math.round(r * 0.320));
+      } else if (nextCorner) {
+        const k = nextCorner.k !== undefined ? nextCorner.k : (nextCorner.ang !== undefined ? (nextCorner.ang >= 0 ? 1 : -1) : apexK);
+        const isRight = k >= 0;
+        const radius = Math.round(nextCorner.R || (maxK > 0 ? 1 / maxK : 60));
+        const distM = Math.round(minNextDist);
+        const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+        const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+        m.fillStyle = badgeColor;
+        m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillText(arrow + ' A ' + distM + 'm · R ' + radius + 'm', padX, Math.round(r * 0.320));
+      } else if (maxK > 0.0035) {
+        const isRight = apexK >= 0;
+        const radius = Math.round(1 / maxK);
+        const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+        const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+        m.fillStyle = badgeColor;
+        m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillText(arrow + ' A ' + apexDist + 'm · R ' + radius + 'm', padX, Math.round(r * 0.320));
       } else {
-        m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        m.font = '600 ' + Math.round(r * 0.095) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        m.fillStyle = '#4ade80';
+        m.font = '700 ' + Math.round(r * 0.095) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         m.fillText('GAS A FONDO', padX, Math.round(r * 0.320));
       }
     }

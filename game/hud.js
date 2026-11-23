@@ -282,7 +282,7 @@ function hudDrawMinimap() {
   // ---------------------------------------------------------------------------
   // RUTA DE FALLBACK (en caso de no disponer de HudComponents)
   // ---------------------------------------------------------------------------
-  const lookAhead = 260;
+  const lookAhead = 650;
   const curS = Math.floor(curM);
   let maxK = 0, apexDist = 0, apexK = 0;
   if (trk.k) {
@@ -299,17 +299,23 @@ function hudDrawMinimap() {
   let inCorner = null, nextCorner = null, minNextDist = 1e9;
   for (let ci = 0; ci < corners.length; ci++) {
     const c = corners[ci];
-    if (c.s0 <= c.s1) {
-      if (curTrackS >= (c.s0 - 6) && curTrackS <= (c.s1 + 6)) { inCorner = c; break; }
-    } else {
-      if (curTrackS >= (c.s0 - 6) || curTrackS <= (c.s1 + 6)) { inCorner = c; break; }
+    const s0 = c.s0 !== undefined ? c.s0 : c.s;
+    const s1 = c.s1 !== undefined ? c.s1 : (s0 !== undefined ? s0 + 30 : 0);
+    if (s0 !== undefined && s1 !== undefined) {
+      if (s0 <= s1) {
+        if (curTrackS >= (s0 - 6) && curTrackS <= (s1 + 6)) { inCorner = c; break; }
+      } else {
+        if (curTrackS >= (s0 - 6) || curTrackS <= (s1 + 6)) { inCorner = c; break; }
+      }
     }
   }
   if (!inCorner) {
     for (let ci = 0; ci < corners.length; ci++) {
       const c = corners[ci];
-      const distToS0 = (c.s0 - curTrackS + trk.L) % trk.L;
-      if (distToS0 > 0 && distToS0 < minNextDist && distToS0 < 350) {
+      const cS = c.s0 !== undefined ? c.s0 : c.s;
+      if (cS === undefined) continue;
+      const distToS0 = (cS - curTrackS + trk.L) % trk.L;
+      if (distToS0 > 0 && distToS0 < minNextDist && distToS0 < 650) {
         minNextDist = distToS0;
         nextCorner = c;
       }
@@ -320,31 +326,159 @@ function hudDrawMinimap() {
   m.textAlign = 'left';
   m.textBaseline = 'top';
 
-  // 1. Curva
+  // 1. Curva (Sección 1)
   m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  m.fillText(inCorner ? 'EN CURVA' : 'PRÓXIMA CURVA', padX, Math.round(r * 0.075));
+  m.fillText(inCorner ? 'EN CURVA' : (nextCorner || maxK > 0.0035 ? 'PRÓXIMA CURVA' : 'TRAMO ACTUAL'), padX, Math.round(r * 0.075));
 
   let cornerTitle = 'RECTA';
-  let titleColor = 'rgba(255, 255, 255, 0.70)';
+  let titleColor = '#ffffff';
   if (inCorner) { cornerTitle = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA'; titleColor = '#facc15'; }
   else if (nextCorner) { cornerTitle = nextCorner.name ? nextCorner.name.toUpperCase() : 'CURVA ADELANTE'; titleColor = '#38bdf8'; }
+  else if (maxK > 0.0035) { cornerTitle = 'CURVA ADELANTE'; titleColor = 'rgba(255, 255, 255, 0.90)'; }
 
-  m.font = '800 ' + Math.round(r * 0.125) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  let titleFontSz = Math.round(r * 0.125);
+  m.font = '800 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  if (typeof m.measureText === 'function') {
+    const maxTitleW = W - padX * 2;
+    while (titleFontSz > 7 && m.measureText(cornerTitle).width > maxTitleW) {
+      titleFontSz -= 0.5;
+      m.font = '800 ' + titleFontSz + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    }
+  }
   m.fillStyle = titleColor;
   m.fillText(cornerTitle, padX, Math.round(r * 0.180));
 
-  // 2. Telemetría de vueltas
+  if (inCorner) {
+    const k = inCorner.k !== undefined ? inCorner.k : (inCorner.ang !== undefined ? (inCorner.ang >= 0 ? 1 : -1) : (trk.k ? trk.k[curS % trk.N] : 0));
+    const isRight = k >= 0;
+    const radius = Math.round(inCorner.R || (maxK > 0 ? (1 / maxK) : 60));
+    const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+    const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+    m.fillStyle = badgeColor;
+    m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText(arrow + ' EN EL ÁPICE · R ' + radius + 'm', padX, Math.round(r * 0.320));
+  } else if (nextCorner) {
+    const k = nextCorner.k !== undefined ? nextCorner.k : (nextCorner.ang !== undefined ? (nextCorner.ang >= 0 ? 1 : -1) : apexK);
+    const isRight = k >= 0;
+    const radius = Math.round(nextCorner.R || (maxK > 0 ? (1 / maxK) : 60));
+    const distM = Math.round(minNextDist);
+    const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+    const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+    m.fillStyle = badgeColor;
+    m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText(arrow + ' A ' + distM + 'm · R ' + radius + 'm', padX, Math.round(r * 0.320));
+  } else if (maxK > 0.0035) {
+    const isRight = apexK >= 0;
+    const radius = Math.round(1 / maxK);
+    const arrow = isRight ? (radius < 55 ? '⤹ R' : '↱ R') : (radius < 55 ? '⤸ L' : '↰ L');
+    const badgeColor = radius < 55 ? '#ef4444' : radius < 95 ? '#facc15' : '#4ade80';
+    m.fillStyle = badgeColor;
+    m.font = '700 ' + Math.round(r * 0.098) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText(arrow + ' A ' + apexDist + 'm · R ' + radius + 'm', padX, Math.round(r * 0.320));
+  } else {
+    m.fillStyle = '#4ade80';
+    m.font = '700 ' + Math.round(r * 0.095) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillText('GAS A FONDO', padX, Math.round(r * 0.320));
+  }
+
+  // 2. Telemetría de vueltas (Sección 2)
   m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.45)';
   m.fillText('TIEMPOS DE VUELTA', padX, yS1 + Math.round(r * 0.075));
+  m.textAlign = 'right';
+  m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = '#ff5a36';
+  m.fillText('VUELTA ' + (lapCount + 1), W - padX, yS1 + Math.round(r * 0.075));
 
-  // 3. Torre de clasificación
+  const fmtTime = s => {
+    if (s === undefined || s === null || s < 0) return '-:--.--';
+    const totalCs = Math.round(s > 10000 ? s : s * 100);
+    if (totalCs <= 0) return '0:00.00';
+    const min = Math.floor(totalCs / 6000), sec = Math.floor((totalCs % 6000) / 100), cs = Math.floor(totalCs % 100);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}.${cs < 10 ? '0' : ''}${cs}`;
+  };
+  const rowStep = Math.round(r * 0.105);
+  const rowY0 = yS1 + Math.round(r * 0.175);
+  const tRows = [
+    { label: 'VUELTA', time: curLapSec, col: '#ffffff' },
+    { label: 'ÚLTIMA', time: lastLapSec, col: 'rgba(255, 255, 255, 0.85)' },
+    { label: 'MEJOR', time: bestLapSec, col: '#c084fc' }
+  ];
+  for (let i = 0; i < tRows.length; i++) {
+    const ry = rowY0 + i * rowStep;
+    m.textAlign = 'left';
+    m.font = '700 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillStyle = 'rgba(255, 255, 255, 0.50)';
+    m.fillText(tRows[i].label, padX, ry);
+    m.textAlign = 'right';
+    m.font = '800 ' + Math.round(r * 0.092) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillStyle = tRows[i].col;
+    m.fillText(fmtTime(tRows[i].time), W - padX, ry);
+  }
+
+  // 3. Torre de clasificación (Sección 3)
+  m.textAlign = 'left';
   m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.45)';
   m.fillText('POSICIÓN EN CARRERA', padX, yS2 + Math.round(r * 0.075));
 
-  // 4. Radar Minimapa
+  const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
+  const carName = (typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name.split(' ')[0] : 'GT3';
+  const allCars = [{ name: `TÚ (${carName})`, prog: curProg, isPlayer: true, col: '#ff5a36' }];
+  for (let i = 0; i < rivals.length; i++) {
+    if (rivals[i] && rivals[i].veh) {
+      allCars.push({ name: rivals[i].name || `RIVAL #${i + 1}`, prog: rivals[i].veh.laps * trk.L + rivals[i].veh.lapS, isPlayer: false, col: rivals[i].col || '#facc15' });
+    }
+  }
+  allCars.sort((a, b) => b.prog - a.prog);
+  const playerIdx = allCars.findIndex(c => c.isPlayer);
+  const playerPos = playerIdx + 1;
+  const leaderProg = allCars[0].prog;
+  const refSpeed = Math.max(15, (typeof VEH !== 'undefined' && VEH.speed > 5) ? VEH.speed : 30);
+
+  m.textAlign = 'right';
+  m.font = '800 ' + Math.round(r * 0.135) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
+  m.fillText('P' + playerPos, W - padX, yS2 + Math.round(r * 0.045));
+
+  const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
+  const rStartY = yS2 + Math.round(r * 0.185);
+  const rStepY = Math.round(r * 0.098);
+  for (let i = 0; i < allCars.length; i++) {
+    const cObj = allCars[i], ry = rStartY + i * rStepY;
+    const isLead = (i === 0);
+    const gapM = Math.max(0, leaderProg - cObj.prog);
+    const gapSec = (gapM / refSpeed).toFixed(1);
+    m.textAlign = 'left';
+    m.font = '800 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillStyle = posColors[i] || '#ffffff';
+    m.fillText(String(i + 1), padX, ry);
+    m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    m.fillStyle = cObj.isPlayer ? '#ff5a36' : '#ffffff';
+    m.fillText(cObj.name, padX + Math.round(r * 0.14), ry);
+    m.textAlign = 'right';
+    m.font = '700 ' + Math.round(r * 0.080) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+    if (isLead) {
+      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      m.fillText('LÍDER', W - padX, ry);
+    } else {
+      m.fillStyle = cObj.isPlayer ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
+      m.fillText('+' + gapSec + 's', W - padX, ry);
+    }
+  }
+
+  // 4. Radar Minimapa (Sección 4)
+  const trackTitle = (trk.spec && (trk.spec.name || trk.spec.id)) || 'CIRCUITO';
+  m.textAlign = 'left';
+  m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  m.fillText('CIRCUITO', padX, yS3 + Math.round(r * 0.075));
+  m.textAlign = 'right';
+  m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  m.fillStyle = 'rgba(255, 255, 255, 0.55)';
+  m.fillText(trackTitle.toUpperCase(), W - padX, yS3 + Math.round(r * 0.075));
+
   const cX = H.mapTrans[0], cZ = H.mapTrans[1];
   const midTrackX = H.mapTrans[2], midTrackZ = H.mapTrans[3];
   const scale = H.mapTrans[4];
@@ -494,11 +628,12 @@ function hudDraw() {
   }
   const cur = V[3], last = V[4], best = V[5];
   if (cur !== K[4] || last !== K[5] || best !== K[6]) {
-    K[4] = cur; K[5] = last; K[6] = best; const t = H.t, B = H.B, y = L[16];
-    t.clearRect(0, 0, L[17], L[18]); t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
+    K[4] = cur; K[5] = last; K[6] = best;
+    // El cronómetro superior (#ht) ha sido retirado porque toda la información de vuelta
+    // ahora reside de forma unificada en el HUD lateral (HudComponents.LapTelemetry).
   }
 
-  // Dibuja la columna lateral (curva, posición y minimapa)
+  // Dibuja la columna lateral (curva, telemetría, posición y minimapa)
   if (H.vis) hudDrawMinimap();
 
   // Dibuja el semáforo de salida FIA
@@ -516,7 +651,8 @@ function hudStatsFrame() {
 
 function hudShow(on) {
   HUD.vis = on;
-  HUD.cg.style.display = HUD.ct.style.display = on ? 'block' : 'none';
+  HUD.cg.style.display = on ? 'block' : 'none';
+  if (HUD.ct) HUD.ct.style.display = 'none'; // El cartel superior se mantiene oculto permanentemente
   if (HUD.cm) HUD.cm.style.display = on ? 'block' : 'none';
   if (HUD.cmirror) HUD.cmirror.style.display = on ? 'block' : 'none';
   HUD.K.fill(-9);

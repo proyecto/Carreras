@@ -121,7 +121,7 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
   const mockCtx = {
     font: '', fillStyle: '', strokeStyle: '', textAlign: '', textBaseline: '', lineWidth: 1,
     clearRect: () => {}, beginPath: () => {}, roundRect: () => {}, arc: () => {}, fill: () => {}, stroke: () => {},
-    fillText: () => {}, createRadialGradient: () => ({ addColorStop: () => {} })
+    fillText: () => {}, measureText: (txt) => ({ width: (txt || '').length * 8 }), createRadialGradient: () => ({ addColorStop: () => {} })
   };
 
   const mockTrk = {
