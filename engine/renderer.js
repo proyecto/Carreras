@@ -69,6 +69,7 @@ const R = {
   sun: new Float32Array([-0.83, 0.26, -0.5]), sunCol: new Float32Array([1, 0.7, 0.4]),
   casc: { vp: [m4(), m4(), m4(), m4()], splits: [12, 40, 130], texel: new Float32Array(4), view: m4(), tmp: m4(), focusOn: false, focus: new Float32Array(3) },
   cube: { pos: new Float32Array(3), cur: new Float32Array(3), face: 0, vp: m4(), view: m4(), proj: m4() },
+  mirror: { eye: new Float32Array([0, 1.5, 0]), target: new Float32Array([0, 1.4, -20]), up: new Float32Array([0, 1, 0]), view: m4(), proj: m4(), vp: m4(), invVp: m4(), active: true },
   wind: new Float32Array([0.8, 0.6, 1.0]),   // Dirección (x,z) y fuerza del viento; F.wind.w = tiempo, F.misc.x = dt
   fog: new Float32Array([0.0008, 1 / 55, 0, 0.05]), fogCol: new Float32Array([0, 0, 0, 1.0]),
   exposure: 1, debug: 0, noJitter: false, timing: null, pending: [],
@@ -165,8 +166,21 @@ function rendererInit() {
   T.sky = mkTex(SKY_W, SKY_H, 'rgba16float');
   T.noise = mkTex(512, 512, 'rgba8unorm', TU.RT | TU.TB, { mipLevelCount: 10 });
   T.noise3 = dev.createTexture({ size: [64, 64, 64], dimension: '3d', format: 'rgba8unorm', usage: TU.RT | TU.TB });
+  // Espejo retrovisor digital
+  const cvsM = (typeof document !== 'undefined') ? document.getElementById('hmirror') : null;
+  if (cvsM && cvsM.getContext) {
+    cvsM.width = 360; cvsM.height = 100;
+    try {
+      R.mirrorCtx = cvsM.getContext('webgpu');
+      if (R.mirrorCtx) R.mirrorCtx.configure({ device: dev, format: G.fmt, alphaMode: 'opaque' });
+    } catch (e) {
+      R.mirrorCtx = null;
+    }
+  }
+  T.mirrorHdr = mkTex(360, 100, 'rgba16float');
+  T.mirrorDepth = mkTex(360, 100, 'depth32float');
   const V = R.view = {};
-  for (const k of ['gA', 'gB', 'gC', 'gV', 'depth', 'hdr', 'vel', 'mb', 'shadowS', 'sky', 'noise', 'envDepth']) V[k] = T[k].createView();
+  for (const k of ['gA', 'gB', 'gC', 'gV', 'depth', 'hdr', 'vel', 'mb', 'shadowS', 'sky', 'noise', 'envDepth', 'mirrorHdr', 'mirrorDepth']) V[k] = T[k].createView();
   V.hist = T.hist.map(t => t.createView()); V.half = T.half.map(t => t.createView());
   V.shadow = T.shadow.createView({ dimension: '2d-array' }); V.shadowL = [0, 1, 2].map(i => T.shadow.createView({ dimension: '2d', baseArrayLayer: i, arrayLayerCount: 1 }));
   V.env = T.env.createView({ dimension: 'cube' }); V.noise3 = T.noise3.createView({ dimension: '3d' });
@@ -186,10 +200,13 @@ function rendererInit() {
   D.shadow = [0, 1, 2].map(i => { const d = mkPassDesc(0, 'clear1', true, 'shadow' + i); d.depthStencilAttachment.view = V.shadowL[i]; return d; });
   D.shadowS = mkPassDesc(0, 'clear1', true, 'shadowS'); D.shadowS.depthStencilAttachment.view = V.shadowS;
   D.cube = [0, 1, 2, 3, 4, 5].map(f => { const d = mkPassDesc(1, 'clear1', true, 'cube' + f); d.colorAttachments[0].view = V.envFace[f][0]; d.depthStencilAttachment.view = V.envDepth; return d; });
+  D.mirrorHdr = mkPassDesc(1, 'clear1', true, 'mirrorHdr'); D.mirrorHdr.colorAttachments[0].view = V.mirrorHdr; D.mirrorHdr.depthStencilAttachment.view = V.mirrorDepth;
+  D.mirrorOut = mkPassDesc(1, null, false, 'mirrorOut');
   D.light = mkPassDesc(1, null, false, 'light'); D.light.colorAttachments[0].view = V.hdr;
   D.trans = mkPassDesc(1, 'ro', false, 'trans'); D.trans.colorAttachments[0].view = V.hdr; D.trans.depthStencilAttachment.view = V.depth;
   D.decal = mkPassDesc(3, 'ro', false, 'decal'); D.decal.colorAttachments[0].view = V.gA; D.decal.colorAttachments[1].view = V.gB; D.decal.colorAttachments[2].view = V.gC; D.decal.depthStencilAttachment.view = V.depth;
   postInit();
+  R.mirrorBG = bgOf(R.post.dbg, 0, [V.mirrorHdr, R.sClamp, R.post.dbgBuf]);
   R.submitArr = [null];
 }
 WGSL.__probe = '#include common\n#include gbuf\n#include mesh_vert\n#ifdef PASS_CUBE\n#include cube_light\n#endif\n';
@@ -240,8 +257,10 @@ function frameUniforms() {
   k = o.wind; f[k] = R.wind[0]; f[k + 1] = R.wind[1]; f[k + 2] = R.wind[2]; f[k + 3] = RT[0];
   k = o.wm; f[k] = WM.x0; f[k + 1] = WM.z0; f[k + 2] = WM.sx; f[k + 3] = WM.sz;
   // Posición del sol en pantalla (UV) para lens flare; z = 1 si está frente a la cámara (desactivado de noche)
-  { const m = c.vp, sx = R.sun[0], sy = R.sun[1], sz = R.sun[2], cw = m[3] * sx + m[7] * sy + m[11] * sz;
-    k = o.sunScr; if (!isNight && cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0; }
+  {
+    const m = c.vp, sx = R.sun[0], sy = R.sun[1], sz = R.sun[2], cw = m[3] * sx + m[7] * sy + m[11] * sz;
+    k = o.sunScr; if (!isNight && cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0;
+  }
   const dtc = RT[1] > 1e-4 ? RT[1] : 1e-4;
   k = o.post; f[k] = (1 / 120) / dtc; f[k + 1] = Math.tan(c.fovy / 2); f[k + 2] = W / H; f[k + 3] = 0;
 }
@@ -305,6 +324,22 @@ function cubeSetup(f) {
   const p = c.proj, n = 0.3, fa = 4000; p.fill(0); p[0] = 1; p[5] = -1; p[10] = fa / (n - fa); p[11] = -1; p[14] = n * fa / (n - fa);
   m4mul(c.vp, p, c.view);
 }
+function mirrorSetup() {
+  const m = R.mirror;
+  if (!m || !m.active) return;
+  m4lookAt(m.view, m.eye[0], m.eye[1], m.eye[2], m.target[0], m.target[1], m.target[2], m.up[0], m.up[1], m.up[2]);
+  const p = m.proj, n = 0.3, fa = 2000, fl = 1 / Math.tan(0.45 / 2);
+  p.fill(0);
+  p[0] = -(fl / 3.6); // Invertido horizontalmente para reflejo de espejo
+  p[5] = fl;
+  p[10] = fa / (n - fa);
+  p[11] = -1;
+  p[14] = n * fa / (n - fa);
+  m4mul(m.vp, p, m.view);
+  setPass(13, m.vp, m.eye);
+  m4inv(m.invVp, m.vp);
+  R.passData.set(m.invVp, 14 * 64);
+}
 
 // ---- Render loop por frame ----
 // Los únicos objetos creados por frame son los exigidos por WebGPU (command encoder, passes,
@@ -323,8 +358,9 @@ function renderFrame() {
   // Dos caras del cubemap de entorno por frame en la posición actual del coche (ciclo cada 3 frames)
   const face = (R.frameIdx * 2) % 6; R.cube.cur.set(R.cube.pos);
   for (let k = 0; k < 2; k++) { cubeSetup(face + k); setPass(5 + face + k, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, (11 + k) * 64); }
+  if (R.mirrorCtx && R.mirror && R.mirror.active) mirrorSetup();
   dev.queue.writeBuffer(R.frameBuf, 0, FR.data);
-  dev.queue.writeBuffer(R.passBuf, 0, R.passData, 0, 13 * 64);
+  dev.queue.writeBuffer(R.passBuf, 0, R.passData, 0, 15 * 64);
   dev.queue.writeBuffer(R.objBuf, 0, R.objData, 0, R.objCount * 64);
   for (let i = 0; i < R.preFrame.length; i++) R.preFrame[i]();
   const enc = apiEncoder();
@@ -332,6 +368,15 @@ function renderFrame() {
   for (let i = 0; i < 3; i++) {
     const p = apiPass(enc, D.shadow[i]);
     drawAll(p, ctxFrom(KIND.SHADOW, R.casc.vp[i], 6, c.pos, i), 1 + i, R.passBG); p.end();
+  }
+  // Pase del espejo retrovisor digital (adelantado en el encoder)
+  if (R.mirrorCtx && R.mirror && R.mirror.active) {
+    const pm = apiPass(enc, D.mirrorHdr);
+    cubeSky(pm, 14);
+    drawAll(pm, ctxFrom(KIND.CUBE, R.mirror.vp, 5, R.mirror.eye, 0), 13, R.passBGCube);
+    pm.end();
+    D.mirrorOut.colorAttachments[0].view = R.mirrorCtx.getCurrentTexture().createView();
+    fsPass(enc, D.mirrorOut, R.post.dbg, R.mirrorBG);
   }
   // Caras del cubemap de entorno
   for (let k = 0; k < 2; k++) {

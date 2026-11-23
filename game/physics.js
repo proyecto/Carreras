@@ -9,6 +9,8 @@ const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V 
 // Registro digital de entradas idéntico para teclado y vueltas guiadas.
 const VIN = new Float64Array(3);
 const VIN_RIVAL = new Float64Array(3);
+const VIN_RIVAL2 = new Float64Array(3);
+const VIN_RIVAL3 = new Float64Array(3);
 const VP = {
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
   mu: 1.42, B: 9.5, C: 1.42, driveF: 1.0,
@@ -38,6 +40,8 @@ function createVehicleState() {
 
 const VEH = createVehicleState();
 const VEH_RIVAL = createVehicleState();
+const VEH_RIVAL2 = createVehicleState();
+const VEH_RIVAL3 = createVehicleState();
 const _vl = new Float64Array(4), _vp = new Float64Array(5);
 // Posiciones locales de las ruedas (x avance, z anchura): FL, FR, RL, RR
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
@@ -437,8 +441,12 @@ function vehicleCarCollide(v1, v2) {
 if (typeof window !== 'undefined') {
   window.VEH = VEH;
   window.VEH_RIVAL = VEH_RIVAL;
+  window.VEH_RIVAL2 = VEH_RIVAL2;
+  window.VEH_RIVAL3 = VEH_RIVAL3;
   window.VIN = VIN;
   window.VIN_RIVAL = VIN_RIVAL;
+  window.VIN_RIVAL2 = VIN_RIVAL2;
+  window.VIN_RIVAL3 = VIN_RIVAL3;
   window.createVehicleState = createVehicleState;
   window.vehicleCarCollide = vehicleCarCollide;
 }

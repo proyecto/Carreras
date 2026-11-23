@@ -10,15 +10,41 @@ const GS = {
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
 };
-const GS_RIVAL = {
-  body: m4(), tmp: m4(), ground: m4(),
-  spin: new Float32Array(4), susp: new Float32Array(4),
-  cx: 0, cy: 0, cz: 0, yaw: 0, steer: 0, speed: 0,
-};
+function createGsRival() {
+  return {
+    body: m4(), tmp: m4(), ground: m4(),
+    spin: new Float32Array(4), susp: new Float32Array(4),
+    cx: 0, cy: 0, cz: 0, yaw: 0, steer: 0, speed: 0,
+  };
+}
+const GS_RIVAL = createGsRival();
+const GS_RIVAL2 = createGsRival();
+const GS_RIVAL3 = createGsRival();
 // Cronómetro: LAP[0] tiempo inicio de vuelta actual, [1] última vuelta, [2] mejor vuelta, [3] estado
 const LAP = new Float64Array(4);
 // Entradas Gamepad API: acelerador, freno y dirección analógicos con zona muerta
 const PADV = new Float64Array(3);
+
+// Semáforo de salida FIA: 5 luces rojas progresivas + pausa tensa + apagado/verde (Lights out!)
+const RACE_START = {
+  active: false,
+  state: 'idle', // 'idle' | 'countdown' | 'lights_out' | 'racing'
+  t: 0,
+  lightsCount: 0,
+  goTime: 6.0,
+  doneTime: 7.8,
+  lastBeep: -1,
+};
+function raceStartTrigger() {
+  RACE_START.active = true;
+  RACE_START.state = 'countdown';
+  RACE_START.t = 0;
+  RACE_START.lightsCount = 0;
+  RACE_START.lastBeep = -1;
+  // 5 luces rojas a los 1s, 2s, 3s, 4s, 5s + intervalo aleatorio FIA (0.8s a 2.0s)
+  RACE_START.goTime = 5.0 + 0.8 + Math.random() * 1.2;
+  RACE_START.doneTime = RACE_START.goTime + 1.8;
+}
 
 const DEFAULT_CONTROLS = {
   accel: ['KeyW', 'ArrowUp'],
@@ -177,112 +203,144 @@ const CARP = {
 const carObj = () => (CAR || CARP);
 const rivalObj = () => ((typeof CARS !== 'undefined' && CARS.rival) ? CARS.rival : CAR_RIVAL);
 
-// Coche rival de competición GT3 (#7) controlado por la IA
-const CAR_RIVAL = {
-  wheelR: VP.R,
-  hubs: [[VP.L / 2, VP.R, -0.72], [VP.L / 2, VP.R, 0.72], [-VP.L / 2, VP.R, -0.72], [-VP.L / 2, VP.R, 0.72]],
-  slotBody: 0,
-  slotWheel: [0, 0, 0, 0],
-  _t: m4(),
-  _u: m4(),
-  inp: new Float64Array(2),
-  built: false,
+// Coches rivales de competición GT3 controlados por la IA (#7 Amarillo, #12 Azul, #99 Rojo)
+function createRivalCar(number, bodyR, bodyG, bodyB, plateR, plateG, plateB) {
+  return {
+    wheelR: VP.R,
+    hubs: [[VP.L / 2, VP.R, -0.72], [VP.L / 2, VP.R, 0.72], [-VP.L / 2, VP.R, -0.72], [-VP.L / 2, VP.R, 0.72]],
+    slotBody: 0,
+    slotWheel: [0, 0, 0, 0],
+    _t: m4(),
+    _u: m4(),
+    inp: new Float64Array(2),
+    built: false,
 
-  build() {
-    if (this.built) return;
-    if (typeof R === 'undefined' || !R.drawables || typeof MeshBuilder === 'undefined') return;
-    const fam = (R.families && R.families.test) || (typeof mkFamily === 'function' ? mkFamily('test', { src: 'mat_test' }) : null);
-    if (!fam) return;
-    const set = new MeshSet(fam);
-    R.drawables.push(set);
+    build() {
+      if (this.built) return;
+      if (typeof R === 'undefined' || !R.drawables || typeof MeshBuilder === 'undefined') return;
+      const fam = (R.families && R.families.test) || (typeof mkFamily === 'function' ? mkFamily('test', { src: 'mat_test' }) : null);
+      if (!fam) return;
+      const set = new MeshSet(fam);
+      R.drawables.push(set);
 
-    this.slotBody = objSlot();
-    for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
+      this.slotBody = objSlot();
+      for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
 
-    // Construcción del chasis GT3 del rival #7:
-    // Amarillo competición y Negro Fibra de Carbono con acentos rojos
-    let mb = new MeshBuilder();
-    // Chasis principal (Amarillo competición con laca multicapa mat=2)
-    mb.mat(2).color(0.96, 0.78, 0.08);
-    mb.rbox(0.08, 0.54, 0, 3.90, 0.50, 1.68, 0.10, 4);
-    mb.rbox(-0.32, 1.05, 0, 2.05, 0.52, 1.36, 0.12, 4);
-    mb.rbox(1.25, 0.58, 0, 1.10, 0.22, 1.58, 0.08, 4);
+      let mb = new MeshBuilder();
+      // Chasis principal (mat=2 para laca de competición)
+      mb.mat(2).color(bodyR, bodyG, bodyB);
+      mb.rbox(0.08, 0.54, 0, 3.90, 0.50, 1.68, 0.10, 4);
+      mb.rbox(-0.32, 1.05, 0, 2.05, 0.52, 1.36, 0.12, 4);
+      mb.rbox(1.25, 0.58, 0, 1.10, 0.22, 1.58, 0.08, 4);
 
-    // Parabrisas y ventanas tintadas oscuras (mat=1)
-    mb.mat(1).color(0.10, 0.12, 0.14);
-    mb.box(-0.15, 1.08, 0, 1.85, 0.44, 1.38);
+      // Parabrisas y ventanas tintadas oscuras (mat=1)
+      mb.mat(1).color(0.10, 0.12, 0.14);
+      mb.box(-0.15, 1.08, 0, 1.85, 0.44, 1.38);
 
-    // Splitter frontal, difusor y faldones aerodinámicos (Negro carbono mat=0)
-    mb.mat(0).color(0.08, 0.08, 0.09);
-    mb.box(2.02, 0.22, 0, 0.42, 0.05, 1.84);
-    mb.box(-1.95, 0.28, 0, 0.40, 0.14, 1.76);
-    mb.box(0, 0.24, -0.84, 2.70, 0.06, 0.12);
-    mb.box(0, 0.24, 0.84, 2.70, 0.06, 0.12);
+      // Splitter frontal, difusor y faldones aerodinámicos (Negro carbono mat=0)
+      mb.mat(0).color(0.08, 0.08, 0.09);
+      mb.box(2.02, 0.22, 0, 0.42, 0.05, 1.84);
+      mb.box(-1.95, 0.28, 0, 0.40, 0.14, 1.76);
+      mb.box(0, 0.24, -0.84, 2.70, 0.06, 0.12);
+      mb.box(0, 0.24, 0.84, 2.70, 0.06, 0.12);
 
-    // Alerón trasero GT3 biplano de competición
-    mb.mat(0).color(0.12, 0.12, 0.13);
-    mb.box(-1.75, 1.18, -0.58, 0.08, 0.38, 0.05);
-    mb.box(-1.75, 1.18, 0.58, 0.08, 0.38, 0.05);
-    mb.box(-1.78, 1.38, 0, 0.46, 0.05, 1.82);
-    mb.mat(2).color(0.85, 0.12, 0.12); // Placas terminales rojas
-    mb.box(-1.78, 1.38, -0.92, 0.50, 0.24, 0.03);
-    mb.box(-1.78, 1.38, 0.92, 0.50, 0.24, 0.03);
+      // Alerón trasero GT3 biplano de competición
+      mb.mat(0).color(0.12, 0.12, 0.13);
+      mb.box(-1.75, 1.18, -0.58, 0.08, 0.38, 0.05);
+      mb.box(-1.75, 1.18, 0.58, 0.08, 0.38, 0.05);
+      mb.box(-1.78, 1.38, 0, 0.46, 0.05, 1.82);
+      mb.mat(2).color(plateR, plateG, plateB); // Placas terminales de color
+      mb.box(-1.78, 1.38, -0.92, 0.50, 0.24, 0.03);
+      mb.box(-1.78, 1.38, 0.92, 0.50, 0.24, 0.03);
 
-    // Faros delanteros LED (mat=3)
-    mb.mat(3).color(1.0, 0.95, 0.75);
-    mb.box(1.92, 0.62, -0.62, 0.12, 0.10, 0.28);
-    mb.box(1.92, 0.62, 0.62, 0.12, 0.10, 0.28);
+      // Faros delanteros LED (mat=3)
+      mb.mat(3).color(1.0, 0.95, 0.75);
+      mb.box(1.92, 0.62, -0.62, 0.12, 0.10, 0.28);
+      mb.box(1.92, 0.62, 0.62, 0.12, 0.10, 0.28);
 
-    // Luces traseras LED rojas (mat=3)
-    mb.mat(3).color(1.0, 0.05, 0.05);
-    mb.box(-1.96, 0.68, -0.58, 0.08, 0.08, 0.36);
-    mb.box(-1.96, 0.68, 0.58, 0.08, 0.08, 0.36);
+      // Luces traseras LED rojas (mat=3)
+      mb.mat(3).color(1.0, 0.05, 0.05);
+      mb.box(-1.96, 0.68, -0.58, 0.08, 0.08, 0.36);
+      mb.box(-1.96, 0.68, 0.58, 0.08, 0.08, 0.36);
 
-    // Dorsal blanco #7 en el techo
-    mb.mat(1).color(1.0, 1.0, 1.0);
-    mb.box(-0.35, 1.34, 0, 0.60, 0.02, 0.60);
+      // Dorsal en el techo (mat=1)
+      mb.mat(1).color(1.0, 1.0, 1.0);
+      mb.box(-0.35, 1.34, 0, 0.60, 0.02, 0.60);
 
-    set.add(mb.upload(), this.slotBody, 3);
+      // Flags = 7 (GBUF | SHADOW | CUBE/MIRROR) -> visible en retrovisor digital
+      set.add(mb.upload(), this.slotBody, 7);
 
-    // Ruedas de aleación ligera GT
-    mb = new MeshBuilder();
-    mb.mat(0).color(0.04, 0.04, 0.04);
-    mb.push(m4rotX(m4(), PI / 2));
-    mb.cyl(0, -0.14, 0, VP.R, 0.28, VP.R, 24, true, true);
-    mb.pop();
-    mb.mat(1).color(0.18, 0.18, 0.20);
-    mb.push(m4rotX(m4(), PI / 2));
-    mb.cyl(0, -0.145, 0, VP.R * 0.72, 0.29, VP.R * 0.72, 16, true, true);
-    mb.pop();
-    mb.mat(1).color(0.55, 0.55, 0.58);
-    mb.push(m4rotX(m4(), PI / 2));
-    mb.cyl(0, 0, 0, VP.R * 0.58, 0.04, VP.R * 0.58, 16, true, true);
-    mb.pop();
+      // Ruedas de aleación ligera GT
+      mb = new MeshBuilder();
+      mb.mat(0).color(0.04, 0.04, 0.04);
+      mb.push(m4rotX(m4(), PI / 2));
+      mb.cyl(0, -0.14, 0, VP.R, 0.28, VP.R, 24, true, true);
+      mb.pop();
+      mb.mat(1).color(0.18, 0.18, 0.20);
+      mb.push(m4rotX(m4(), PI / 2));
+      mb.cyl(0, -0.145, 0, VP.R * 0.72, 0.29, VP.R * 0.72, 16, true, true);
+      mb.pop();
+      mb.mat(1).color(0.55, 0.55, 0.58);
+      mb.push(m4rotX(m4(), PI / 2));
+      mb.cyl(0, 0, 0, VP.R * 0.58, 0.04, VP.R * 0.58, 16, true, true);
+      mb.pop();
 
-    const wm = mb.upload();
-    for (let i = 0; i < 4; i++) set.add(wm, this.slotWheel[i], 3);
+      const wm = mb.upload();
+      for (let i = 0; i < 4; i++) set.add(wm, this.slotWheel[i], 7);
 
-    this.built = true;
-  },
+      this.built = true;
+    },
 
-  place(body, spin, susp) {
-    const steer = this.inp[0];
-    objPrev(this.slotBody).set(objModel(this.slotBody));
-    objModel(this.slotBody).set(body);
-    for (let i = 0; i < 4; i++) {
-      const h = this.hubs[i], m = objModel(this.slotWheel[i]);
-      objPrev(this.slotWheel[i]).set(m);
-      m4translate(this._t, h[0], h[1] + (susp ? susp[i] : 0), h[2]);
-      m4mul(this._t, body, this._t);
-      if (i < 2) {
-        m4rotY(this._u, -steer);
-        m4mul(this._t, this._t, this._u);
+    place(body, spin, susp) {
+      const steer = this.inp[0];
+      objPrev(this.slotBody).set(objModel(this.slotBody));
+      objModel(this.slotBody).set(body);
+      for (let i = 0; i < 4; i++) {
+        const h = this.hubs[i], m = objModel(this.slotWheel[i]);
+        objPrev(this.slotWheel[i]).set(m);
+        m4translate(this._t, h[0], h[1] + (susp ? susp[i] : 0), h[2]);
+        m4mul(this._t, body, this._t);
+        if (i < 2) {
+          m4rotY(this._u, -steer);
+          m4mul(this._t, this._t, this._u);
+        }
+        m4rotZ(this._u, -spin[i]);
+        m4mul(m, this._t, this._u);
       }
-      m4rotZ(this._u, -spin[i]);
-      m4mul(m, this._t, this._u);
     }
+  };
+}
+
+const CAR_RIVAL = createRivalCar(7, 0.96, 0.78, 0.08, 0.85, 0.12, 0.12);
+const CAR_RIVAL2 = createRivalCar(12, 0.10, 0.40, 0.95, 0.95, 0.95, 0.95);
+const CAR_RIVAL3 = createRivalCar(99, 0.92, 0.12, 0.14, 0.96, 0.78, 0.08);
+
+function poseRival(CR, VR, gsR, kr, al) {
+  if (!CR || !CR.built || !VR) return;
+  const PR = VP;
+  const xr = VR.px + (VR.x - VR.px) * al, zr = VR.pz + (VR.z - VR.pz) * al, yr = VR.py + (VR.y - VR.py) * al;
+  let dyr = VR.yaw - VR.pyaw; if (dyr > PI) dyr -= TAU; else if (dyr < -PI) dyr += TAU; const yawr = VR.pyaw + dyr * al;
+  const gpr = VR.pgPitch + (VR.gPitch - VR.pgPitch) * al, grr = VR.pgRoll + (VR.gRoll - VR.pgRoll) * al, rollr = VR.proll + (VR.roll - VR.proll) * al, pitchr = VR.ppitch + (VR.pitch - VR.ppitch) * al, heaver = VR.pheave + (VR.heave - VR.pheave) * al;
+  const cr = Math.cos(yawr), sr = Math.sin(yawr), oxr = -(PR.L / 2 - PR.a);
+  gsR.cx = xr + cr * oxr; gsR.cz = zr + sr * oxr; gsR.cy = yr; gsR.yaw = yawr; gsR.steer = VR.psteer + (VR.steer - VR.psteer) * al; gsR.speed = Math.sqrt(VR.vx * VR.vx + VR.vy * VR.vy);
+  const BR = gsR.body, TR = gsR.tmp, GR0 = gsR.ground;
+  GR0[0] = cr; GR0[1] = 0; GR0[2] = sr; GR0[3] = 0; GR0[4] = 0; GR0[5] = 1; GR0[6] = 0; GR0[7] = 0; GR0[8] = -sr; GR0[9] = 0; GR0[10] = cr; GR0[11] = 0; GR0[12] = gsR.cx; GR0[13] = gsR.cy; GR0[14] = gsR.cz; GR0[15] = 1;
+  ROTQ[0] = gpr; rotZQ(TR); m4mul(GR0, GR0, TR); ROTQ[0] = -grr; rotXQ(TR); m4mul(GR0, GR0, TR);
+  BR[0] = GR0[0]; BR[1] = GR0[1]; BR[2] = GR0[2]; BR[3] = 0; BR[4] = GR0[4]; BR[5] = GR0[5]; BR[6] = GR0[6]; BR[7] = 0; BR[8] = GR0[8]; BR[9] = GR0[9]; BR[10] = GR0[10]; BR[11] = 0; BR[12] = GR0[12]; BR[13] = GR0[13]; BR[14] = GR0[14]; BR[15] = 1;
+  m4ident(TR); TR[13] = 0.18 + heaver; m4mul(BR, GR0, TR);
+  ROTQ[0] = -pitchr; rotZQ(TR); m4mul(BR, BR, TR); ROTQ[0] = -rollr; rotXQ(TR); m4mul(BR, BR, TR);
+  m4ident(TR); TR[13] = -0.18; m4mul(BR, BR, TR);
+  for (let i = 0; i < 4; i++) {
+    const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
+    let su = VR.wy[i] + CR.wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
+    gsR.susp[i] = su; gsR.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
   }
-};
+  if (!CR.inp) CR.inp = new Float64Array(2);
+  CR.inp[0] = gsR.steer; CR.inp[1] = gsR.steer * 14; CR.place(BR, gsR.spin, gsR.susp);
+  const bpR = objParams(CR.slotBody);
+  bpR[0] = ((kr & K_S) && VR.gear !== 0) || ((kr & K_W) && VR.gear === 0) ? 1 : 0; bpR[1] = VR.gear === 0 ? 1 : 0; bpR[2] = 1;
+  for (let i = 0; i < 4; i++) { const w = VR.omega[i]; objParams(CR.slotWheel[i])[0] = w < 0 ? -w : w; }
+}
 
 function gameInit() {
   addEventListener('keydown', onKeyDown); addEventListener('keyup', onKeyUp); addEventListener('blur', onBlur);
@@ -357,12 +415,21 @@ function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
-    const VR = VEH_RIVAL; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
-    vehicleReset(TRK.L + TRK.startS - 8.0, TRK.startD + 3.2, 0, VEH_RIVAL, VIN_RIVAL);
+    const rivals = [
+      { v: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2 },
+      { v: (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null), vin: (typeof VIN_RIVAL2 !== 'undefined' ? VIN_RIVAL2 : null), ds: -16.0, dd: -0.2 },
+      { v: (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null), vin: (typeof VIN_RIVAL3 !== 'undefined' ? VIN_RIVAL3 : null), ds: -24.0, dd: 3.0 }
+    ];
+    for (const r of rivals) {
+      if (!r.v || !r.vin) continue;
+      const VR = r.v; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
+      vehicleReset(TRK.L + TRK.startS + r.ds, TRK.startD + r.dd, 0, r.v, r.vin);
+    }
   }
-  GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = GS.rivalKeys2 = GS.rivalKeys3 = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
+  raceStartTrigger();
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // Paso de física a 120 Hz; lectura de entradas a 60 Hz
@@ -385,19 +452,72 @@ function gameStep() {
       if (typeof NET !== 'undefined' && NET.connected) {
         NET.sendLocalState(VEH);
       } else {
-        GS.rivalKeys = t < 0.5 ? 0 : aiKeys(t, VEH_RIVAL);
+        GS.rivalKeys = (t < 0.5 || RACE_START.active) ? 0 : aiKeys(t, VEH_RIVAL);
+        if (typeof VEH_RIVAL2 !== 'undefined') {
+          GS.rivalKeys2 = (VEH_RIVAL2.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL2.time, VEH_RIVAL2);
+        }
+        if (typeof VEH_RIVAL3 !== 'undefined') {
+          GS.rivalKeys3 = (VEH_RIVAL3.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL3.time, VEH_RIVAL3);
+        }
       }
     }
   }
   GS.sub++;
+
+  // Control de salida en parrilla con semáforo FIA
+  if (RACE_START.active) {
+    RACE_START.t += 1 / 120;
+    if (RACE_START.state === 'countdown') {
+      const curLight = Math.min(5, Math.floor(RACE_START.t));
+      if (curLight !== RACE_START.lightsCount) {
+        RACE_START.lightsCount = curLight;
+        if (curLight > 0 && curLight !== RACE_START.lastBeep) {
+          RACE_START.lastBeep = curLight;
+          if (typeof sndBeep === 'function') sndBeep(480, 0.16, 0.28);
+        }
+      }
+      if (RACE_START.t >= RACE_START.goTime) {
+        RACE_START.state = 'lights_out';
+        if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
+        LAP[0] = performance.now() * 0.001;
+      } else {
+        // En parrilla durante la cuenta atrás: el coche no puede desplazarse (Launch Control)
+        VEH.vx = 0; VEH.vy = 0; VEH.vz = 0;
+        if (typeof VEH_RIVAL !== 'undefined') { VEH_RIVAL.vx = 0; VEH_RIVAL.vy = 0; VEH_RIVAL.vz = 0; }
+        if (typeof VEH_RIVAL2 !== 'undefined') { VEH_RIVAL2.vx = 0; VEH_RIVAL2.vy = 0; VEH_RIVAL2.vz = 0; }
+        if (typeof VEH_RIVAL3 !== 'undefined') { VEH_RIVAL3.vx = 0; VEH_RIVAL3.vy = 0; VEH_RIVAL3.vz = 0; }
+      }
+    } else if (RACE_START.state === 'lights_out') {
+      if (RACE_START.t >= RACE_START.doneTime) {
+        RACE_START.active = false;
+        RACE_START.state = 'racing';
+      }
+    }
+  }
+
   vehicleStep(GS.keys, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
     if (typeof NET !== 'undefined' && NET.connected) {
       NET.updateRemoteVehicle(VEH_RIVAL, PHYS_DT);
     } else {
       vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
+      if (typeof VEH_RIVAL2 !== 'undefined' && typeof VIN_RIVAL2 !== 'undefined') {
+        vehicleStep(GS.rivalKeys2 || 0, VEH_RIVAL2, VIN_RIVAL2);
+      }
+      if (typeof VEH_RIVAL3 !== 'undefined' && typeof VIN_RIVAL3 !== 'undefined') {
+        vehicleStep(GS.rivalKeys3 || 0, VEH_RIVAL3, VIN_RIVAL3);
+      }
     }
     vehicleCarCollide(VEH, VEH_RIVAL);
+    if (typeof VEH_RIVAL2 !== 'undefined') {
+      vehicleCarCollide(VEH, VEH_RIVAL2);
+      vehicleCarCollide(VEH_RIVAL, VEH_RIVAL2);
+    }
+    if (typeof VEH_RIVAL3 !== 'undefined') {
+      vehicleCarCollide(VEH, VEH_RIVAL3);
+      vehicleCarCollide(VEH_RIVAL, VEH_RIVAL3);
+      if (typeof VEH_RIVAL2 !== 'undefined') vehicleCarCollide(VEH_RIVAL2, VEH_RIVAL3);
+    }
   }
   if (VEH.laps !== GS.lapSeen) lapCross();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
@@ -465,31 +585,11 @@ function gamePose() {
   const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
 
-  // Pose e interpolación del rival IA
-  const CR = rivalObj();
-  if (GAME.rivalEnabled !== false && CR && CR.built && typeof VEH_RIVAL !== 'undefined') {
-    const VR = VEH_RIVAL, PR = VP;
-    const xr = VR.px + (VR.x - VR.px) * al, zr = VR.pz + (VR.z - VR.pz) * al, yr = VR.py + (VR.y - VR.py) * al;
-    let dyr = VR.yaw - VR.pyaw; if (dyr > PI) dyr -= TAU; else if (dyr < -PI) dyr += TAU; const yawr = VR.pyaw + dyr * al;
-    const gpr = VR.pgPitch + (VR.gPitch - VR.pgPitch) * al, grr = VR.pgRoll + (VR.gRoll - VR.pgRoll) * al, rollr = VR.proll + (VR.roll - VR.proll) * al, pitchr = VR.ppitch + (VR.pitch - VR.ppitch) * al, heaver = VR.pheave + (VR.heave - VR.pheave) * al;
-    const cr = Math.cos(yawr), sr = Math.sin(yawr), oxr = -(PR.L / 2 - PR.a);
-    GS_RIVAL.cx = xr + cr * oxr; GS_RIVAL.cz = zr + sr * oxr; GS_RIVAL.cy = yr; GS_RIVAL.yaw = yawr; GS_RIVAL.steer = VR.psteer + (VR.steer - VR.psteer) * al; GS_RIVAL.speed = Math.sqrt(VR.vx * VR.vx + VR.vy * VR.vy);
-    const BR = GS_RIVAL.body, TR = GS_RIVAL.tmp, GR0 = GS_RIVAL.ground;
-    GR0[0] = cr; GR0[1] = 0; GR0[2] = sr; GR0[3] = 0; GR0[4] = 0; GR0[5] = 1; GR0[6] = 0; GR0[7] = 0; GR0[8] = -sr; GR0[9] = 0; GR0[10] = cr; GR0[11] = 0; GR0[12] = GS_RIVAL.cx; GR0[13] = GS_RIVAL.cy; GR0[14] = GS_RIVAL.cz; GR0[15] = 1;
-    ROTQ[0] = gpr; rotZQ(TR); m4mul(GR0, GR0, TR); ROTQ[0] = -grr; rotXQ(TR); m4mul(GR0, GR0, TR);
-    m4ident(TR); TR[13] = 0.18 + heaver; m4mul(BR, GR0, TR);
-    ROTQ[0] = -pitchr; rotZQ(TR); m4mul(BR, BR, TR); ROTQ[0] = -rollr; rotXQ(TR); m4mul(BR, BR, TR);
-    m4ident(TR); TR[13] = -0.18; m4mul(BR, BR, TR);
-    for (let i = 0; i < 4; i++) {
-      const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
-      let su = VR.wy[i] + CR.wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
-      GS_RIVAL.susp[i] = su; GS_RIVAL.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
-    }
-    if (!CR.inp) CR.inp = new Float64Array(2);
-    CR.inp[0] = GS_RIVAL.steer; CR.inp[1] = GS_RIVAL.steer * 14; CR.place(BR, GS_RIVAL.spin, GS_RIVAL.susp);
-    const bpR = objParams(CR.slotBody), kr = GS.rivalKeys;
-    bpR[0] = ((kr & K_S) && VR.gear !== 0) || ((kr & K_W) && VR.gear === 0) ? 1 : 0; bpR[1] = VR.gear === 0 ? 1 : 0; bpR[2] = 1;
-    for (let i = 0; i < 4; i++) { const w = VR.omega[i]; objParams(CR.slotWheel[i])[0] = w < 0 ? -w : w; }
+  // Pose e interpolación de los rivales IA
+  if (GAME.rivalEnabled !== false) {
+    if (typeof VEH_RIVAL !== 'undefined') poseRival(rivalObj(), VEH_RIVAL, GS_RIVAL, GS.rivalKeys, al);
+    if (typeof CAR_RIVAL2 !== 'undefined' && typeof VEH_RIVAL2 !== 'undefined') poseRival(CAR_RIVAL2, VEH_RIVAL2, GS_RIVAL2, GS.rivalKeys2 || 0, al);
+    if (typeof CAR_RIVAL3 !== 'undefined' && typeof VEH_RIVAL3 !== 'undefined') poseRival(CAR_RIVAL3, VEH_RIVAL3, GS_RIVAL3, GS.rivalKeys3 || 0, al);
   }
 
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
@@ -498,6 +598,16 @@ function gamePose() {
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // Luces de salida en parrilla
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
+  const m = R.mirror;
+  if (m) {
+    m.eye[0] = B[0] * -1.8 + B[4] * 1.35 + B[12];
+    m.eye[1] = B[1] * -1.8 + B[5] * 1.35 + B[13];
+    m.eye[2] = B[2] * -1.8 + B[6] * 1.35 + B[14];
+    m.target[0] = B[0] * -20.0 + B[4] * 1.25 + B[12];
+    m.target[1] = B[1] * -20.0 + B[5] * 1.25 + B[13];
+    m.target[2] = B[2] * -20.0 + B[6] * 1.25 + B[14];
+    m.up[0] = B[4]; m.up[1] = B[5]; m.up[2] = B[6];
+  }
 }
 // Rotaciones leyendo ángulo del registro ROTQ[0]
 const ROTQ = new Float64Array(1);
@@ -547,10 +657,12 @@ BUILD.push(async () => {
   if (GAME.mode === 'test' || GAME.mode === 'car') return;
   if (!CAR) CARP.build();
   if (GAME.rivalEnabled !== false) {
-    const rCar = rivalObj();
-    if (rCar && typeof rCar.build === 'function') {
-      rCar.build();
-      rCar.built = true;
+    const rivals = [rivalObj(), (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null)];
+    for (const rCar of rivals) {
+      if (rCar && typeof rCar.build === 'function') {
+        rCar.build();
+        rCar.built = true;
+      }
     }
   }
   GAME.init = gameInit; GAME.tick = gameTick; GAME.prewarm = gamePrewarm;

@@ -351,3 +351,22 @@ function sndOffline(mix, mudoDe, pausaDe) {
   let pk = 0; for (let i = 0; i < n * 800; i++) { const a = Math.abs(L[i]), b = Math.abs(Rr[i]); if (a > pk) pk = a; if (b > pk) pk = b; pcm[i * 2] = Math.round(L[i] * 32767); pcm[i * 2 + 1] = Math.round(Rr[i] * 32767); }
   return { frames: n, muestras: n * 800, tasa: 48000, pico: pk };
 }
+
+// Emite tonos de beeps para el semáforo de salida FIA
+function sndBeep(freq = 440, duration = 0.12, gainVal = 0.22) {
+  if (typeof SND === 'undefined' || !SND.ctx || SND.mute) return;
+  try {
+    const ctx = SND.ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    g.gain.setValueAtTime(gainVal, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {}
+}
