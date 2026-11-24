@@ -396,8 +396,10 @@ createFromSpec(spec) {
     }
   }
   if (!spec) {
+    const version = (typeof window !== 'undefined' && window.CACHE_VERSION) ? window.CACHE_VERSION : 'racing_mirror_f1_v23';
     const safeUrl = encodeURI(url);
-    const res = await fetch(safeUrl);
+    const busterUrl = safeUrl + (safeUrl.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(version);
+    const res = await fetch(busterUrl);
     if (!res.ok) throw new Error(`[TrackFactory] Error al cargar circuito desde JSON: ${safeUrl} (HTTP ${res.status})`);
     spec = await res.json();
   }

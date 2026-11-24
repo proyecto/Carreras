@@ -257,142 +257,142 @@ const CarFactory = {
       hubs,
     });
 
-    CAR.build = async function() {
-        if (glbUrl && (!bodyV || !bodyI)) {
-          try {
-            const glbData = await CarFactory.loadGLB(glbUrl);
-            if (glbData) {
-              bodyV = glbData.bodyV;
-              bodyI = glbData.bodyI;
-              glassV = glbData.glassV;
-              glassI = glbData.glassI;
-              wheelV = glbData.wheelV;
-              wheelI = glbData.wheelI;
-            }
-          } catch (err) {
-            console.warn(`[CarFactory] Advertencia al cargar GLB (${glbUrl}):`, err);
+    CAR.build = async function () {
+      if (glbUrl && (!bodyV || !bodyI)) {
+        try {
+          const glbData = await CarFactory.loadGLB(glbUrl);
+          if (glbData) {
+            bodyV = glbData.bodyV;
+            bodyI = glbData.bodyI;
+            glassV = glbData.glassV;
+            glassI = glbData.glassI;
+            wheelV = glbData.wheelV;
+            wheelI = glbData.wheelI;
           }
+        } catch (err) {
+          console.warn(`[CarFactory] Advertencia al cargar GLB (${glbUrl}):`, err);
         }
+      }
 
-        const famName = `car_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-        const actualShader = (typeof WGSL !== 'undefined' && shaderSrc && WGSL[shaderSrc]) ? shaderSrc : 'mat_car_default';
-        const fam = CAR.fam = mkFamily(famName, { src: actualShader, noCube: true });
-        CAR.slotBody = objSlot();
-        for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot();
+      const famName = `car_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+      const actualShader = (typeof WGSL !== 'undefined' && shaderSrc && WGSL[shaderSrc]) ? shaderSrc : 'mat_car_default';
+      const fam = CAR.fam = mkFamily(famName, { src: actualShader, noCube: true });
+      CAR.slotBody = objSlot();
+      for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot();
 
-        const set = CAR.set = new MeshSet(fam);
-        const glass = CAR.glass = new GlassSet();
+      const set = CAR.set = new MeshSet(fam);
+      const glass = CAR.glass = new GlassSet();
 
-        const mb = new MeshBuilder(1 << 19);
-        const gl = new MeshBuilder(1 << 15);
-        const w = new MeshBuilder(1 << 15);
+      const mb = new MeshBuilder(1 << 19);
+      const gl = new MeshBuilder(1 << 15);
+      const w = new MeshBuilder(1 << 15);
 
-        // Subida de carrocería principal
-        if (bodyV && bodyI) {
-          const bV = typeof bodyV === 'string' ? CarFactory.b64ToF32(bodyV) : bodyV;
-          const bI = typeof bodyI === 'string' ? CarFactory.b64ToU32(bodyI) : bodyI;
-          const nbV = bV.length / 9;
-          for (let i = 0; i < nbV; i++) {
-            mb.mat(bV[i * 9 + 8]);
-            mb.v(bV[i*9], bV[i*9+1], bV[i*9+2], bV[i*9+3], bV[i*9+4], bV[i*9+5], bV[i*9+6], bV[i*9+7]);
+      // Subida de carrocería principal
+      if (bodyV && bodyI) {
+        const bV = typeof bodyV === 'string' ? CarFactory.b64ToF32(bodyV) : bodyV;
+        const bI = typeof bodyI === 'string' ? CarFactory.b64ToU32(bodyI) : bodyI;
+        const nbV = bV.length / 9;
+        for (let i = 0; i < nbV; i++) {
+          mb.mat(bV[i * 9 + 8]);
+          mb.v(bV[i * 9], bV[i * 9 + 1], bV[i * 9 + 2], bV[i * 9 + 3], bV[i * 9 + 4], bV[i * 9 + 5], bV[i * 9 + 6], bV[i * 9 + 7]);
+        }
+        for (let i = 0; i < bI.length; i += 3) mb.tri(bI[i], bI[i + 1], bI[i + 2]);
+      }
+
+      // Subida de cristales (transparencias)
+      if (glassV && glassI) {
+        const gV = typeof glassV === 'string' ? CarFactory.b64ToF32(glassV) : glassV;
+        const gI = typeof glassI === 'string' ? CarFactory.b64ToU32(glassI) : glassI;
+        const ngV = gV.length / 9;
+        for (let i = 0; i < ngV; i++) {
+          const mat = gV[i * 9 + 8];
+          gl.mat(mat === 18 ? 1 : 0); // 1 = lente de faro, 0 = cristal estándar
+          gl.v(gV[i * 9], gV[i * 9 + 1], gV[i * 9 + 2], gV[i * 9 + 3], gV[i * 9 + 4], gV[i * 9 + 5], gV[i * 9 + 6], gV[i * 9 + 7]);
+        }
+        for (let i = 0; i < gI.length; i += 3) gl.tri(gI[i], gI[i + 1], gI[i + 2]);
+      }
+
+      // Subida de rueda estándar
+      if (wheelV && wheelI) {
+        const wV = typeof wheelV === 'string' ? CarFactory.b64ToF32(wheelV) : wheelV;
+        const wI = typeof wheelI === 'string' ? CarFactory.b64ToU32(wheelI) : wheelI;
+        const nwV = wV.length / 9;
+        for (let i = 0; i < nwV; i++) {
+          w.mat(wV[i * 9 + 8]);
+          w.v(wV[i * 9], wV[i * 9 + 1], wV[i * 9 + 2], wV[i * 9 + 3], wV[i * 9 + 4], wV[i * 9 + 5], wV[i * 9 + 6], wV[i * 9 + 7]);
+        }
+        for (let i = 0; i < wI.length; i += 3) w.tri(wI[i], wI[i + 1], wI[i + 2]);
+      }
+
+      // Hook para personalizaciones adicionales del modelo
+      if (typeof onCustomBuild === 'function') {
+        onCustomBuild({ CAR, fam, set, glass, mb, gl, w });
+      }
+
+      CAR.tris = (mb.ni / 3) + (gl.ni / 3);
+      set.add(mb.upload(), CAR.slotBody, 3);
+
+      if (gl.ni > 0) {
+        glass.add_(gl.upload(), CAR.slotBody);
+        R.transparents.push(glass);
+      }
+
+      const wm = w.upload();
+      CAR.tris += 4 * (w.ni / 3);
+      for (let i = 0; i < 4; i++) set.add(wm, CAR.slotWheel[i], 3);
+
+      const tex = CarFactory.createAtlasTexture(atlasB64 || textureUrl);
+      R.drawables.push({
+        draw(pass, ctx) {
+          if (ctx.kind === KIND.SHADOW && ctx.cascade === 3) return;
+          if (!CAR.atlasBG) {
+            if (!fam.bgl3) return;
+            CAR.atlasBG = G.dev.createBindGroup({ layout: fam.bgl3, entries: [{ binding: 0, resource: tex.createView() }] });
           }
-          for (let i = 0; i < bI.length; i += 3) mb.tri(bI[i], bI[i+1], bI[i+2]);
-        }
+          pass.setBindGroup(3, CAR.atlasBG);
+          set.draw(pass, ctx);
+        },
+      });
 
-        // Subida de cristales (transparencias)
-        if (glassV && glassI) {
-          const gV = typeof glassV === 'string' ? CarFactory.b64ToF32(glassV) : glassV;
-          const gI = typeof glassI === 'string' ? CarFactory.b64ToU32(glassI) : glassI;
-          const ngV = gV.length / 9;
-          for (let i = 0; i < ngV; i++) {
-            const mat = gV[i * 9 + 8];
-            gl.mat(mat === 18 ? 1 : 0); // 1 = lente de faro, 0 = cristal estándar
-            gl.v(gV[i*9], gV[i*9+1], gV[i*9+2], gV[i*9+3], gV[i*9+4], gV[i*9+5], gV[i*9+6], gV[i*9+7]);
-          }
-          for (let i = 0; i < gI.length; i += 3) gl.tri(gI[i], gI[i+1], gI[i+2]);
-        }
+      m4ident(CAR._t);
+      CAR.place(CAR._t, CAR._z4, CAR._z4);
+      CAR.place(CAR._t, CAR._z4, CAR._z4);
+      console.log(`[${name}] Modelo inicializado con éxito. Triángulos: ${CAR.tris}`);
+    };
 
-        // Subida de rueda estándar
-        if (wheelV && wheelI) {
-          const wV = typeof wheelV === 'string' ? CarFactory.b64ToF32(wheelV) : wheelV;
-          const wI = typeof wheelI === 'string' ? CarFactory.b64ToU32(wheelI) : wheelI;
-          const nwV = wV.length / 9;
-          for (let i = 0; i < nwV; i++) {
-            w.mat(wV[i * 9 + 8]);
-            w.v(wV[i*9], wV[i*9+1], wV[i*9+2], wV[i*9+3], wV[i*9+4], wV[i*9+5], wV[i*9+6], wV[i*9+7]);
-          }
-          for (let i = 0; i < wI.length; i += 3) w.tri(wI[i], wI[i+1], wI[i+2]);
-        }
+    /**
+     * Cinemática de suspensión, dirección y rotación de ruedas.
+     * Implementada en un único paso matricial directo sin allocations intermedias.
+     */
+    CAR.place = function (body, spin, susp) {
+      const steer = CAR.inp[0];
+      const t = CAR._t2;
+      objPrev(CAR.slotBody).set(objModel(CAR.slotBody));
+      objModel(CAR.slotBody).set(body);
 
-        // Hook para personalizaciones adicionales del modelo
-        if (typeof onCustomBuild === 'function') {
-          onCustomBuild({ CAR, fam, set, glass, mb, gl, w });
-        }
+      const PI_VAL = typeof PI !== 'undefined' ? PI : Math.PI;
 
-        CAR.tris = (mb.ni / 3) + (gl.ni / 3);
-        set.add(mb.upload(), CAR.slotBody, 3);
+      for (let i = 0; i < 4; i++) {
+        const sl = CAR.slotWheel[i], h = CAR.hubs[i], left = (i & 1) === 0;
+        objPrev(sl).set(objModel(sl));
 
-        if (gl.ni > 0) {
-          glass.add_(gl.upload(), CAR.slotBody);
-          R.transparents.push(glass);
-        }
+        const a = -(i < 2 ? steer : 0) + (left ? PI_VAL : 0);
+        const c = Math.cos(a), sn = Math.sin(a);
+        const g = (spin && spin[i] !== undefined) ? (left ? spin[i] : -spin[i]) : 0;
+        const cg = Math.cos(g), sg = Math.sin(g);
 
-        const wm = w.upload();
-        CAR.tris += 4 * (w.ni / 3);
-        for (let i = 0; i < 4; i++) set.add(wm, CAR.slotWheel[i], 3);
+        t[0] = c * cg; t[1] = sg; t[2] = -sn * cg; t[3] = 0;
+        t[4] = -c * sg; t[5] = cg; t[6] = sn * sg; t[7] = 0;
+        t[8] = sn; t[9] = 0; t[10] = c; t[11] = 0;
+        t[12] = h[0]; t[13] = h[1] + (susp ? susp[i] : 0); t[14] = h[2]; t[15] = 1;
 
-        const tex = CarFactory.createAtlasTexture(atlasB64 || textureUrl);
-        R.drawables.push({
-          draw(pass, ctx) {
-            if (ctx.kind === KIND.SHADOW && ctx.cascade === 3) return;
-            if (!CAR.atlasBG) {
-              if (!fam.bgl3) return;
-              CAR.atlasBG = G.dev.createBindGroup({ layout: fam.bgl3, entries: [{ binding: 0, resource: tex.createView() }] });
-            }
-            pass.setBindGroup(3, CAR.atlasBG);
-            set.draw(pass, ctx);
-          },
-        });
+        m4mul(objModel(sl), body, t);
+      }
 
-        m4ident(CAR._t);
-        CAR.place(CAR._t, CAR._z4, CAR._z4);
-        CAR.place(CAR._t, CAR._z4, CAR._z4);
-        console.log(`[${name}] Modelo inicializado con éxito. Triángulos: ${CAR.tris}`);
-      };
-
-      /**
-       * Cinemática de suspensión, dirección y rotación de ruedas.
-       * Implementada en un único paso matricial directo sin allocations intermedias.
-       */
-      CAR.place = function(body, spin, susp) {
-        const steer = CAR.inp[0];
-        const t = CAR._t2;
-        objPrev(CAR.slotBody).set(objModel(CAR.slotBody));
-        objModel(CAR.slotBody).set(body);
-
-        const PI_VAL = typeof PI !== 'undefined' ? PI : Math.PI;
-
-        for (let i = 0; i < 4; i++) {
-          const sl = CAR.slotWheel[i], h = CAR.hubs[i], left = (i & 1) === 0;
-          objPrev(sl).set(objModel(sl));
-
-          const a = -(i < 2 ? steer : 0) + (left ? PI_VAL : 0);
-          const c = Math.cos(a), sn = Math.sin(a);
-          const g = (spin && spin[i] !== undefined) ? (left ? spin[i] : -spin[i]) : 0;
-          const cg = Math.cos(g), sg = Math.sin(g);
-
-          t[0] = c * cg;   t[1] = sg;  t[2] = -sn * cg; t[3] = 0;
-          t[4] = -c * sg;  t[5] = cg;  t[6] = sn * sg;  t[7] = 0;
-          t[8] = sn;       t[9] = 0;   t[10] = c;       t[11] = 0;
-          t[12] = h[0];    t[13] = h[1] + (susp ? susp[i] : 0); t[14] = h[2]; t[15] = 1;
-
-          m4mul(objModel(sl), body, t);
-        }
-
-        if (typeof onCustomPlace === 'function') {
-          onCustomPlace({ CAR, body, spin, susp });
-        }
-      };
+      if (typeof onCustomPlace === 'function') {
+        onCustomPlace({ CAR, body, spin, susp });
+      }
+    };
 
     if (autoRegister && typeof CARS !== 'undefined' && typeof CARS.register === 'function') {
       CARS.register(CAR);
@@ -566,7 +566,7 @@ const CarFactory = {
           }
 
           const target = (isGlassNode || /glass|cristal/i.test(matName)) ? glassParts :
-                         (isWheelNode || /wheel|llanta/i.test(matName)) ? wheelParts : bodyParts;
+            (isWheelNode || /wheel|llanta/i.test(matName)) ? wheelParts : bodyParts;
 
           const baseVIdx = target.v.length / 9;
           const count = posAcc.count;
@@ -607,7 +607,7 @@ const CarFactory = {
       const cz = (wMinZ + wMaxZ) * 0.5;
       if (Math.abs(cx) > 0.001 || Math.abs(cy) > 0.001 || Math.abs(cz) > 0.001) {
         for (let k = 0; k < wheelParts.v.length; k += 9) {
-          wheelParts.v[k]     -= cx;
+          wheelParts.v[k] -= cx;
           wheelParts.v[k + 1] -= cy;
           wheelParts.v[k + 2] -= cz;
         }
