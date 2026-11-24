@@ -197,6 +197,11 @@ if (typeof window !== 'undefined') {
 
 function onKeyDown(e) {
   if (GAME.ui && typeof UI !== 'undefined' && (UI.st === ST.INICIO || UI.st === ST.PAUSA || UI.st === ST.RESULT)) return;
+  if (typeof raceDirectorInstance !== 'undefined' && raceDirectorInstance.active && raceDirectorInstance.state === 'countdown') {
+    if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyW' || e.code === 'ArrowUp' || (typeof CONTROLS !== 'undefined' && CONTROLS.isKey('throttle', e.code))) {
+      raceDirectorInstance.skipToLightsOut();
+    }
+  }
   const k = KEYMAP[e.code]; if (k) { GS.held |= k; e.preventDefault(); }
 }
 function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; e.preventDefault(); } }

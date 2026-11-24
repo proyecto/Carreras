@@ -106,12 +106,27 @@ const HudComponents = {
       // 1. Etiqueta de estado superior
       m.font = '600 ' + Math.round(r * 0.070) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
       m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      m.fillText(inCorner ? 'EN CURVA' : (nextCorner || maxK > 0.0035 ? 'PRÓXIMA CURVA' : 'TRAMO ACTUAL'), padX, Math.round(r * 0.075));
+      let statusLbl = inCorner ? 'EN CURVA' : (nextCorner || maxK > 0.0035 ? 'PRÓXIMA CURVA' : 'TRAMO ACTUAL');
+      if (typeof raceDirectorInstance !== 'undefined' && raceDirectorInstance.active && raceDirectorInstance.state === 'countdown') {
+        statusLbl = 'SALIDA EN PARRILLA · [ACELERA / ESPACIO: SALIR YA]';
+      } else if (typeof raceDirectorInstance !== 'undefined' && raceDirectorInstance.active && raceDirectorInstance.state === 'lights_out') {
+        statusLbl = '¡SALIDA DE CARRERA!';
+      }
+      m.fillText(statusLbl, padX, Math.round(r * 0.075));
 
       // 2. Nombre prominente de la curva (con auto-escala según maxTextW)
       let cornerName = 'RECTA';
       let nameColor = '#ffffff';
-      if (inCorner) {
+      if (typeof raceDirectorInstance !== 'undefined' && raceDirectorInstance.active && raceDirectorInstance.state === 'countdown') {
+        const lights = raceDirectorInstance.lightsCount;
+        let dots = '';
+        for (let i = 1; i <= 5; i++) dots += (i <= lights ? '🔴 ' : '⚪ ');
+        cornerName = dots.trim();
+        nameColor = '#ef4444';
+      } else if (typeof raceDirectorInstance !== 'undefined' && raceDirectorInstance.active && raceDirectorInstance.state === 'lights_out') {
+        cornerName = '¡LUCES FUERA! ¡GO!';
+        nameColor = '#4ade80';
+      } else if (inCorner) {
         cornerName = inCorner.name ? inCorner.name.toUpperCase() : 'EN CURVA';
         nameColor = '#facc15';
       } else if (nextCorner) {

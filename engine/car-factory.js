@@ -142,8 +142,11 @@ const CarFactory = {
       const img = new Image();
       if (typeof atlasSource === 'string' && !atlasSource.startsWith('data:')) {
         img.crossOrigin = 'anonymous';
+        const ver = (typeof window !== 'undefined' && window.CACHE_VERSION) ? window.CACHE_VERSION : 'racing_mirror_f1_v23';
+        img.src = atlasSource + (atlasSource.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(ver);
+      } else {
+        img.src = atlasSource;
       }
-      img.src = atlasSource;
       img.onload = () => {
         if (typeof createImageBitmap !== 'undefined') {
           createImageBitmap(img).then(bmp => {
@@ -587,6 +590,30 @@ const CarFactory = {
       }
     }
 
+    // Centrado automático y estandarización del mesh de rueda en el origen (0, 0, 0)
+    // Garantiza que CAR.place() posicione las ruedas exactamente en sus ejes/hubs
+    if (wheelParts.v.length > 0) {
+      let wMinX = Infinity, wMaxX = -Infinity;
+      let wMinY = Infinity, wMaxY = -Infinity;
+      let wMinZ = Infinity, wMaxZ = -Infinity;
+      for (let k = 0; k < wheelParts.v.length; k += 9) {
+        const x = wheelParts.v[k], y = wheelParts.v[k + 1], z = wheelParts.v[k + 2];
+        if (x < wMinX) wMinX = x; if (x > wMaxX) wMaxX = x;
+        if (y < wMinY) wMinY = y; if (y > wMaxY) wMaxY = y;
+        if (z < wMinZ) wMinZ = z; if (z > wMaxZ) wMaxZ = z;
+      }
+      const cx = (wMinX + wMaxX) * 0.5;
+      const cy = (wMinY + wMaxY) * 0.5;
+      const cz = (wMinZ + wMaxZ) * 0.5;
+      if (Math.abs(cx) > 0.001 || Math.abs(cy) > 0.001 || Math.abs(cz) > 0.001) {
+        for (let k = 0; k < wheelParts.v.length; k += 9) {
+          wheelParts.v[k]     -= cx;
+          wheelParts.v[k + 1] -= cy;
+          wheelParts.v[k + 2] -= cz;
+        }
+      }
+    }
+
     return {
       bodyV: new Float32Array(bodyParts.v),
       bodyI: new Uint32Array(bodyParts.i),
@@ -617,8 +644,10 @@ const CarFactory = {
         // Fallback a fetch
       }
     }
+    const version = (typeof window !== 'undefined' && window.CACHE_VERSION) ? window.CACHE_VERSION : 'racing_mirror_f1_v23';
     const safeUrl = encodeURI(url);
-    const res = await fetch(safeUrl);
+    const busterUrl = safeUrl + (safeUrl.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(version);
+    const res = await fetch(busterUrl);
     if (!res.ok) throw new Error(`[CarFactory] Error al cargar modelo GLB: ${safeUrl} (HTTP ${res.status})`);
     const buf = await res.arrayBuffer();
     return CarFactory.parseGLB(buf);
@@ -644,8 +673,10 @@ const CarFactory = {
       }
     }
     if (!spec) {
+      const version = (typeof window !== 'undefined' && window.CACHE_VERSION) ? window.CACHE_VERSION : 'racing_mirror_f1_v23';
       const safeUrl = encodeURI(url);
-      const res = await fetch(safeUrl);
+      const busterUrl = safeUrl + (safeUrl.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(version);
+      const res = await fetch(busterUrl);
       if (!res.ok) throw new Error(`[CarFactory] Error al cargar especificación de coche: ${safeUrl} (HTTP ${res.status})`);
       spec = await res.json();
     }

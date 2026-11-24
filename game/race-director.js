@@ -48,6 +48,22 @@ class RaceDirector {
   }
 
   /**
+   * Salto instantáneo a salida (Lights Out) por pulsación de acelerador / Space / Enter.
+   * Evita bloqueos involuntarios al iniciar práctica o pruebas.
+   */
+  skipToLightsOut() {
+    if (!this.active || this.state !== RaceState.COUNTDOWN) return;
+    this.t = this.goTime;
+    this.lightsCount = 5;
+    this.state = RaceState.LIGHTS_OUT;
+    if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
+    if (typeof LAP !== 'undefined') LAP[0] = performance.now() * 0.001;
+    if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
+      Patterns.EventBusSingleton.emit('race:lights_out', { time: this.t });
+    }
+  }
+
+  /**
    * Actualiza el temporizador de salida a 120 Hz.
    * Aplica Launch Control si está en cuenta atrás.
    * @param {number} dt - Paso de tiempo de simulación (1/120 s)
