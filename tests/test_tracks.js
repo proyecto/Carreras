@@ -21,6 +21,12 @@ function runTracksTestSuite() {
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
+  const propUtilsCode = fs.readFileSync(path.join(root, 'engine/props/prop-utils.js'), 'utf8');
+  const trackSafetyCode = fs.readFileSync(path.join(root, 'engine/props/track-safety.js'), 'utf8');
+  const grandstandCode = fs.readFileSync(path.join(root, 'engine/props/grandstands.js'), 'utf8');
+  const paddockCode = fs.readFileSync(path.join(root, 'engine/props/paddock.js'), 'utf8');
+  const sceneryCode = fs.readFileSync(path.join(root, 'engine/props/scenery.js'), 'utf8');
+  const urbanContainmentCode = fs.readFileSync(path.join(root, 'engine/props/urban-containment.js'), 'utf8');
   const propFactoryCode = fs.readFileSync(path.join(root, 'engine/prop-factory.js'), 'utf8');
   const atlasFactoryCode = fs.readFileSync(path.join(root, 'engine/atlas-factory.js'), 'utf8');
   const landmarkFactoryCode = fs.readFileSync(path.join(root, 'engine/landmark-factory.js'), 'utf8');
@@ -46,6 +52,12 @@ function runTracksTestSuite() {
   vm.runInContext(mathCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(trackFactoryCode, ctx);
+  vm.runInContext(propUtilsCode, ctx);
+  vm.runInContext(trackSafetyCode, ctx);
+  vm.runInContext(grandstandCode, ctx);
+  vm.runInContext(paddockCode, ctx);
+  vm.runInContext(sceneryCode, ctx);
+  vm.runInContext(urbanContainmentCode, ctx);
   vm.runInContext(propFactoryCode, ctx);
   vm.runInContext(atlasFactoryCode, ctx);
   vm.runInContext(landmarkFactoryCode, ctx);
@@ -126,10 +138,15 @@ function runTracksTestSuite() {
   const landmarkCode = fs.existsSync(landmarkPath) ? fs.readFileSync(landmarkPath, 'utf8') : '';
   const propFactoryPath = path.join(root, 'engine/prop-factory.js');
   assert(fs.existsSync(propFactoryPath), 'Módulo separado de PropFactory (engine/prop-factory.js) presente');
+  assert(fs.existsSync(path.join(root, 'engine/props/track-safety.js')), 'Submódulo TrackSafetyProps presente');
+  assert(fs.existsSync(path.join(root, 'engine/props/grandstands.js')), 'Submódulo GrandstandProps presente');
+  assert(fs.existsSync(path.join(root, 'engine/props/paddock.js')), 'Submódulo PaddockProps presente');
+  assert(fs.existsSync(path.join(root, 'engine/props/scenery.js')), 'Submódulo SceneryProps presente');
+  assert(fs.existsSync(path.join(root, 'engine/props/urban-containment.js')), 'Submódulo UrbanContainmentProps presente');
   const propsBaseCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
   const vegasJsonSpec = JSON.parse(fs.readFileSync(path.join(root, 'tracks/las-vegas-strip.json'), 'utf8'));
   assert(vegasJsonSpec.props && vegasJsonSpec.props.perimeterJerseyWall, 'Especificación declarativa JSON de props de Las Vegas presente');
-  const propsCode = atlasCode + '\n' + landmarkCode + '\n' + propFactoryCode + '\n' + propsBaseCode;
+  const propsCode = atlasCode + '\n' + landmarkCode + '\n' + propFactoryCode + '\n' + urbanContainmentCode + '\n' + trackSafetyCode + '\n' + paddockCode + '\n' + grandstandCode + '\n' + sceneryCode + '\n' + propsBaseCode;
 
   assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
   assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');
