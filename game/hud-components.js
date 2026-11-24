@@ -763,100 +763,19 @@ const HudComponents = {
   },
 
   /**
-   * Componente 5: Semáforo Oficial FIA (5 focos + viseras parasol)
+   * Componente 5: Semáforo Oficial FIA (Deprecado: el semáforo ahora es 100% físico 3D en el arco/pórtico del circuito)
    */
   StartLights: {
     draw(ctx, clights, raceStart) {
-      if (!ctx || !clights || !raceStart) return;
-
-      const has3dGantry = (typeof TRACKS !== 'undefined' && TRACKS.active && TRACKS.active.id === 'nurburgring-gp');
-      if (has3dGantry || (!raceStart.active && raceStart.state !== 'lights_out')) {
-        if (clights.style.display !== 'none') clights.style.display = 'none';
-        return;
-      }
-      if (clights.style.display !== 'block') clights.style.display = 'block';
-
-      const w = clights.width, h = clights.height;
-      ctx.clearRect(0, 0, w, h);
-
-      // Marco de la cabina
-      ctx.fillStyle = '#090b0e';
-      ctx.strokeStyle = '#222831';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.roundRect(8, 8, w - 16, h - 16, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      const numPods = 5;
-      const podW = (w - 32) / numPods;
-      const centerY = h * 0.45;
-      const lampR = Math.min(podW * 0.32, h * 0.28);
-
-      for (let i = 0; i < numPods; i++) {
-        const cx = 16 + i * podW + podW * 0.5;
-
-        // Visera parasol superior
-        ctx.fillStyle = '#14171d';
-        ctx.beginPath();
-        ctx.arc(cx, centerY - lampR * 0.3, lampR * 1.25, Math.PI, 0);
-        ctx.fill();
-
-        // Aro exterior
-        ctx.fillStyle = '#1a1f26';
-        ctx.beginPath();
-        ctx.arc(cx, centerY, lampR + 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Lámpara
-        const isRedLit = (raceStart.state === 'countdown' && (i + 1) <= raceStart.lightsCount);
-        const isGreenLit = (raceStart.state === 'lights_out');
-
-        if (isRedLit) {
-          ctx.shadowColor = '#ff2222';
-          ctx.shadowBlur = 18;
-          ctx.fillStyle = '#ff1a1a';
-        } else if (isGreenLit) {
-          ctx.shadowColor = '#00ff66';
-          ctx.shadowBlur = 18;
-          ctx.fillStyle = '#00e65c';
-        } else {
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#22262c';
+        if (clights && clights.style) {
+          clights.style.display = 'none';
         }
-
-        ctx.beginPath();
-        ctx.arc(cx, centerY, lampR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Reflejo lente
-        if (isRedLit || isGreenLit) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.beginPath();
-          ctx.arc(cx - lampR * 0.3, centerY - lampR * 0.3, lampR * 0.35, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // Letrero inferior
-      ctx.font = '800 ' + Math.round(h * 0.16) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      if (raceStart.state === 'countdown') {
-        ctx.fillStyle = '#facc15';
-        ctx.fillText('PREPÁRATE · SALIDA EN BREVE', w * 0.5, h * 0.82);
-      } else if (raceStart.state === 'lights_out') {
-        ctx.fillStyle = '#4ade80';
-        ctx.fillText('¡LUCES FUERA! · ¡SALIDA!', w * 0.5, h * 0.82);
       }
     }
-  }
-};
+  };
 
-if (typeof window !== 'undefined') {
-  window.HudComponents = HudComponents;
+  if(typeof window !== 'undefined') {
+    window.HudComponents = HudComponents;
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { HudComponents };

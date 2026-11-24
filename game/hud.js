@@ -3,8 +3,8 @@
 // Panel en pantalla: velocímetro, tacómetro, marcha, cronómetro de vuelta, última y mejor vuelta, estadísticas y minimapa con radar de curvas.
 // Cuatro lienzos 2D sobre el juego. Cero asignaciones por frame: relojes y trazado estático pre-renderizados.
 const HUD = {
-  cg: null, ct: null, cs: null, cm: null, cp: null, cmirror: null, clights: null,
-  g: null, t: null, s: null, m: null, p: null, gl: null,
+  cg: null, ct: null, cs: null, cm: null, cp: null, cmirror: null,
+  g: null, t: null, s: null, m: null, p: null,
   face: null, hub: null, bgT: null, bgS: null, bgMap: null,
   mapTrans: new Float64Array(5), // [cX, cZ, midTrackX, midTrackZ, scale]
   A: null, B: null, C: null,
@@ -31,13 +31,11 @@ function hudInit() {
   H.cm = document.getElementById('hm');
   H.cp = document.getElementById('hp');
   H.cmirror = document.getElementById('hmirror');
-  H.clights = document.getElementById('hlights');
   H.g = H.cg ? H.cg.getContext('2d') : null;
   H.t = H.ct ? H.ct.getContext('2d') : null;
   H.s = H.cs ? H.cs.getContext('2d') : null;
   if (H.cm) H.m = H.cm.getContext('2d');
   if (H.cp) H.p = H.cp.getContext('2d');
-  if (H.clights) H.gl = H.clights.getContext('2d');
   hudLayout();
   addEventListener('resize', hudLayout);
 }
@@ -204,13 +202,6 @@ function hudLayout() {
     H.cp.style.left = 'auto';
     H.cp.style.bottom = 'auto';
     H.cp.style.transform = 'none';
-  }
-
-  // Semáforo de salida FIA
-  if (H.clights) {
-    const lW = Math.round(r * 4.4), lH = Math.round(r * 1.45);
-    H.clights.width = lW; H.clights.height = lH;
-    H.clights.style.width = lW / dpr + 'px'; H.clights.style.height = lH / dpr + 'px';
   }
 }
 
@@ -519,124 +510,6 @@ function hudDrawLeaderboard() {
   }
 }
 
-// Renderiza el semáforo de salida FIA de 5 luces rojas/verdes
-function hudDrawStartLights() {
-  const H = HUD;
-  if (!H.clights || !H.gl) return;
-  const rs = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : (typeof RACE_START !== 'undefined' ? RACE_START : null);
-  if (!rs || (!rs.active && rs.state !== 'lights_out')) {
-    if (H.clights.style.display !== 'none') H.clights.style.display = 'none';
-    return;
-  }
-  // En circuitos con pórtico 3D físico (como Nürburgring GP), las luces de salida se muestran
-  // directamente sobre el arco/marquesina 3D frente a la parrilla, ocultando el HUD 2D.
-  const has3dGantry = (typeof TRACKS !== 'undefined' && TRACKS.active && TRACKS.active.id === 'nurburgring-gp');
-  if (has3dGantry) {
-    if (H.clights.style.display !== 'none') H.clights.style.display = 'none';
-    return;
-  }
-  // Delegación modular en HudComponents.StartLights (Patrón Component)
-  if (typeof HudComponents !== 'undefined' && HudComponents.StartLights) {
-    HudComponents.StartLights.draw(H.gl, H.clights, rs);
-    return;
-  }
-  if (H.clights.style.display !== 'block') H.clights.style.display = 'block';
-
-  const gl = H.gl, W = H.clights.width, Hh = H.clights.height;
-  gl.clearRect(0, 0, W, Hh);
-
-  // Estructura del pórtico FIA
-  gl.beginPath();
-  gl.roundRect(0, 0, W, Hh, Hh * 0.22);
-  gl.fillStyle = 'rgba(10, 12, 16, 0.94)';
-  gl.fill();
-  gl.lineWidth = Math.max(2, Hh * 0.032);
-  gl.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-  gl.stroke();
-
-  const nPods = 5;
-  const podSpacing = W / (nPods + 1);
-  const lampR = Hh * 0.22;
-  const lampY = Hh * 0.46;
-  const isLightsOut = (RACE_START.state === 'lights_out');
-  const count = RACE_START.lightsCount;
-
-  for (let i = 0; i < nPods; i++) {
-    const cx = podSpacing * (i + 1);
-
-    // Visera exterior del pod
-    gl.beginPath();
-    gl.arc(cx, lampY, lampR * 1.32, Math.PI * 1.05, Math.PI * 1.95);
-    gl.lineWidth = lampR * 0.22;
-    gl.strokeStyle = '#05070a';
-    gl.stroke();
-
-    // Fondo del hueco
-    gl.beginPath();
-    gl.arc(cx, lampY, lampR, 0, TAU);
-    gl.fillStyle = '#080a0e';
-    gl.fill();
-    gl.lineWidth = 2;
-    gl.strokeStyle = '#1e2430';
-    gl.stroke();
-
-    if (isLightsOut) {
-      // Luces verdes de salida
-      gl.beginPath();
-      gl.arc(cx, lampY, lampR * 0.88, 0, TAU);
-      const grad = gl.createRadialGradient(cx, lampY, lampR * 0.15, cx, lampY, lampR * 0.88);
-      grad.addColorStop(0, '#86efac');
-      grad.addColorStop(0.6, '#22c55e');
-      grad.addColorStop(1, '#15803d');
-      gl.fillStyle = grad;
-      gl.fill();
-
-      // Halo verde brillante
-      gl.beginPath();
-      gl.arc(cx, lampY, lampR * 1.45, 0, TAU);
-      gl.fillStyle = 'rgba(34, 197, 94, 0.35)';
-      gl.fill();
-    } else {
-      const isRedOn = (i < count);
-      if (isRedOn) {
-        // Lámpara roja encendida
-        gl.beginPath();
-        gl.arc(cx, lampY, lampR * 0.88, 0, TAU);
-        const grad = gl.createRadialGradient(cx, lampY, lampR * 0.15, cx, lampY, lampR * 0.88);
-        grad.addColorStop(0, '#fca5a5');
-        grad.addColorStop(0.5, '#ef4444');
-        grad.addColorStop(1, '#b91c1c');
-        gl.fillStyle = grad;
-        gl.fill();
-
-        // Halo rojo de alta intensidad
-        gl.beginPath();
-        gl.arc(cx, lampY, lampR * 1.5, 0, TAU);
-        gl.fillStyle = 'rgba(239, 68, 68, 0.38)';
-        gl.fill();
-      } else {
-        // Lámpara apagada
-        gl.beginPath();
-        gl.arc(cx, lampY, lampR * 0.88, 0, TAU);
-        gl.fillStyle = 'rgba(45, 15, 15, 0.45)';
-        gl.fill();
-      }
-    }
-  }
-
-  // Rótulo inferior del pórtico
-  gl.textAlign = 'center';
-  gl.textBaseline = 'bottom';
-  gl.font = '700 ' + Math.round(Hh * 0.16) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  if (isLightsOut) {
-    gl.fillStyle = '#4ade80';
-    gl.fillText('¡LUCES FUERA! · ¡SALIDA!', W * 0.5, Hh - Math.round(Hh * 0.07));
-  } else {
-    gl.fillStyle = 'rgba(255, 255, 255, 0.70)';
-    gl.fillText('PROCEDIMIENTO DE SALIDA FIA', W * 0.5, Hh - Math.round(Hh * 0.07));
-  }
-}
-
 // Invocado en cada frame: lee el estado (hudRead) y redibuja solo los cambios (hudDraw)
 function hudFrame() { hudRead(); hudDraw(); }
 function hudRead() {
@@ -673,9 +546,6 @@ function hudDraw() {
     hudDrawMinimap();
     hudDrawLeaderboard();
   }
-
-  // Dibuja el semáforo de salida FIA
-  hudDrawStartLights();
 }
 
 // Estadísticas de rendimiento (tecla H): promedio de frametimes (ms)

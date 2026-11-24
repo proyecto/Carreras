@@ -65,7 +65,7 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
   const mockGS = {
     cam: 0, yaw: 0, speed: 25, cx: 0, cy: 1, cz: 0,
     chaseInit: false, chaseYaw: 0, chaseY: 1,
-    body: new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]), keys: 0, cut: false
+    body: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), keys: 0, cut: false
   };
   const mockVeh = { vx: 25, vy: 0, ay: 0, gPitch: 0, gRoll: 0, roll: 0, s: 100 };
   const camQ = new Float32Array(8);
@@ -121,9 +121,9 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
   // Mock canvas 2D context
   const mockCtx = {
     font: '', fillStyle: '', strokeStyle: '', textAlign: '', textBaseline: '', lineWidth: 1,
-    clearRect: () => {}, beginPath: () => {}, roundRect: () => {}, arc: () => {}, fill: () => {}, stroke: () => {}, fillRect: () => {},
-    fillText: () => {}, measureText: (txt) => ({ width: (txt || '').length * 8 }), createRadialGradient: () => ({ addColorStop: () => {} }),
-    save: () => {}, restore: () => {}, clip: () => {}, moveTo: () => {}, lineTo: () => {}, closePath: () => {}, setLineDash: () => {}, rect: () => {}
+    clearRect: () => { }, beginPath: () => { }, roundRect: () => { }, arc: () => { }, fill: () => { }, stroke: () => { }, fillRect: () => { },
+    fillText: () => { }, measureText: (txt) => ({ width: (txt || '').length * 8 }), createRadialGradient: () => ({ addColorStop: () => { } }),
+    save: () => { }, restore: () => { }, clip: () => { }, moveTo: () => { }, lineTo: () => { }, closePath: () => { }, setLineDash: () => { }, rect: () => { }
   };
 
   const mockTrk = {
@@ -140,11 +140,11 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
     HudComponents.Minimap.draw(mockCtx, 100, 500, 250, 162, [125, 300, 0, 0, 0.2], [10, 0, 20], [], 5, 'Nürburgring GP', '0.5 / 5.0 km');
     HudComponents.StartLights.draw(mockCtx, { width: 400, height: 100, style: {} }, { active: true, state: 'countdown', lightsCount: 3 });
 
-    // Verificación de supresión de semáforo 2D en Nürburgring GP en favor del pórtico 3D
+    // Verificación de supresión de semáforo 2D (popup retirado en favor del semáforo 3D físico de pista)
     global.TRACKS = { active: { id: 'nurburgring-gp' } };
     const mockLights2D = { width: 400, height: 100, style: { display: 'block' } };
     HudComponents.StartLights.draw(mockCtx, mockLights2D, { active: true, state: 'countdown', lightsCount: 3 });
-    testAssert(mockLights2D.style.display === 'none', 'El semáforo 2D se oculta en Nürburgring GP para usar el semáforo 3D del pórtico/arco');
+    testAssert(mockLights2D.style.display === 'none', 'El semáforo 2D se mantiene oculto en favor del semáforo 3D del pórtico/arco');
 
     // Verificación de formato de vueltas con totalLaps
     global.GAME = { totalLaps: 5 };
