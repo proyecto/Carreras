@@ -96,14 +96,45 @@
 
     // Topografía orográfica de Eifel con vaguada en Dunlop-Kehre y colina del Castillo de Nürburg
     naturalH(x, z, s, d) {
-      // 1. Colina volcánica del Castillo medieval de Nürburg (x=1050, z=-2150, cota +115m)
-      const distToCastle = Math.hypot(x - 1050, z - (-2150));
-      const castleHill = Math.max(0, 1.0 - distToCastle / 1600) * 115.0;
-      // 2. Ondulaciones orográficas características del macizo de Hocheifel
-      const eifelRidge = Math.sin(x * 0.0028 + 1.2) * 16.0 + Math.cos(z * 0.0024 - 0.8) * 14.0;
-      // 3. Micro-relieve y taludes naturales
-      const micro = Math.sin(x * 0.012 + z * 0.009) * 2.2;
-      return eifelRidge + castleHill + micro;
+      // 1. Colina de Burg Nürburg (x=1050, z=-2150, cota +115m en el horizonte sur de Eifel)
+      const distCastle = Math.hypot(x - 1050, z - (-2150));
+      const castle = Math.max(0, 1.0 - distCastle / 1600) * 115.0;
+
+      // 2. Terraza plana oficial FIA de recta de meta, boxes, paddock y Haupttribüne
+      if (x >= -190 && x <= 270 && z >= -85 && z <= 95) {
+        return 0.0;
+      }
+
+      // 3. Altura orográfica regional de Eifel coherente con la rasante de pista
+      const cp = [
+        [-60, 0, 0], [585, 20, -4.5], [466, 186, -8], [654, 300, -8],
+        [652, 228, -7], [989, -59, -14], [1070, -196, -20], [1483, -259, -28],
+        [1531, -205, -10], [1393, -205, 0], [1023, 26, 16], [807, 142, 24],
+        [672, 424, 18], [286, 422, 6], [-53, 220, 0.5], [-70, 0, 0]
+      ];
+      let num = 0, den = 0;
+      for (let i = 0; i < 16; i++) {
+        const p = cp[i], dx = x - p[0], dz = z - p[1];
+        const w = 1.0 / (dx * dx + dz * dz + 1600.0);
+        num += p[2] * w;
+        den += w;
+      }
+      let finalY = den > 0 ? num / den : 0;
+
+      // 4. Suavizado en la transición perimetral de la meseta de meta
+      const dMetaX = Math.max(0, Math.max(-190 - x, x - 270));
+      const dMetaZ = Math.max(0, Math.max(-85 - z, z - 95));
+      const dMeta = Math.hypot(dMetaX, dMetaZ);
+      if (dMeta < 60.0) {
+        const t = dMeta / 60.0;
+        finalY *= t * t;
+      }
+
+      // 5. Micro-relieve y taludes naturales
+      const micro = Math.sin(x * 0.005 + 1.1) * 2.2 + Math.cos(z * 0.004 - 0.7) * 1.8;
+      const microWeight = dMeta < 40 ? 0 : Math.min(1, (dMeta - 40) / 40);
+
+      return finalY + castle + micro * microWeight;
     },
 
     // Poses de cámara cinematográficas para el modo foto / menú
