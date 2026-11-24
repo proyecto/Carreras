@@ -149,7 +149,7 @@ const CarFactory = {
 
       build() {
         const famName = `car_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-        const fam = CAR.fam = mkFamily(famName, { src: shaderSrc, noCube: true });
+        const fam = CAR.fam = mkFamily(famName, { src: shaderSrc, noCube: false });
         CAR.slotBody = objSlot();
         for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot();
 

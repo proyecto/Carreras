@@ -73,6 +73,15 @@ const R = {
   wind: new Float32Array([0.8, 0.6, 1.0]),   // Dirección (x,z) y fuerza del viento; F.wind.w = tiempo, F.misc.x = dt
   fog: new Float32Array([0.0008, 1 / 55, 0, 0.05]), fogCol: new Float32Array([0, 0, 0, 1.0]),
   exposure: 1, debug: 0, noJitter: false, timing: null, pending: [],
+  playerSlotBody: -1, playerSlotWheels: null,
+  isPlayerSlot(slot) {
+    if (slot === this.playerSlotBody) return true;
+    if (this.playerSlotWheels) {
+      const w = this.playerSlotWheels;
+      if (slot === w[0] || slot === w[1] || slot === w[2] || slot === w[3]) return true;
+    }
+    return false;
+  },
 };
 
 // Slots de uniform de objeto (256 bytes cada uno: model, prevModel, 4 vec4 de parámetros). Slot 0 = identidad.
@@ -91,7 +100,7 @@ function mkFamily(name, def) {
   const fam = { name, def, pipe: [null, null, null], bgl3: null };
   const kinds = [['PASS_GBUF', 0], ['PASS_SHADOW', 1], ['PASS_CUBE', 2]];
   for (const [kdef, k] of kinds) {
-    if ((k === 1 && def.noShadow) || (k === 2 && def.noCube)) continue;
+    if ((k === 1 && def.noShadow) || (k === 2 && def.noCube && !name.startsWith('car_'))) continue;
     const defs = Object.assign({}, SH_DEFS, def.defs || {}); defs[kdef] = ''; if (def.alpha) defs.ALPHA = '';
     WGSL['__fam_' + name] = `#include common\n#include gbuf\n#include ${def.src}\n#include entry\n`;
     const code = wgslPP('__fam_' + name, defs), mod = mkShader('__fam_' + name, defs), bgls = reflectBGLs(code);
@@ -131,7 +140,14 @@ class MeshSet {
     const pipe = this.fam.pipe[ctx.kind]; if (!pipe) return;
     const bit = 1 << ctx.kind; let set = false;
     for (let i = 0; i < this.items.length; i++) {
-      const it = this.items[i]; if (!(it.flags & bit) || !it.on) continue;
+      const it = this.items[i];
+      if (!it.on) continue;
+      if (ctx.isMirror) {
+        if (!(it.flags & 1)) continue;
+        if (R.isPlayerSlot && R.isPlayerSlot(it.slot)) continue;
+      } else {
+        if (!(it.flags & bit)) continue;
+      }
       const m = R.objData, o = it.slot * 64;
       const x = m[o] * it.cx + m[o + 4] * it.cy + m[o + 8] * it.cz + m[o + 12], y = m[o + 1] * it.cx + m[o + 5] * it.cy + m[o + 9] * it.cz + m[o + 13], z = m[o + 2] * it.cx + m[o + 6] * it.cy + m[o + 10] * it.cz + m[o + 14];
       const pl = ctx.planes, np = ctx.nPlanes, rr = it.r; let vis = true;   // Test esfera × planos integrado (sin paso de números por argumento)
@@ -306,7 +322,7 @@ function staticShadowSetup() {
   frMat('shadowVP', cs.vp[3], 3);
 }
 function setPass(slot, vp, pos) { const p = R.passData, o = slot * 64; p.set(vp, o); p[o + 16] = pos[0]; p[o + 17] = pos[1]; p[o + 18] = pos[2]; p[o + 19] = slot; }
-function ctxFrom(kind, vp, nPlanes, pos, cascade) { const c = R.ctx; c.kind = kind; frustumPlanes(c.planes, vp, nPlanes); c.nPlanes = nPlanes; c.cx = pos[0]; c.cy = pos[1]; c.cz = pos[2]; c.cascade = cascade; return c; }
+function ctxFrom(kind, vp, nPlanes, pos, cascade, isMirror = false) { const c = R.ctx; c.kind = kind; frustumPlanes(c.planes, vp, nPlanes); c.nPlanes = nPlanes; c.cx = pos[0]; c.cy = pos[1]; c.cz = pos[2]; c.cascade = cascade; c.isMirror = !!isMirror; return c; }
 function drawAll(pass, ctx, slot, bg1) { drawRange(pass, ctx, slot, bg1, 0, R.drawables.length); }
 function drawRange(pass, ctx, slot, bg1, i0, i1) {
   pass.setBindGroup(0, R.globBG); R.dyn1[0] = slot * 256; pass.setBindGroup(1, bg1, R.dyn1, 0, 1); R.dyn2[0] = 0; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
@@ -371,7 +387,7 @@ function renderFrame() {
   if (R.mirrorCtx && R.mirror && R.mirror.active) {
     const pm = apiPass(enc, D.mirrorHdr);
     cubeSky(pm, 14);
-    drawAll(pm, ctxFrom(KIND.CUBE, R.mirror.vp, 5, R.mirror.eye, 0), 13, R.passBGCube);
+    drawAll(pm, ctxFrom(KIND.CUBE, R.mirror.vp, 5, R.mirror.eye, 0, true), 13, R.passBGCube);
     pm.end();
     D.mirrorOut.colorAttachments[0].view = R.mirrorCtx.getCurrentTexture().createView();
     fsPass(enc, D.mirrorOut, R.post.dbg, R.mirrorBG);

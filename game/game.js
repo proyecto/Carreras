@@ -219,7 +219,9 @@ const rivalObj = () => {
 // Instanciación de modelos para parrillas multi-coche (reutilización eficiente de buffers WebGPU)
 function cloneCarModelForGrid(baseModel, instanceIndex) {
   if (!baseModel) return null;
-  if (!instanceIndex || instanceIndex === 0) return baseModel;
+  const isPlayerCar = (typeof CAR !== 'undefined' && baseModel === CAR) ||
+                      (typeof CARS !== 'undefined' && (baseModel === CARS.active || (CARS.active && baseModel.id === CARS.active.id)));
+  if (!isPlayerCar && (!instanceIndex || instanceIndex === 0)) return baseModel;
 
   const inst = Object.create(baseModel);
   inst.id = `${baseModel.id}_inst${instanceIndex}`;
@@ -609,6 +611,10 @@ function gamePose() {
   C.inp[0] = GS.steer; C.inp[1] = GS.steer * 14; C.place(B, GS.spin, GS.susp);
   const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
+  if (typeof R !== 'undefined') {
+    R.playerSlotBody = C.slotBody;
+    R.playerSlotWheels = C.slotWheel;
+  }
 
   // Pose e interpolación del rival IA utilizando exclusivamente el modelo real
   if (GAME.rivalEnabled !== false) {

@@ -56,7 +56,8 @@ function runShaderTests() {
     { name: '__fwd_glassMul', defs: { GLASS_MUL: '', PASS_FWD: '' }, setup: () => { ctx.WGSL['__fwd_glassMul'] = '#include common\n#include gbuf\n#include glass\n#include entry_fwd\n'; } },
     { name: '__fwd_glassAdd', defs: { GLASS_ADD: '', PASS_FWD: '' }, setup: () => { ctx.WGSL['__fwd_glassAdd'] = '#include common\n#include gbuf\n#include glass\n#include entry_fwd\n'; } },
     { name: '__fam_glb_track (GBUF)', defs: { PASS_GBUF: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } },
-    { name: '__fam_glb_track (Shadow)', defs: { PASS_SHADOW: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } }
+    { name: '__fam_glb_track (Shadow)', defs: { PASS_SHADOW: '' }, key: '__fam_glb_track', setup: () => { ctx.WGSL['__fam_glb_track'] = '#include common\n#include gbuf\n#include mat_glb_track\n#include entry\n'; } },
+    { name: '__fam_car (CUBE)', defs: { PASS_CUBE: '' }, key: '__fam_car', setup: () => { ctx.WGSL['__fam_car'] = '#include common\n#include gbuf\n#include mesh_vert\nfn surf(in: V2F, ff: bool) -> Surface { var s: Surface; s.albedo = in.col.rgb; s.normal = in.nrm.xyz; s.rough = 0.5; s.metal = 0.0; return s; }\n#include entry\n'; } }
   ];
 
   for (const p of pipelines) {

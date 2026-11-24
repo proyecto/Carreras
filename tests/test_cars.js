@@ -38,7 +38,7 @@ function runCarsTestSuite() {
     WGSL: {},
     mkTex: () => ({}),
     TU: { RT: 1, TB: 2, CD: 4 },
-    G: { dev: { queue: { writeTexture: () => {} } } },
+    G: { dev: { queue: { writeTexture: () => { } } } },
     atob: (b64) => Buffer.from(b64, 'base64').toString('binary')
   };
   vm.createContext(ctx);
