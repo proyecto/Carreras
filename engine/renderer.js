@@ -62,7 +62,7 @@ const bgOf = (pipe, g, res) => G.dev.createBindGroup({ layout: pipe.bgls[g], ent
 
 const R = {
   drawables: [], transparents: [], families: {}, frameIdx: 0, ready: false,
-  objData: new Float32Array(64 * 64), objCount: 1, passData: new Float32Array(16 * 64),
+  objData: new Float32Array(256 * 64), objCount: 1, passData: new Float32Array(16 * 64),
   ctx: { kind: 0, planes: new Float32Array(24), nPlanes: 4, cx: 0, cy: 0, cz: 0, cascade: 0, lod: 1 },
   dyn1: new Uint32Array(1), dyn2: new Uint32Array(1),
   cam: { view: m4(), proj: m4(), projJ: m4(), vp: m4(), vpJ: m4(), prevVp: m4(), inv: m4(), tmp: m4(), pos: new Float32Array(3), fwd: new Float32Array(3), fovy: 1, near: 0.1, first: true },
@@ -80,7 +80,7 @@ const R = {
 const _objViews = [];
 function _objMk(i) { _objViews[i] = [R.objData.subarray(i * 64, i * 64 + 16), R.objData.subarray(i * 64 + 16, i * 64 + 32), R.objData.subarray(i * 64 + 32, i * 64 + 48)]; m4ident(_objViews[i][0]); m4ident(_objViews[i][1]); }
 _objMk(0);
-function objSlot() { const i = R.objCount++; if (i >= 64) throw new Error('Slots de objeto agotados'); _objMk(i); return i; }
+function objSlot() { const i = R.objCount++; if (i >= 256) throw new Error('Slots de objeto agotados'); _objMk(i); return i; }
 const objModel = i => _objViews[i][0];
 const objPrev = i => _objViews[i][1];
 const objParams = i => _objViews[i][2];
@@ -152,7 +152,7 @@ function rendererInit() {
   R.sSky = dev.createSampler({ minFilter: 'linear', magFilter: 'linear', addressModeU: 'repeat', addressModeV: 'clamp-to-edge' });
   R.sCmp = dev.createSampler({ compare: 'less-equal', minFilter: 'linear', magFilter: 'linear' });
   R.sNear = dev.createSampler({});
-  R.frameBuf = mkBuf(FR.size, BU.U); R.objBuf = mkBuf(64 * 256, BU.U); R.passBuf = mkBuf(16 * 256, BU.U);
+  R.frameBuf = mkBuf(FR.size, BU.U); R.objBuf = mkBuf(256 * 256, BU.U); R.passBuf = mkBuf(16 * 256, BU.U);
   // Render targets
   const T = R.tex = {};
   T.gA = mkTex(W, H, 'rgba8unorm-srgb'); T.gB = mkTex(W, H, 'rgba16float'); T.gC = mkTex(W, H, 'rgba8unorm'); T.gV = mkTex(W, H, 'rg16float'); T.depth = mkTex(W, H, 'depth32float');

@@ -124,6 +124,12 @@ async function main() {
           : (saved.rival !== false));
     GAME.rivalEnabled = rivalEnabled;
 
+    const rivalCountParam = (typeof Q !== 'undefined') ? (parseInt(Q.get('rivals') || Q.get('rivalCount'), 10)) : null;
+    const rivalCount = rivalEnabled
+      ? Math.max(1, Math.min(15, rivalCountParam || (typeof window !== 'undefined' && window.__rivalCount) || saved.rivalCount || 1))
+      : 0;
+    GAME.rivalCount = rivalCount;
+
     if (rivalEnabled) {
       const rivalId = (typeof window !== 'undefined' && window.__rivalCarId) || (typeof Q !== 'undefined' && Q.get('rivalCar')) || saved.rivalCar;
       const rivalCar = CARS.get(rivalId);
@@ -152,14 +158,24 @@ async function main() {
     if (GAME.mode === 'test') buildTestScene();
     if (GAME.mode === 'placeholder') { buildPlaceholderWorld(); GAME.init = () => { const p = trackPos(40, 0, new Float64Array(5)); setCamera(p[0] - 12, p[1] + 3, p[2] + 4, p[0] + 30, p[1] + 1, p[2], 0.9); R.cube.pos.set([p[0], p[1] + 1.2, p[2]]); }; }
 
-    setLoadingProgress(45, 'loading_build_car', 'Construyendo bólido y rival…');
+    setLoadingProgress(45, 'loading_build_car', 'Construyendo bólido y rivales…');
     // Construye el coche activo antes del resto de la escena
     if (activeCar && typeof activeCar.build === 'function') {
       activeCar.build();
+      activeCar.built = true;
       if (GAME.mode === 'car') {
         buildTestGround();
         GAME.init = () => { setCamera(3.3, 1.25, -3.6, 0.1, 0.62, 0, 0.5); R.cube.pos.set([0, 0.9, 0]); };
         window.__car = activeCar;
+      }
+    }
+    // Construye todos los coches rivales registrados en CARS.list
+    if (rivalEnabled && CARS.list && CARS.list.length > 0) {
+      for (const c of CARS.list) {
+        if (c && typeof c.build === 'function' && !c.built) {
+          c.build();
+          c.built = true;
+        }
       }
     }
     await new Promise(r => setTimeout(r, 16));

@@ -216,6 +216,85 @@ const rivalObj = () => {
   return CAR || null;
 };
 
+// Instanciación de modelos para parrillas multi-coche (reutilización eficiente de buffers WebGPU)
+function cloneCarModelForGrid(baseModel, instanceIndex) {
+  if (!baseModel) return null;
+  if (!instanceIndex || instanceIndex === 0) return baseModel;
+
+  const inst = Object.create(baseModel);
+  inst.id = `${baseModel.id}_inst${instanceIndex}`;
+  if (typeof objSlot === 'function') {
+    inst.slotBody = objSlot();
+    inst.slotWheel = [objSlot(), objSlot(), objSlot(), objSlot()];
+  }
+  inst.inp = new Float64Array(2);
+  inst._t2 = m4();
+  inst.built = true;
+
+  if (baseModel.set && baseModel.set.items) {
+    const items = baseModel.set.items;
+    const len = items.length;
+    for (let i = 0; i < len; i++) {
+      const it = items[i];
+      if (it.slot === baseModel.slotBody) {
+        items.push({
+          vb: it.vb, ib: it.ib, count: it.count, slot: inst.slotBody,
+          flags: it.flags, cx: it.cx, cy: it.cy, cz: it.cz, r: it.r,
+          maxDist: it.maxDist, wc: new Float32Array(3), on: true
+        });
+      } else if (baseModel.slotWheel) {
+        for (let w = 0; w < 4; w++) {
+          if (it.slot === baseModel.slotWheel[w]) {
+            items.push({
+              vb: it.vb, ib: it.ib, count: it.count, slot: inst.slotWheel[w],
+              flags: it.flags, cx: it.cx, cy: it.cy, cz: it.cz, r: it.r,
+              maxDist: it.maxDist, wc: new Float32Array(3), on: true
+            });
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (baseModel.glass && baseModel.glass.items) {
+    const items = baseModel.glass.items;
+    const len = items.length;
+    for (let i = 0; i < len; i++) {
+      const it = items[i];
+      if (it.slot === baseModel.slotBody) {
+        items.push({
+          vb: it.vb, ib: it.ib, count: it.count, slot: inst.slotBody,
+          flags: it.flags, cx: it.cx, cy: it.cy, cz: it.cz, r: it.r,
+          maxDist: it.maxDist, wc: new Float32Array(3), on: true
+        });
+      }
+    }
+  }
+
+  inst.place = function(body, spin, susp) {
+    const steer = inst.inp[0];
+    const t = inst._t2;
+    if (typeof objPrev === 'function' && typeof objModel === 'function') {
+      objPrev(inst.slotBody).set(objModel(inst.slotBody));
+      objModel(inst.slotBody).set(body);
+      for (let i = 0; i < 4; i++) {
+        const sl = inst.slotWheel[i], h = inst.hubs[i], left = (i & 1) === 0;
+        objPrev(sl).set(objModel(sl));
+        const a = -(i < 2 ? steer : 0) + (left ? Math.PI : 0), c = Math.cos(a), sn = Math.sin(a);
+        const g = left ? spin[i] : -spin[i], cg = Math.cos(g), sg = Math.sin(g);
+        t[0] = c * cg; t[1] = sg; t[2] = -sn * cg; t[3] = 0;
+        t[4] = -c * sg; t[5] = cg; t[6] = sn * sg; t[7] = 0;
+        t[8] = sn; t[9] = 0; t[10] = c; t[11] = 0;
+        t[12] = h[0]; t[13] = h[1] + susp[i]; t[14] = h[2]; t[15] = 1;
+        m4mul(objModel(sl), body, t);
+      }
+    }
+  };
+
+  return inst;
+}
+
 function poseRival(CR, VR, gsR, kr, al) {
   if (!CR || !VR || !gsR) return;
   if (!CR.built && typeof CR.build === 'function') {
@@ -337,12 +416,54 @@ function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
-    const rModel = rivalObj();
-    const rName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : 'RIVAL';
-    const rCol = (rModel && rModel.accent) ? rModel.accent : '#facc15';
-    const rivals = [
-      { veh: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2, model: rModel, gs: GS_RIVAL, name: rName, col: rCol }
-    ];
+    const rivalCount = Math.max(1, Math.min(15, GAME.rivalCount || (typeof window !== 'undefined' && window.__rivalCount) || 1));
+    const activeId = (CARS.active && CARS.active.id) || (CAR && CAR.id);
+    const availableModels = (CARS.list && CARS.list.length > 0)
+      ? CARS.list.filter(c => c && c.id !== activeId && typeof c.build === 'function')
+      : [];
+    const pool = availableModels.length > 0 ? availableModels : (CARS.list && CARS.list.length > 0 ? CARS.list : [rivalObj()]);
+
+    const primaryModel = rivalObj();
+    const sortedPool = [];
+    if (primaryModel) sortedPool.push(primaryModel);
+    for (const m of pool) {
+      if (m && (!primaryModel || m.id !== primaryModel.id)) sortedPool.push(m);
+    }
+    const finalPool = sortedPool.length > 0 ? sortedPool : [primaryModel || CAR];
+
+    const modelUsage = {};
+    const rivals = [];
+    const colors = ['#facc15', '#38bdf8', '#ef4444', '#a855f7', '#4ade80', '#fb923c', '#e879f9', '#2dd4bf'];
+
+    for (let k = 0; k < rivalCount; k++) {
+      const baseModel = finalPool[k % finalPool.length];
+      const modelId = baseModel ? baseModel.id : 'rival';
+      const useCount = modelUsage[modelId] || 0;
+      modelUsage[modelId] = useCount + 1;
+      const rModel = cloneCarModelForGrid(baseModel, useCount);
+
+      const veh = (k === 0 && typeof VEH_RIVAL !== 'undefined') ? VEH_RIVAL
+                : (k === 1 && typeof VEH_RIVAL2 !== 'undefined') ? VEH_RIVAL2
+                : (k === 2 && typeof VEH_RIVAL3 !== 'undefined') ? VEH_RIVAL3
+                : (typeof createVehicleState === 'function' ? createVehicleState() : {});
+      const vin = (k === 0 && typeof VIN_RIVAL !== 'undefined') ? VIN_RIVAL
+                : (k === 1 && typeof VIN_RIVAL2 !== 'undefined') ? VIN_RIVAL2
+                : (k === 2 && typeof VIN_RIVAL3 !== 'undefined') ? VIN_RIVAL3
+                : new Float64Array(3);
+      const gs = (k === 0 && typeof GS_RIVAL !== 'undefined') ? GS_RIVAL
+               : (k === 1 && typeof GS_RIVAL2 !== 'undefined') ? GS_RIVAL2
+               : (k === 2 && typeof GS_RIVAL3 !== 'undefined') ? GS_RIVAL3
+               : createGsRival();
+
+      const rName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : `RIVAL #${k + 1}`;
+      const rCol = (rModel && rModel.accent) ? rModel.accent : colors[k % colors.length];
+
+      const ds = -(k + 1) * 8.0;
+      const dd = ((k % 2 === 0) ? 1 : -1) * Math.min(3.2, (TRK.hw || 6) * 0.45);
+
+      rivals.push({ veh, vin, ds, dd, model: rModel, gs, name: rName, col: rCol });
+    }
+
     if (typeof gridManagerInstance !== 'undefined') {
       gridManagerInstance.init(rivals);
       gridManagerInstance.resetGrid(TRK, TRK.startS, TRK.startD);

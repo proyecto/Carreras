@@ -140,10 +140,27 @@ function runRivalTestSuite() {
   assert(carsObj.rival && carsObj.rival.id === randomRival.id, `CARS.selectRival registra correctamente el modelo competidor`);
 
   // 6. Verificación de activación/desactivación del modo rival (solitario vs carrera)
-  ctx.GAME = { rivalEnabled: true };
+  ctx.GAME = { rivalEnabled: true, rivalCount: 15 };
   assert(ctx.GAME.rivalEnabled === true, 'Modo carrera: Rival activado');
   ctx.GAME.rivalEnabled = false;
   assert(ctx.GAME.rivalEnabled === false, 'Modo contrarreloj: Rival desactivado (en solitario)');
+
+  // 7. Verificación de escalabilidad de parrilla de 1 a 15 rivales
+  const testCounts = [1, 3, 8, 15];
+  for (const count of testCounts) {
+    const grid = [];
+    for (let k = 0; k < count; k++) {
+      const ds = -(k + 1) * 8.0;
+      const dd = ((k % 2 === 0) ? 1 : -1) * 3.2;
+      const carEntry = manifest[k % manifest.length];
+      grid.push({ ds, dd, carId: carEntry.id });
+    }
+    assert(grid.length === count, `Parrilla generada correctamente con ${count} rivales`);
+    assert(grid[0].ds === -8.0, `Primer rival en posición -8.0m`);
+    if (count > 1) {
+      assert(grid[1].ds === -16.0 && grid[1].dd === -3.2, `Segundo rival en cajón escalonado (-16.0m, -3.2m)`);
+    }
+  }
 
   console.log(`Resultado Rival IA: ${passed} aserciones correctas, ${failed} fallos.`);
   return { passed, failed };

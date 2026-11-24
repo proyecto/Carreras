@@ -239,20 +239,36 @@ const HudComponents = {
       m.fillStyle = 'rgba(255, 255, 255, 0.45)';
       m.fillText('POSICIÓN EN CARRERA', padX, yStart + Math.round(r * 0.075));
 
-      // Badge de posición grande a la derecha (P1..P4)
+      // Badge de posición grande a la derecha (P1..P16)
       m.textAlign = 'right';
       m.font = '800 ' + Math.round(r * 0.135) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
       m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
-      m.fillText('P' + playerPos, W - padX, yStart + Math.round(r * 0.045));
+      m.fillText('P' + playerPos + (allCars.length > 1 ? `/${allCars.length}` : ''), W - padX, yStart + Math.round(r * 0.045));
 
       // Filas de clasificación estilo F1 Timing Tower (inician DEBAJO del encabezado)
+      // En parrillas de hasta 16 coches, muestra un visor dinámico de 4 filas con el líder y tus rivales inmediatos
       const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
       const rowStartY = yStart + Math.round(r * 0.185);
       const rowStepY = Math.round(r * 0.098);
 
-      for (let i = 0; i < allCars.length; i++) {
+      let displayIndices = [];
+      if (allCars.length <= 4) {
+        for (let i = 0; i < allCars.length; i++) displayIndices.push(i);
+      } else {
+        if (playerIdx < 4) {
+          displayIndices = [0, 1, 2, 3];
+        } else {
+          const ahead = playerIdx - 1;
+          const current = playerIdx;
+          const behind = playerIdx + 1 < allCars.length ? playerIdx + 1 : playerIdx - 2;
+          displayIndices = Array.from(new Set([0, ahead, current, behind])).sort((a, b) => a - b);
+        }
+      }
+
+      for (let slot = 0; slot < displayIndices.length; slot++) {
+        const i = displayIndices[slot];
         const cObj = allCars[i];
-        const rowY = rowStartY + i * rowStepY;
+        const rowY = rowStartY + slot * rowStepY;
         const isLead = (i === 0);
         const gapM = Math.max(0, leaderProg - cObj.prog);
         const gapSec = (gapM / refSpeed).toFixed(1);
@@ -260,7 +276,7 @@ const HudComponents = {
         // Posición
         m.textAlign = 'left';
         m.font = '800 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        m.fillStyle = posColors[i] || '#ffffff';
+        m.fillStyle = (i === 0) ? '#facc15' : (i === 1) ? '#94a3b8' : (i === 2) ? '#d97706' : '#64748b';
         m.fillText(String(i + 1), padX, rowY);
 
         // Nombre

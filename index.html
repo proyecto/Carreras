@@ -78,11 +78,18 @@
             <span class="rival-panel-title" data-i18n="rival_title">Coche Rival IA</span>
             <span id="rival-panel-model" class="rival-panel-sub"></span>
           </div>
-          <button type="button" id="btn-toggle-rival" class="btn-rival-toggle is-active" onclick="uiToggleRival()"
-            aria-pressed="true">
-            <span class="rival-icon" aria-hidden="true">🏁</span>
-            <span id="rival-toggle-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
-          </button>
+          <div class="rival-panel-controls">
+            <button type="button" id="btn-toggle-rival" class="btn-rival-toggle is-active" onclick="uiToggleRival()"
+              aria-pressed="true">
+              <span class="rival-icon" aria-hidden="true">🏁</span>
+              <span id="rival-toggle-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
+            </button>
+            <div id="rival-count-wrapper" class="rival-count-wrapper">
+              <label for="rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
+              <select id="rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="bt">
@@ -121,6 +128,11 @@
               <span class="rival-icon" aria-hidden="true">🏁</span>
               <span id="opt-rival-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
             </button>
+            <div id="opt-rival-count-wrapper" class="rival-count-wrapper">
+              <label for="opt-rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
+              <select id="opt-rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              </select>
+            </div>
             <div id="opt-rival-info" class="opt-rival-info">
               <span id="opt-rival-car-name" class="opt-rival-car-name"></span>
               <span id="opt-rival-car-specs" class="opt-rival-car-specs"></span>
@@ -309,12 +321,15 @@
     (() => {
       let carId = null;
       let rivalParam = null;
+      let rivalCountParam = null;
       let rivalCarId = null;
       let trackId = null;
       try {
         const p = new URLSearchParams(location.search);
         if (p.get('car')) carId = p.get('car');
         if (p.has('rival')) rivalParam = p.get('rival');
+        if (p.has('rivals')) rivalCountParam = parseInt(p.get('rivals'), 10);
+        else if (p.has('rivalCount')) rivalCountParam = parseInt(p.get('rivalCount'), 10);
         if (p.get('rivalCar')) rivalCarId = p.get('rivalCar');
         if (p.get('track')) trackId = p.get('track');
       } catch (e) { }
@@ -347,7 +362,7 @@
         document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v5"><\/script>');
       }
 
-      // --- D. Coche activo y rival IA bajo demanda ---
+      // --- D. Coche activo y rivales IA bajo demanda ---
       const carManifest = window.CAR_MANIFEST || [];
       const carEntry = (carId && carManifest.find(c => c.id === carId)) || carManifest[0];
       if (carEntry && carEntry.file) {
@@ -359,7 +374,12 @@
         : (saved.rival !== false);
       window.__rivalEnabled = rivalEnabled;
 
-      if (rivalEnabled) {
+      const rivalCount = rivalEnabled
+        ? Math.max(1, Math.min(15, rivalCountParam || saved.rivalCount || 1))
+        : 0;
+      window.__rivalCount = rivalCount;
+
+      if (rivalEnabled && rivalCount > 0) {
         const availableRivals = carManifest.filter(c => !carEntry || c.id !== carEntry.id);
         const pool = availableRivals.length > 0 ? availableRivals : carManifest;
         let chosenRival = (rivalCarId && carManifest.find(c => c.id === rivalCarId));
@@ -370,8 +390,32 @@
           chosenRival = pool[Math.floor(Math.random() * pool.length)];
         }
         window.__rivalCarId = chosenRival ? chosenRival.id : null;
-        if (chosenRival && chosenRival.file && chosenRival.file !== (carEntry && carEntry.file)) {
-          document.write('<script src="cars/' + chosenRival.file + '?v=racing_mirror_f1_v5"><\/script>');
+
+        // Determinar qué modelos reales cubrirán la parrilla de rivales
+        const rivalEntries = [];
+        if (chosenRival) rivalEntries.push(chosenRival);
+        for (let i = 0; i < pool.length && rivalEntries.length < rivalCount; i++) {
+          if (pool[i].id !== chosenRival.id) {
+            rivalEntries.push(pool[i]);
+          }
+        }
+        // Si se necesitan más coches hasta completar rivalCount (hasta 15):
+        for (let i = 0; i < carManifest.length && rivalEntries.length < rivalCount; i++) {
+          if (!rivalEntries.some(r => r.id === carManifest[i].id)) {
+            rivalEntries.push(carManifest[i]);
+          }
+        }
+        window.__rivalCarEntries = rivalEntries;
+
+        // Cargar los scripts únicos necesarios para todos los rivales
+        const loadedFiles = new Set();
+        if (carEntry && carEntry.file) loadedFiles.add(carEntry.file);
+
+        for (const r of rivalEntries) {
+          if (r && r.file && !loadedFiles.has(r.file)) {
+            loadedFiles.add(r.file);
+            document.write('<script src="cars/' + r.file + '?v=racing_mirror_f1_v5"><\/script>');
+          }
         }
       }
     })();

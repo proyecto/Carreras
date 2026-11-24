@@ -440,19 +440,35 @@ function hudDrawMinimap() {
   m.textAlign = 'right';
   m.font = '800 ' + Math.round(r * 0.135) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
-  m.fillText('P' + playerPos, W - padX, yS2 + Math.round(r * 0.045));
+  m.fillText('P' + playerPos + (allCars.length > 1 ? `/${allCars.length}` : ''), W - padX, yS2 + Math.round(r * 0.045));
 
   const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
   const rStartY = yS2 + Math.round(r * 0.185);
   const rStepY = Math.round(r * 0.098);
-  for (let i = 0; i < allCars.length; i++) {
-    const cObj = allCars[i], ry = rStartY + i * rStepY;
+
+  let displayIndices = [];
+  if (allCars.length <= 4) {
+    for (let i = 0; i < allCars.length; i++) displayIndices.push(i);
+  } else {
+    if (playerIdx < 4) {
+      displayIndices = [0, 1, 2, 3];
+    } else {
+      const ahead = playerIdx - 1;
+      const current = playerIdx;
+      const behind = playerIdx + 1 < allCars.length ? playerIdx + 1 : playerIdx - 2;
+      displayIndices = Array.from(new Set([0, ahead, current, behind])).sort((a, b) => a - b);
+    }
+  }
+
+  for (let slot = 0; slot < displayIndices.length; slot++) {
+    const i = displayIndices[slot];
+    const cObj = allCars[i], ry = rStartY + slot * rStepY;
     const isLead = (i === 0);
     const gapM = Math.max(0, leaderProg - cObj.prog);
     const gapSec = (gapM / refSpeed).toFixed(1);
     m.textAlign = 'left';
     m.font = '800 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillStyle = posColors[i] || '#ffffff';
+    m.fillStyle = (i === 0) ? '#facc15' : (i === 1) ? '#94a3b8' : (i === 2) ? '#d97706' : '#64748b';
     m.fillText(String(i + 1), padX, ry);
     m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
     m.fillStyle = cObj.isPlayer ? '#ff5a36' : '#ffffff';

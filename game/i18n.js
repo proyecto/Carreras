@@ -64,6 +64,8 @@ const I18N = {
       rival_status_on: 'Competing on track · Random model',
       rival_status_off: 'Solo practice · Empty track',
       rival_model_label: 'Current rival: {name}',
+      rival_count_label: 'Rivals:',
+      rival_count_multiple: '{count} AI Rivals on track · Real models',
 
       action_accel: 'Accelerate',
       action_brake: 'Brake / Reverse',
@@ -274,6 +276,8 @@ const I18N = {
       rival_status_on: 'En pista compitiendo · Modelo al azar',
       rival_status_off: 'Práctica en solitario · Pista libre',
       rival_model_label: 'Rival actual: {name}',
+      rival_count_label: 'Rivales:',
+      rival_count_multiple: '{count} rivales en pista · Modelos reales',
 
       action_accel: 'Acelerar',
       action_brake: 'Frenar / Marcha atrás',

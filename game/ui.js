@@ -9,7 +9,7 @@ const UI = {
   b0: null, b1: null, bOpt: null, bOptBack: null, bResetControls: null,
   pMain: null, pOpt: null, listeningKey: null,
   bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, selCar: '', selTrack: '',
-  selRival: true, selRivalCar: ''
+  selRival: true, selRivalCar: '', selRivalCount: 1
 };
 const $ = id => document.getElementById(id);
 
@@ -212,7 +212,11 @@ function uiSelectionChanged() {
   const rivalChanged = (UI.selRival !== rivalCurrent);
   const rivalCarCurrent = (CARS.rival ? CARS.rival.id : ((typeof window !== 'undefined' && window.__rivalCarId) || ''));
   const rivalCarChanged = (UI.selRival && UI.selRivalCar && rivalCarCurrent && UI.selRivalCar !== rivalCarCurrent);
-  return carChanged || trkChanged || rivalChanged || rivalCarChanged;
+  const rivalCountCurrent = (typeof GAME !== 'undefined' && GAME.rivalCount)
+    ? GAME.rivalCount
+    : ((typeof window !== 'undefined' && window.__rivalCount) || 1);
+  const rivalCountChanged = (UI.selRival && UI.selRivalCount !== rivalCountCurrent);
+  return carChanged || trkChanged || rivalChanged || rivalCarChanged || rivalCountChanged;
 }
 function uiUpdatePrimaryBtn() {
   if (!UI.b0) return;
@@ -229,15 +233,21 @@ function uiUpdatePrimaryBtn() {
   }
 }
 function uiApplySelection(startDirectly = true) {
-  saveSelection(UI.selCar, UI.selTrack, { rival: UI.selRival, rivalCar: UI.selRivalCar });
+  saveSelection(UI.selCar, UI.selTrack, { rival: UI.selRival, rivalCar: UI.selRivalCar, rivalCount: UI.selRivalCount });
   if (typeof setMsg === 'function') setMsg((typeof I18N !== 'undefined') ? I18N.t('loading') : 'Loading…');
   if (UI.el) UI.el.style.display = 'none';
   const p = new URLSearchParams(location.search);
   p.set('car', UI.selCar);
   p.set('track', UI.selTrack);
   p.set('rival', UI.selRival ? '1' : '0');
-  if (UI.selRival && UI.selRivalCar) p.set('rivalCar', UI.selRivalCar);
-  else p.delete('rivalCar');
+  if (UI.selRival) {
+    p.set('rivals', String(UI.selRivalCount));
+    if (UI.selRivalCar) p.set('rivalCar', UI.selRivalCar);
+    else p.delete('rivalCar');
+  } else {
+    p.delete('rivals');
+    p.delete('rivalCar');
+  }
   if (startDirectly) p.set('play', '1');
   location.search = '?' + p.toString();
 }
@@ -247,6 +257,13 @@ function uiToggleRival() {
   if (UI.selRival && !UI.selRivalCar) {
     uiRerollRival(false);
   }
+  uiUpdateRivalDOM();
+  uiUpdatePrimaryBtn();
+}
+
+function uiChangeRivalCount(val) {
+  const count = Math.max(1, Math.min(15, parseInt(val, 10) || 1));
+  UI.selRivalCount = count;
   uiUpdateRivalDOM();
   uiUpdatePrimaryBtn();
 }
@@ -263,8 +280,21 @@ function uiRerollRival(applyChanged = true) {
   if (applyChanged) uiUpdatePrimaryBtn();
 }
 
+function _populateRivalSelect(sel) {
+  if (!sel || sel.options.length === 15) return;
+  sel.innerHTML = '';
+  for (let i = 1; i <= 15; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    sel.appendChild(opt);
+  }
+}
+
 function uiUpdateRivalDOM() {
   const enabled = !!UI.selRival;
+  const count = Math.max(1, Math.min(15, UI.selRivalCount || 1));
+  UI.selRivalCount = count;
   const manifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
   let rivalCar = manifest.find(c => c.id === UI.selRivalCar);
   if (!rivalCar && CARS.rival) rivalCar = CARS.rival;
@@ -277,10 +307,21 @@ function uiUpdateRivalDOM() {
   const rivalName = rivalCar ? ((typeof I18N !== 'undefined') ? I18N.carName(rivalCar) : rivalCar.name) : '';
   const rivalSpecs = rivalCar ? ((typeof I18N !== 'undefined') ? I18N.carSpecs(rivalCar) : (rivalCar.specs || rivalCar.subtitle || '')) : '';
 
-  // 1. Botón y textos del panel principal
+  // 1. Selector de cantidad y botón del panel principal
   const btnMain = $('btn-toggle-rival');
   const txtMain = $('rival-toggle-text');
   const subMain = $('rival-panel-model');
+  const wrapMain = $('rival-count-wrapper');
+  const selMain = $('rival-count-select');
+
+  if (selMain) {
+    _populateRivalSelect(selMain);
+    selMain.value = String(count);
+  }
+  if (wrapMain) {
+    wrapMain.classList.toggle('is-hidden', !enabled);
+  }
+
   if (btnMain) {
     btnMain.classList.toggle('is-active', enabled);
     btnMain.setAttribute('aria-pressed', enabled ? 'true' : 'false');
@@ -293,17 +334,33 @@ function uiUpdateRivalDOM() {
       : (enabled ? 'Rival: Activado' : 'Rival: Desactivado');
   }
   if (subMain) {
-    subMain.textContent = enabled
-      ? ((typeof I18N !== 'undefined') ? I18N.t('rival_model_label', { name: rivalName }) : `Rival actual: ${rivalName}`)
-      : ((typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre');
+    if (!enabled) {
+      subMain.textContent = (typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre';
+    } else if (count > 1) {
+      subMain.textContent = (typeof I18N !== 'undefined')
+        ? I18N.t('rival_count_multiple', { count: count })
+        : `${count} rivales en pista · Modelos reales (${rivalName} y +${count - 1})`;
+    } else {
+      subMain.textContent = (typeof I18N !== 'undefined') ? I18N.t('rival_model_label', { name: rivalName }) : `Rival actual: ${rivalName}`;
+    }
   }
 
-  // 2. Botón y textos de la pantalla de Opciones
+  // 2. Selector de cantidad y botón de la pantalla de Opciones
   const btnOpt = $('b-opt-rival');
   const txtOpt = $('opt-rival-text');
   const optName = $('opt-rival-car-name');
   const optSpecs = $('opt-rival-car-specs');
   const btnReroll = $('b-opt-reroll-rival');
+  const wrapOpt = $('opt-rival-count-wrapper');
+  const selOpt = $('opt-rival-count-select');
+
+  if (selOpt) {
+    _populateRivalSelect(selOpt);
+    selOpt.value = String(count);
+  }
+  if (wrapOpt) {
+    wrapOpt.classList.toggle('is-hidden', !enabled);
+  }
 
   if (btnOpt) {
     btnOpt.classList.toggle('is-active', enabled);
@@ -317,14 +374,24 @@ function uiUpdateRivalDOM() {
       : (enabled ? 'Rival: Activado' : 'Rival: Desactivado');
   }
   if (optName) {
-    optName.textContent = enabled
-      ? rivalName
-      : ((typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre');
+    if (!enabled) {
+      optName.textContent = (typeof I18N !== 'undefined') ? I18N.t('rival_status_off') : 'Práctica en solitario · Pista libre';
+    } else if (count > 1) {
+      optName.textContent = (typeof I18N !== 'undefined')
+        ? I18N.t('rival_count_multiple', { count: count })
+        : `${count} rivales en pista · Modelos reales`;
+    } else {
+      optName.textContent = rivalName;
+    }
   }
   if (optSpecs) {
-    optSpecs.textContent = enabled
-      ? rivalSpecs
-      : '';
+    if (!enabled) {
+      optSpecs.textContent = '';
+    } else if (count > 1) {
+      optSpecs.textContent = rivalName ? `${rivalName} (${rivalSpecs}) y ${count - 1} más` : '';
+    } else {
+      optSpecs.textContent = rivalSpecs;
+    }
   }
   if (btnReroll) {
     btnReroll.style.display = enabled ? 'inline-block' : 'none';
@@ -443,6 +510,9 @@ function uiInit() {
       ? window.__rivalEnabled
       : (saved.rival !== false));
   UI.selRivalCar = (CARS.rival ? CARS.rival.id : ((typeof window !== 'undefined' && window.__rivalCarId) || saved.rivalCar || ''));
+  UI.selRivalCount = (typeof GAME !== 'undefined' && GAME.rivalCount)
+    ? GAME.rivalCount
+    : ((typeof window !== 'undefined' && window.__rivalCount) || saved.rivalCount || 1);
   uiBuildSelectors();
   uiUpdateRivalDOM();
   hudInit(); uiWarmup();
@@ -639,6 +709,7 @@ function uiAfter() {
 
 if (typeof window !== 'undefined') {
   window.uiToggleRival = uiToggleRival;
+  window.uiChangeRivalCount = uiChangeRivalCount;
   window.uiRerollRival = uiRerollRival;
   window.uiUpdateRivalDOM = uiUpdateRivalDOM;
 }
