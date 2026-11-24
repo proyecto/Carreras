@@ -189,10 +189,10 @@ function runRivalTestSuite() {
   // Comprobar discriminación de dibujo en MeshSet para espejo vs cubemap de entorno
   let drawnSlots = [];
   const mockPass = {
-    setPipeline: () => {},
-    setBindGroup: () => {},
-    setVertexBuffer: () => {},
-    setIndexBuffer: () => {},
+    setPipeline: () => { },
+    setBindGroup: () => { },
+    setVertexBuffer: () => { },
+    setIndexBuffer: () => { },
     drawIndexed: (cnt) => { drawnSlots.push(cnt); }
   };
 
