@@ -102,40 +102,44 @@ function buildTestScene() {
   mb.mat(3).color(1, 0.2, 0.1); mb.box(0, 1.2, 0, 0.3, 0.3, 0.3);
   set.add(mb.upload(), 0, 7);
 }
-async function main() {
+async function loadManifests() {
+  if (typeof window !== 'undefined' && window.__manifestPromise) {
+    await window.__manifestPromise;
+  }
+  if (typeof window !== 'undefined' && (!window.CAR_MANIFEST || window.CAR_MANIFEST.length === 0)) {
+    try {
+      const resC = await fetch('cars/manifest.json');
+      window.CAR_MANIFEST = await resC.json();
+    } catch (e) {
+      console.warn('[main] Fallo al cargar cars/manifest.json:', e);
+    }
+    window.CAR_LIST = (window.CAR_MANIFEST || []).map(c => c.json);
+    if (typeof CARS !== 'undefined') {
+      for (const item of (window.CAR_MANIFEST || [])) CARS.register(item);
+    }
+  }
+  if (typeof window !== 'undefined' && (!window.TRACK_MANIFEST || window.TRACK_MANIFEST.length === 0)) {
+    try {
+      const resT = await fetch('tracks/manifest.json');
+      window.TRACK_MANIFEST = await resT.json();
+    } catch (e) {
+      console.warn('[main] Fallo al cargar tracks/manifest.json:', e);
+    }
+    window.TRACK_LIST = (window.TRACK_MANIFEST || []).map(t => t.json);
+    for (const item of (window.TRACK_MANIFEST || [])) {
+      if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
+        TrackFactory.register(item);
+      } else if (typeof TRACKS !== 'undefined') {
+        TRACKS.register(item);
+      }
+    }
+  }
+}
+
+async function bootSimulation(autoDrive) {
   try {
-    // 0. Espera o carga asíncrona de los manifiestos JSON
-    if (typeof window !== 'undefined' && window.__manifestPromise) {
-      await window.__manifestPromise;
-    }
-    if (typeof window !== 'undefined' && (!window.CAR_MANIFEST || window.CAR_MANIFEST.length === 0)) {
-      try {
-        const resC = await fetch('cars/manifest.json');
-        window.CAR_MANIFEST = await resC.json();
-      } catch (e) {
-        console.warn('[main] Fallo al cargar cars/manifest.json:', e);
-      }
-      window.CAR_LIST = (window.CAR_MANIFEST || []).map(c => c.json);
-      if (typeof CARS !== 'undefined') {
-        for (const item of (window.CAR_MANIFEST || [])) CARS.register(item);
-      }
-    }
-    if (typeof window !== 'undefined' && (!window.TRACK_MANIFEST || window.TRACK_MANIFEST.length === 0)) {
-      try {
-        const resT = await fetch('tracks/manifest.json');
-        window.TRACK_MANIFEST = await resT.json();
-      } catch (e) {
-        console.warn('[main] Fallo al cargar tracks/manifest.json:', e);
-      }
-      window.TRACK_LIST = (window.TRACK_MANIFEST || []).map(t => t.json);
-      for (const item of (window.TRACK_MANIFEST || [])) {
-        if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
-          TrackFactory.register(item);
-        } else if (typeof TRACKS !== 'undefined') {
-          TRACKS.register(item);
-        }
-      }
-    }
+    setMsg('Cargando simulación…');
+    setLoadingProgress(2, 'loading_init_gpu', 'Preparando recursos…');
 
     const carManifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
     const saved = GAME.ui ? loadSelection() : {};
@@ -143,22 +147,6 @@ async function main() {
     const activeCarEntry = (typeof window !== 'undefined' && window.__activeCarEntry)
       || (reqCarId && carManifest.find(c => c.id === reqCarId))
       || carManifest[0];
-
-    // Carga asíncrona de la especificación JSON pura del vehículo activo si no está inicializado
-    if (activeCarEntry && (!CARS.byId[activeCarEntry.id] || !CARS.byId[activeCarEntry.id].build)) {
-      setLoadingProgress(3, 'loading_init_gpu', 'Cargando especificación del vehículo…');
-      if (typeof CarFactory !== 'undefined' && typeof CarFactory.loadFromJSON === 'function') {
-        await CarFactory.loadFromJSON(activeCarEntry.json);
-      } else {
-        const res = await fetch(encodeURI(activeCarEntry.json));
-        const spec = await res.json();
-        if (typeof CarFactory !== 'undefined' && typeof CarFactory.createFromSpec === 'function') {
-          CarFactory.createFromSpec(spec);
-        } else {
-          CARS.register(spec);
-        }
-      }
-    }
 
     // Configuración del rival IA: habilitado por defecto salvo indicación expresa
     const rivalParam = (typeof Q !== 'undefined') ? Q.get('rival') : null;
@@ -175,9 +163,10 @@ async function main() {
       : 0;
     GAME.rivalCount = rivalCount;
 
-    // Carga asíncrona de especificaciones JSON puras para los rivales de la parrilla
+    // Selección de rivales de la parrilla
+    let rivalEntries = [];
     if (rivalEnabled) {
-      let rivalEntries = (typeof window !== 'undefined' && window.__rivalCarEntries) || [];
+      rivalEntries = (typeof window !== 'undefined' && window.__rivalCarEntries) || [];
       if (rivalEntries.length === 0 && carManifest.length > 0) {
         const availableRivals = carManifest.filter(c => !activeCarEntry || c.id !== activeCarEntry.id);
         const pool = availableRivals.length > 0 ? availableRivals : carManifest;
@@ -198,47 +187,40 @@ async function main() {
           window.__rivalCarEntries = rivalEntries;
           window.__rivalCarId = chosenRival ? chosenRival.id : null;
         }
-      }
-
-      const loadRivalJSON = async (jsonUrl) => {
-        if (typeof CarFactory !== 'undefined' && typeof CarFactory.loadFromJSON === 'function') {
-          return await CarFactory.loadFromJSON(jsonUrl);
-        }
-        const res = await fetch(encodeURI(jsonUrl));
-        const spec = await res.json();
-        if (typeof CarFactory !== 'undefined' && typeof CarFactory.createFromSpec === 'function') {
-          return CarFactory.createFromSpec(spec);
-        }
-        return CARS.register(spec);
-      };
-
-      if (rivalEntries.length > 0) {
-        for (const rEntry of rivalEntries) {
-          if (rEntry && (!CARS.byId[rEntry.id] || !CARS.byId[rEntry.id].build)) {
-            await loadRivalJSON(rEntry.json);
-          }
-        }
-      } else {
+      } else if (rivalEntries.length === 0) {
         const fallbackRival = carManifest.find(c => !activeCarEntry || c.id !== activeCarEntry.id) || carManifest[0];
-        if (fallbackRival && (!CARS.byId[fallbackRival.id] || !CARS.byId[fallbackRival.id].build)) {
-          await loadRivalJSON(fallbackRival.json);
-        }
+        if (fallbackRival) rivalEntries = [fallbackRival];
       }
     }
 
-    // Carga asíncrona de especificación JSON pura del circuito activo si no está inicializado
     const trackManifest = (typeof window !== 'undefined' && window.TRACK_MANIFEST) || [];
     const reqTrackId = (typeof Q !== 'undefined' ? Q.get('track') : null) || saved.track;
     const activeTrackEntry = (typeof window !== 'undefined' && window.__activeTrackEntry)
       || (reqTrackId && trackManifest.find(t => t.id === reqTrackId))
       || trackManifest[0];
 
-    if (activeTrackEntry && (!TRACKS.byId[activeTrackEntry.id] || !TRACKS.byId[activeTrackEntry.id].points)) {
-      setLoadingProgress(5, 'loading_build_track', 'Cargando trazado del circuito…');
-      if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.loadFromJSON === 'function') {
-        await TrackFactory.loadFromJSON(activeTrackEntry.json);
+    // Carga en PARALELO de coche activo, rivales y circuito
+    const loadCarSpec = async (entry) => {
+      if (!entry || (CARS.byId[entry.id] && CARS.byId[entry.id].build)) return;
+      if (typeof CarFactory !== 'undefined' && typeof CarFactory.loadFromJSON === 'function') {
+        await CarFactory.loadFromJSON(entry.json);
       } else {
-        const res = await fetch(encodeURI(activeTrackEntry.json));
+        const res = await fetch(encodeURI(entry.json));
+        const spec = await res.json();
+        if (typeof CarFactory !== 'undefined' && typeof CarFactory.createFromSpec === 'function') {
+          CarFactory.createFromSpec(spec);
+        } else {
+          CARS.register(spec);
+        }
+      }
+    };
+
+    const loadTrackSpec = async (entry) => {
+      if (!entry || (TRACKS.byId[entry.id] && TRACKS.byId[entry.id].points)) return;
+      if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.loadFromJSON === 'function') {
+        await TrackFactory.loadFromJSON(entry.json);
+      } else {
+        const res = await fetch(encodeURI(entry.json));
         const spec = await res.json();
         if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.createFromSpec === 'function') {
           TrackFactory.createFromSpec(spec);
@@ -246,6 +228,22 @@ async function main() {
           TRACKS.register(spec);
         }
       }
+    };
+
+    const tasks = [];
+    if (activeCarEntry) tasks.push(loadCarSpec(activeCarEntry));
+    for (const rEntry of rivalEntries) tasks.push(loadCarSpec(rEntry));
+    if (activeTrackEntry) tasks.push(loadTrackSpec(activeTrackEntry));
+
+    if (tasks.length > 0) {
+      let done = 0;
+      const total = tasks.length;
+      setLoadingProgress(4, 'loading_init_gpu', `Descargando modelos y circuito (0/${total})…`);
+      await Promise.all(tasks.map(p => p.then(() => {
+        done++;
+        const pct = 4 + Math.round((done / total) * 6);
+        setLoadingProgress(pct, 'loading_init_gpu', `Descargando modelos y circuito (${done}/${total})…`);
+      })));
     }
 
     // Selecciona el coche y circuito activos (?car=<id>&track=<id>, última selección o predeterminados)
@@ -349,9 +347,34 @@ async function main() {
     await new Promise(r => setTimeout(r, 180));
 
     setMsg(''); const hint = document.getElementById('hint'); if (hint) setTimeout(() => { hint.style.opacity = 0; }, 9000);
-    if (GAME.ui) uiInit();
+    if (GAME.ui && !UI.el) uiInit();
     GAME.ready = true;
+    if (autoDrive && GAME.ui) {
+      sndStart();
+      uiDrive();
+    }
     if (!GAME.capture) requestAnimationFrame(rafLoop);
+  } catch (e) { setMsg('Error: ' + e.message); console.error(e); GAME.error = e.message; }
+}
+
+async function main() {
+  try {
+    await loadManifests();
+
+    const directPlay = (typeof Q !== 'undefined' && Q.get('play') === '1')
+      || GAME.capture
+      || (typeof Q !== 'undefined' && Q.get('scene'));
+
+    // Fase 1: Si hay UI y no es arranque directo (?play=1 / captura / ?scene=),
+    // mostrar el menú al instante sin descargar ningún coche ni circuito.
+    if (GAME.ui && !directPlay) {
+      setMsg('');
+      uiInit();
+      return;
+    }
+
+    // Fase 2: Arranque directo (o sin UI)
+    await bootSimulation(false);
   } catch (e) { setMsg('Error: ' + e.message); console.error(e); GAME.error = e.message; }
 }
 let _lastT = 0;

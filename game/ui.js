@@ -75,7 +75,7 @@ function uiNetJoinRoom() {
     try {
       const u = new URL(code, window.location.href);
       code = u.searchParams.get('room') || code;
-    } catch (e) {}
+    } catch (e) { }
   }
   NET.joinRoom(code);
 }
@@ -566,7 +566,15 @@ function uiInit() {
   uiSetupNetworkListeners();
   if (typeof NET !== 'undefined') NET.init();
   try { const b = +localStorage.getItem(uiStorageKey()); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sin almacenamiento local: mejor vuelta en sesión */ }
-  UI.b0.onclick = () => {
+  UI.b0.onclick = async () => {
+    if (!GAME.ready) {
+      saveSelection();
+      UI.el.style.display = 'none';
+      if (typeof bootSimulation === 'function') {
+        await bootSimulation(true);
+      }
+      return;
+    }
     if (uiSelectionChanged()) { uiApplySelection(true); return; }
     if (UI.st === ST.INICIO) { sndStart(); uiDrive(); } else uiResume();
   };
