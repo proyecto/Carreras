@@ -70,9 +70,9 @@ function hudBuildMap(W, Hh, r) {
   g.stroke();
 
   // Divisores horizontales entre las 4 secciones modulares
-  const yS1 = Math.round(r * 0.46); // Fin aviso de curva
-  const yS2 = Math.round(r * 0.98); // Fin telemetría de vuelta
-  const yS3 = Math.round(r * 1.62); // Fin torre de clasificación
+  const yS1 = Math.round(r * 0.90); // Fin aviso de curva y radar dinámico
+  const yS2 = Math.round(r * 1.42); // Fin telemetría de vuelta
+  const yS3 = Math.round(r * 2.06); // Fin torre de clasificación
 
   g.beginPath();
   g.moveTo(Math.round(r * 0.10), yS1);
@@ -184,7 +184,7 @@ function hudLayout() {
 
   // Columna lateral izquierda (Siguiente curva, Telemetría de vuelta, Posición F1, Minimapa)
   if (H.cm) {
-    const mW = Math.round(r * 2.50), mH = Math.round(r * 5.00);
+    const mW = Math.round(r * 2.70), mH = Math.round(r * 5.20);
     H.cm.width = mW; H.cm.height = mH;
     H.cm.style.width = mW / dpr + 'px'; H.cm.style.height = mH / dpr + 'px';
     H.cm.style.top = '1.6vh';
@@ -229,9 +229,9 @@ function hudDrawMinimap() {
   const curM = typeof VEH !== 'undefined' ? VEH.s : 0;
   const curTrackS = ((curM % trk.L) + trk.L) % trk.L;
 
-  const yS1 = Math.round(r * 0.46);
-  const yS2 = Math.round(r * 0.98);
-  const yS3 = Math.round(r * 1.62);
+  const yS1 = Math.round(r * 0.90);
+  const yS2 = Math.round(r * 1.42);
+  const yS3 = Math.round(r * 2.06);
 
   m.clearRect(0, 0, W, Hh);
   m.drawImage(H.bgMap, 0, 0);
