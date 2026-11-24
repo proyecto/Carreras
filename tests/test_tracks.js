@@ -220,6 +220,22 @@ function runTracksTestSuite() {
   PF.createPaddockTent({ mb: mockMB }, { color: [1, 1, 1] });
   assert(mockMB.ni > prevNi, 'PropFactory.createPaddockTent genera geometría 3D');
 
+  const gantryMats = [];
+  const mockGantryMB = {
+    nv: 0, ni: 0,
+    mat(id, a, b, c) { gantryMats.push({ id, a, b, c }); },
+    color() {},
+    box() { this.ni += 36; },
+    cyl() { this.ni += 60; },
+    tube() { this.ni += 48; },
+    quad() { this.ni += 6; },
+    push() {}, pop() {}
+  };
+  PF.createStartGantry({ mb: mockGantryMB, md: mockGantryMB }, { s: 0, dL: -7.7, dR: 7.05, lights: true, local: true });
+  const fiaLights = gantryMats.filter(m => m.id === 18);
+  assert(fiaLights.length === 10, 'PropFactory.createStartGantry genera 10 ópticas de semáforo FIA (5 columnas x 2 lámparas)');
+  assert(fiaLights.some(m => m.b === 1) && fiaLights.some(m => m.b === 5), 'Las ópticas FIA tienen indexadas sus columnas 1 a 5 para activación secuencial');
+
   // 11. Validación de AtlasFactory (engine/atlas-factory.js)
   assert(indexHtml.includes('engine/atlas-factory.js'), 'index.html incluye el módulo unificado AtlasFactory');
   const AF = ctx.window.AtlasFactory || ctx.AtlasFactory;

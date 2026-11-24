@@ -216,7 +216,11 @@ function uiSelectionChanged() {
     ? GAME.rivalCount
     : ((typeof window !== 'undefined' && window.__rivalCount) || 1);
   const rivalCountChanged = (UI.selRival && UI.selRivalCount !== rivalCountCurrent);
-  return carChanged || trkChanged || rivalChanged || rivalCarChanged || rivalCountChanged;
+  const totalLapsCurrent = (typeof GAME !== 'undefined' && GAME.totalLaps)
+    ? GAME.totalLaps
+    : ((typeof window !== 'undefined' && window.__totalLaps) || 3);
+  const totalLapsChanged = (UI.selTotalLaps && UI.selTotalLaps !== totalLapsCurrent);
+  return carChanged || trkChanged || rivalChanged || rivalCarChanged || rivalCountChanged || totalLapsChanged;
 }
 function uiUpdatePrimaryBtn() {
   if (!UI.b0) return;
@@ -233,12 +237,18 @@ function uiUpdatePrimaryBtn() {
   }
 }
 function uiApplySelection(startDirectly = true) {
-  saveSelection(UI.selCar, UI.selTrack, { rival: UI.selRival, rivalCar: UI.selRivalCar, rivalCount: UI.selRivalCount });
+  saveSelection(UI.selCar, UI.selTrack, {
+    rival: UI.selRival,
+    rivalCar: UI.selRivalCar,
+    rivalCount: UI.selRivalCount,
+    totalLaps: UI.selTotalLaps
+  });
   if (typeof setMsg === 'function') setMsg((typeof I18N !== 'undefined') ? I18N.t('loading') : 'Loading…');
   if (UI.el) UI.el.style.display = 'none';
   const p = new URLSearchParams(location.search);
   p.set('car', UI.selCar);
   p.set('track', UI.selTrack);
+  p.set('laps', String(UI.selTotalLaps || 3));
   p.set('rival', UI.selRival ? '1' : '0');
   if (UI.selRival) {
     p.set('rivals', String(UI.selRivalCount));
@@ -266,6 +276,39 @@ function uiChangeRivalCount(val) {
   UI.selRivalCount = count;
   uiUpdateRivalDOM();
   uiUpdatePrimaryBtn();
+}
+
+function uiChangeTotalLaps(val) {
+  const laps = Math.max(1, Math.min(50, parseInt(val, 10) || 3));
+  UI.selTotalLaps = laps;
+  uiUpdateLapsDOM();
+  uiUpdatePrimaryBtn();
+}
+
+function _populateLapSelect(sel) {
+  if (!sel || sel.options.length > 0) return;
+  const options = [1, 2, 3, 5, 7, 10, 15, 20];
+  for (const n of options) {
+    const opt = document.createElement('option');
+    opt.value = String(n);
+    opt.textContent = String(n);
+    sel.appendChild(opt);
+  }
+}
+
+function uiUpdateLapsDOM() {
+  const laps = Math.max(1, Math.min(50, UI.selTotalLaps || 3));
+  UI.selTotalLaps = laps;
+  const selMain = $('lap-count-select');
+  const selOpt = $('opt-lap-count-select');
+  if (selMain) {
+    _populateLapSelect(selMain);
+    selMain.value = String(laps);
+  }
+  if (selOpt) {
+    _populateLapSelect(selOpt);
+    selOpt.value = String(laps);
+  }
 }
 
 function uiRerollRival(applyChanged = true) {
@@ -513,8 +556,12 @@ function uiInit() {
   UI.selRivalCount = (typeof GAME !== 'undefined' && GAME.rivalCount)
     ? GAME.rivalCount
     : ((typeof window !== 'undefined' && window.__rivalCount) || saved.rivalCount || 1);
+  UI.selTotalLaps = (typeof GAME !== 'undefined' && GAME.totalLaps)
+    ? GAME.totalLaps
+    : ((typeof window !== 'undefined' && window.__totalLaps) || saved.totalLaps || 3);
   uiBuildSelectors();
   uiUpdateRivalDOM();
+  uiUpdateLapsDOM();
   hudInit(); uiWarmup();
   uiSetupNetworkListeners();
   if (typeof NET !== 'undefined') NET.init();
@@ -710,6 +757,8 @@ function uiAfter() {
 if (typeof window !== 'undefined') {
   window.uiToggleRival = uiToggleRival;
   window.uiChangeRivalCount = uiChangeRivalCount;
+  window.uiChangeTotalLaps = uiChangeTotalLaps;
+  window.uiUpdateLapsDOM = uiUpdateLapsDOM;
   window.uiRerollRival = uiRerollRival;
   window.uiUpdateRivalDOM = uiUpdateRivalDOM;
 }

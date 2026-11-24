@@ -1,0 +1,85 @@
+{
+  "id": "porsche-911-gt3-r-rennsport-2024",
+  "name": "Porsche 911 GT3 R Rennsport (2024)",
+  "subtitle": "Limited Rennsport Edition · 4.2L Boxer 6 Atmospheric · 620 CV · RWD",
+  "specs": "1240 kg · 620 CV · 6-vel seq · RWD · Laguna Seca Rennsport Reunion",
+  "accent": "#d5001c",
+  "physics": {
+    "m": 1240,
+    "Izz": 1690,
+    "L": 2.517,
+    "a": 1.25,
+    "b": 1.267,
+    "tw": 1.63,
+    "h": 0.35,
+    "R": 0.35,
+    "mu": 1.78,
+    "B": 12.1,
+    "C": 1.56,
+    "driveF": 0,
+    "gears": [
+      2.95,
+      2.18,
+      1.7,
+      1.36,
+      1.12,
+      0.93
+    ],
+    "final": 3.44,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.69,
+    "crr": 0.01,
+    "brakeF": 0.59,
+    "halfW": 1.03,
+    "front": 2.36,
+    "rear": 2.42,
+    "clA": 1.22,
+    "aeroSplitF": 0.43,
+    "torqueBase": 430,
+    "torquePeak": 230,
+    "torqueDrop": 150,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.6,
+    "torqueDropRpm": 9,
+    "shiftUpRpm": 9000,
+    "shiftDownRpm": 6500,
+    "revLimitRpm": 9400,
+    "maxRpm": 9500,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 340,
+    "maxRpm": 10,
+    "redlineRpm": 9.1
+  },
+  "wheelbase": 2.517,
+  "trackF": 1.64,
+  "trackR": 1.62,
+  "wheelR": 0.35,
+  "hubs": [
+    [
+      1.315,
+      0.353,
+      -0.82
+    ],
+    [
+      1.315,
+      0.353,
+      0.82
+    ],
+    [
+      -1.202,
+      0.354,
+      -0.81
+    ],
+    [
+      -1.202,
+      0.354,
+      0.81
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/porsche-911-gt3-r-rennsport-2024.glb",
+  "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png"
+}

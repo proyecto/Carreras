@@ -191,6 +191,12 @@ const TrackFactory = {
     }
     if (!spec.id || typeof spec.id !== 'string') errors.push('Falta spec.id (string requerido).');
     if (!spec.name || typeof spec.name !== 'string') errors.push('Falta spec.name (string requerido).');
+
+    // Si es solo una entrada de catálogo / manifest (con ruta de archivo pero aún sin geometría cargada)
+    if (spec.file && !spec.points) {
+      return { valid: errors.length === 0, errors, isManifest: true };
+    }
+
     if (typeof spec.hw !== 'number' || spec.hw < 3.0 || spec.hw > 15.0) {
       errors.push(`spec.hw inválido (${spec.hw}): debe estar entre 3.0 y 15.0 m.`);
     }

@@ -1,0 +1,85 @@
+{
+  "id": "bentley-continental-gt3-pikes-peak",
+  "name": "Bentley Continental GT3 Pikes Peak (2021)",
+  "subtitle": "Pikes Peak Time Attack 1 · 4.0L V8 Twin-Turbo Biofuel · 750 CV · RWD",
+  "specs": "1300 kg · 750 CV · 6-vel seq · RWD · Pikes Peak Aero & Biofuel",
+  "accent": "#005a36",
+  "physics": {
+    "m": 1300,
+    "Izz": 1820,
+    "L": 2.6,
+    "a": 1.3,
+    "b": 1.3,
+    "tw": 1.72,
+    "h": 0.36,
+    "R": 0.35,
+    "mu": 1.82,
+    "B": 12.2,
+    "C": 1.58,
+    "driveF": 0,
+    "gears": [
+      2.8,
+      2.05,
+      1.6,
+      1.28,
+      1.05,
+      0.88
+    ],
+    "final": 3.3,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.82,
+    "crr": 0.01,
+    "brakeF": 0.62,
+    "halfW": 1.1,
+    "front": 2.55,
+    "rear": 2.5,
+    "clA": 1.55,
+    "aeroSplitF": 0.45,
+    "torqueBase": 550,
+    "torquePeak": 450,
+    "torqueDrop": 200,
+    "torquePeakStart": 0.35,
+    "torquePeakSpan": 4.5,
+    "torqueDropRpm": 7.5,
+    "shiftUpRpm": 7500,
+    "shiftDownRpm": 5200,
+    "revLimitRpm": 7800,
+    "maxRpm": 8000,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 350,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.6
+  },
+  "wheelbase": 2.6,
+  "trackF": 1.72,
+  "trackR": 1.72,
+  "wheelR": 0.35,
+  "hubs": [
+    [
+      1.35,
+      0.35,
+      -0.86
+    ],
+    [
+      1.35,
+      0.35,
+      0.86
+    ],
+    [
+      -1.25,
+      0.355,
+      -0.86
+    ],
+    [
+      -1.25,
+      0.355,
+      0.86
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/bentley-continental-gt3-pikes-peak.glb",
+  "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png"
+}

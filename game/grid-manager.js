@@ -38,6 +38,10 @@ class GridManager {
       VR.steps = 0;
       VR.spin.fill(0);
       VR.susp.fill(0);
+      r.lapStart = 0;
+      r.lapSeen = 0;
+      r.lastLapTime = -1;
+      r.bestLapTime = -1;
       if (typeof vehicleReset === 'function') {
         vehicleReset(trk.L + playerStartS + r.ds, playerStartD + r.dd, 0, r.veh, r.vin);
       }
@@ -66,12 +70,47 @@ class GridManager {
     if (isNetActive && typeof NET !== 'undefined') {
       if (this.rivals[0] && this.rivals[0].veh) {
         NET.updateRemoteVehicle(this.rivals[0].veh, typeof PHYS_DT !== 'undefined' ? PHYS_DT : 1 / 120);
+        const r = this.rivals[0];
+        const laps = r.veh.laps || 0;
+        const lapSeen = r.lapSeen || 0;
+        if (laps > lapSeen) {
+          const t = r.veh.time;
+          if (lapSeen > 0 || (r.lapStart !== undefined && r.lapStart >= 0)) {
+            const lt = t - (r.lapStart || 0);
+            if (lt > 5.0) {
+              r.lastLapTime = lt;
+              if (!r.bestLapTime || r.bestLapTime < 0 || lt < r.bestLapTime) {
+                r.bestLapTime = lt;
+              }
+            }
+          }
+          r.lapStart = t;
+          r.lapSeen = laps;
+        }
       }
     } else {
       for (let i = 0; i < this.rivals.length; i++) {
         const r = this.rivals[i];
         if (r.veh && r.vin && typeof vehicleStep === 'function') {
           vehicleStep(r.keys || 0, r.veh, r.vin);
+        }
+        if (r.veh) {
+          const laps = r.veh.laps || 0;
+          const lapSeen = r.lapSeen || 0;
+          if (laps > lapSeen) {
+            const t = r.veh.time;
+            if (lapSeen > 0 || (r.lapStart !== undefined && r.lapStart >= 0)) {
+              const lt = t - (r.lapStart || 0);
+              if (lt > 5.0) {
+                r.lastLapTime = lt;
+                if (!r.bestLapTime || r.bestLapTime < 0 || lt < r.bestLapTime) {
+                  r.bestLapTime = lt;
+                }
+              }
+            }
+            r.lapStart = t;
+            r.lapSeen = laps;
+          }
         }
       }
     }
@@ -112,11 +151,11 @@ class GridManager {
   /**
    * Construye los modelos 3D de todos los rivales para WebGPU.
    */
-  buildAll() {
+  async buildAll() {
     for (let i = 0; i < this.rivals.length; i++) {
       const r = this.rivals[i];
       if (r.model && typeof r.model.build === 'function' && !r.model.built) {
-        r.model.build();
+        await r.model.build();
         r.model.built = true;
       }
     }

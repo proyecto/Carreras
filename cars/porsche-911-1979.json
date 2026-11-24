@@ -1,0 +1,83 @@
+{
+  "id": "porsche-911-1979",
+  "name": "Porsche 911 / 935 Turbo",
+  "subtitle": "1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD",
+  "specs": "1040 kg · 750 CV · Moby Dick Aero · Chasis Gr.5 Competición · RWD",
+  "accent": "#e8251e",
+  "physics": {
+    "m": 1040,
+    "Izz": 1720,
+    "L": 2.42,
+    "a": 1.24,
+    "b": 1.18,
+    "tw": 1.88,
+    "h": 0.38,
+    "R": 0.3,
+    "mu": 1.85,
+    "B": 11.5,
+    "C": 1.55,
+    "driveF": 0,
+    "gears": [
+      2.05,
+      1.45,
+      1.08,
+      0.84
+    ],
+    "final": 3.88,
+    "rev": 3.1,
+    "eff": 0.94,
+    "cdA": 0.58,
+    "crr": 0.01,
+    "brakeF": 0.65,
+    "halfW": 0.98,
+    "front": 2.34,
+    "rear": 2.33,
+    "clA": 1.15,
+    "aeroSplitF": 0.4,
+    "torqueBase": 380,
+    "torquePeak": 320,
+    "torqueDrop": 210,
+    "torquePeakStart": 0.65,
+    "torquePeakSpan": 5.8,
+    "torqueDropRpm": 7.2,
+    "shiftUpRpm": 7800,
+    "shiftDownRpm": 5600,
+    "revLimitRpm": 8200,
+    "maxRpm": 8400,
+    "idleRpm": 1100
+  },
+  "hud": {
+    "maxKmh": 350,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.8
+  },
+  "wheelbase": 2.27,
+  "trackF": 1.762,
+  "trackR": 1.958,
+  "wheelR": 0.2856,
+  "hubs": [
+    [
+      1.362,
+      0.2856,
+      -0.881
+    ],
+    [
+      1.362,
+      0.2856,
+      0.881
+    ],
+    [
+      -0.908,
+      0.2856,
+      -0.979
+    ],
+    [
+      -0.908,
+      0.2856,
+      0.979
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/porsche-911-1979.glb",
+  "texture": "cars/textures/porsche-911-1979.png"
+}

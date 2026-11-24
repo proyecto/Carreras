@@ -1,0 +1,85 @@
+{
+  "id": "audi-r8-lms-evo-2020",
+  "name": "Audi R8 LMS Evo",
+  "subtitle": "2020 GT3 Spec · 5.2L Naturally-Aspirated V10 · RWD",
+  "specs": "1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Aero",
+  "accent": "#e60000",
+  "physics": {
+    "m": 1225,
+    "Izz": 1710,
+    "L": 2.7,
+    "a": 1.35,
+    "b": 1.35,
+    "tw": 1.65,
+    "h": 0.38,
+    "R": 0.345,
+    "mu": 1.72,
+    "B": 11.3,
+    "C": 1.53,
+    "driveF": 0,
+    "gears": [
+      2.92,
+      2.15,
+      1.68,
+      1.34,
+      1.11,
+      0.92
+    ],
+    "final": 3.44,
+    "rev": 3.2,
+    "eff": 0.96,
+    "cdA": 0.67,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.02,
+    "front": 2.45,
+    "rear": 2.4,
+    "clA": 0.94,
+    "aeroSplitF": 0.4,
+    "torqueBase": 360,
+    "torquePeak": 260,
+    "torqueDrop": 140,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 5.5,
+    "torqueDropRpm": 8.2,
+    "shiftUpRpm": 8400,
+    "shiftDownRpm": 6000,
+    "revLimitRpm": 8600,
+    "maxRpm": 8800,
+    "idleRpm": 1400
+  },
+  "hud": {
+    "maxKmh": 335,
+    "maxRpm": 9,
+    "redlineRpm": 8.5
+  },
+  "wheelbase": 2.7,
+  "trackF": 1.652,
+  "trackR": 1.633,
+  "wheelR": 0.345,
+  "hubs": [
+    [
+      1.35,
+      0.337,
+      -0.826
+    ],
+    [
+      1.35,
+      0.337,
+      0.826
+    ],
+    [
+      -1.35,
+      0.352,
+      -0.817
+    ],
+    [
+      -1.35,
+      0.352,
+      0.817
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/audi-r8-lms-evo-2020.glb",
+  "texture": "cars/textures/audi-r8-lms-evo-2020.png"
+}

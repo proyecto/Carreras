@@ -1,0 +1,85 @@
+{
+  "id": "ford-mustang-gt3",
+  "name": "Ford Mustang GT3",
+  "subtitle": "Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD",
+  "specs": "1270 kg · 535 CV · 6-vel seq · RWD · Multimatic Carbon Aero",
+  "accent": "#002244",
+  "physics": {
+    "m": 1270,
+    "Izz": 1770,
+    "L": 2.78,
+    "a": 1.39,
+    "b": 1.39,
+    "tw": 1.68,
+    "h": 0.38,
+    "R": 0.355,
+    "mu": 1.7,
+    "B": 11.2,
+    "C": 1.52,
+    "driveF": 0,
+    "gears": [
+      3.1,
+      2.15,
+      1.6,
+      1.28,
+      1.06,
+      0.9
+    ],
+    "final": 3.5,
+    "rev": 3.1,
+    "eff": 0.96,
+    "cdA": 0.68,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.04,
+    "front": 2.5,
+    "rear": 2.5,
+    "clA": 0.93,
+    "aeroSplitF": 0.4,
+    "torqueBase": 420,
+    "torquePeak": 260,
+    "torqueDrop": 180,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 7.4,
+    "shiftUpRpm": 7400,
+    "shiftDownRpm": 5400,
+    "revLimitRpm": 8000,
+    "maxRpm": 8200,
+    "idleRpm": 1100
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.8
+  },
+  "wheelbase": 2.78,
+  "trackF": 1.68,
+  "trackR": 1.69,
+  "wheelR": 0.355,
+  "hubs": [
+    [
+      1.39,
+      0.395,
+      -0.845
+    ],
+    [
+      1.39,
+      0.405,
+      0.845
+    ],
+    [
+      -1.39,
+      0.45,
+      -0.845
+    ],
+    [
+      -1.39,
+      0.465,
+      0.845
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/ford-mustang-gt3.glb",
+  "texture": "cars/textures/ford-mustang-gt3.png"
+}

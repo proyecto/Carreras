@@ -596,10 +596,18 @@ fn surf(in: V2F, ff: bool) -> Surface {
     let band = step(0.45, in.uv.y) * step(in.uv.y, 0.68);
     s.albedo = mix(vec3f(0.75, 0.16, 0.02), vec3f(0.7), band) * (0.85 + 0.2 * n2.r); s.rough = 0.55;
   } else if (id == 18u) {
-    // óptica de semáforo de salida: roja mientras el vehículo aguarda en parrilla (F.car2.x = 1), apagada tras la salida
-    // Apagada: lente roja oscura lisa (refleja cielo); encendida: rojo saturado emisivo
-    let on = F.car2.x;
-    s.albedo = mix(vec3f(0.05, 0.004, 0.003), in.col.rgb, on); s.emissive = matA(in.mat) * on; s.rough = mix(0.12, 0.3, on); s.coat = 1.0 - on;
+    // Óptica de semáforo de salida FIA en pórtico:
+    // in.mat.z (matB) codifica la columna de luz (1..5 de izquierda a derecha)
+    // F.car2.x contiene el número de luces rojas encendidas (0..5) durante la cuenta atrás
+    // F.car2.y = 1.0 durante la cuenta atrás (countdown), 0.0 tras apagado (lights_out / racing)
+    let colIdx = f32((in.mat >> 16u) & 255u);
+    let count = F.car2.x;
+    let isCountdown = step(0.5, F.car2.y);
+    let lightOn = isCountdown * select(step(colIdx, count), step(0.5, count), colIdx < 0.5);
+    s.albedo = mix(vec3f(0.04, 0.003, 0.002), in.col.rgb * 1.5, lightOn);
+    s.emissive = mix(0.0, 2.8, lightOn);
+    s.rough = mix(0.06, 0.35, lightOn);
+    s.coat = 1.0 - lightOn;
   } else if (id == 17u) {
     // chapa grecada lacada (revestimiento de fachadas y pilares): grecas verticales, uniones de panel y escorrentías
     let tg = normalize(cross(vec3f(0.0, 1.0, 0.0), N) + vec3f(1e-5, 0.0, 0.0)); let a = dot(wp, tg);

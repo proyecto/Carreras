@@ -1,0 +1,85 @@
+{
+  "id": "lamborghini-huracan-gt3-2023",
+  "name": "Lamborghini Huracán GT3 (2023)",
+  "subtitle": "EVO2 Spec · 5.2L V10 Atmospheric · 640 CV · RWD",
+  "specs": "1230 kg · 640 CV · Hör 6-vel seq · RWD · Squadra Corse",
+  "accent": "#739600",
+  "physics": {
+    "m": 1230,
+    "Izz": 1680,
+    "L": 2.62,
+    "a": 1.31,
+    "b": 1.31,
+    "tw": 1.66,
+    "h": 0.35,
+    "R": 0.34,
+    "mu": 1.77,
+    "B": 12,
+    "C": 1.56,
+    "driveF": 0,
+    "gears": [
+      2.95,
+      2.18,
+      1.7,
+      1.36,
+      1.12,
+      0.93
+    ],
+    "final": 3.48,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.7,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.05,
+    "front": 2.35,
+    "rear": 2.3,
+    "clA": 1.15,
+    "aeroSplitF": 0.42,
+    "torqueBase": 420,
+    "torquePeak": 220,
+    "torqueDrop": 150,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.4,
+    "torqueDropRpm": 8.3,
+    "shiftUpRpm": 8400,
+    "shiftDownRpm": 6000,
+    "revLimitRpm": 8800,
+    "maxRpm": 9000,
+    "idleRpm": 1300
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 9.5,
+    "redlineRpm": 8.6
+  },
+  "wheelbase": 2.62,
+  "trackF": 1.66,
+  "trackR": 1.66,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.185,
+      0.33,
+      -0.83
+    ],
+    [
+      1.185,
+      0.33,
+      0.83
+    ],
+    [
+      -1.435,
+      0.34,
+      -0.83
+    ],
+    [
+      -1.435,
+      0.34,
+      0.83
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/lamborghini-huracan-gt3-2023.glb",
+  "texture": "cars/textures/lamborghini-huracan-gt3-2023.png"
+}

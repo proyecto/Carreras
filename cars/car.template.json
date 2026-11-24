@@ -1,0 +1,85 @@
+{
+  "id": "mi-coche-gt3",
+  "name": "Mi Coche GT3",
+  "subtitle": "2024 GT3 Spec · 4.0L V8 Atmosférico · 550 CV · RWD",
+  "specs": "1250 kg · 550 CV · Secuencial 6-vel · RWD · Carbon High-Downforce Aero",
+  "accent": "#ff3300",
+  "physics": {
+    "m": 1250,
+    "Izz": 1650,
+    "L": 2.5,
+    "a": 1.45,
+    "b": 1.05,
+    "tw": 1.68,
+    "h": 0.38,
+    "R": 0.34,
+    "mu": 1.72,
+    "B": 11.5,
+    "C": 1.52,
+    "driveF": 0,
+    "gears": [
+      2.9,
+      2.1,
+      1.62,
+      1.3,
+      1.08,
+      0.9
+    ],
+    "final": 3.55,
+    "rev": 3.1,
+    "eff": 0.96,
+    "cdA": 0.65,
+    "crr": 0.01,
+    "brakeF": 0.58,
+    "halfW": 1.02,
+    "front": 2.45,
+    "rear": 2.5,
+    "clA": 0.96,
+    "aeroSplitF": 0.38,
+    "torqueBase": 380,
+    "torquePeak": 210,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.55,
+    "torquePeakSpan": 4.5,
+    "torqueDropRpm": 8.5,
+    "shiftUpRpm": 8500,
+    "shiftDownRpm": 6500,
+    "revLimitRpm": 9000,
+    "maxRpm": 9200,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 10,
+    "redlineRpm": 8.8
+  },
+  "wheelbase": 2.5,
+  "trackF": 1.7,
+  "trackR": 1.68,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.3,
+      0.35,
+      -0.84
+    ],
+    [
+      1.3,
+      0.35,
+      0.84
+    ],
+    [
+      -1.2,
+      0.35,
+      -0.84
+    ],
+    [
+      -1.2,
+      0.35,
+      0.84
+    ]
+  ],
+  "model": "cars/models/mi-coche-gt3.glb",
+  "texture": "cars/textures/mi-coche-atlas.png",
+  "shaderSrc": "mat_car_default"
+}

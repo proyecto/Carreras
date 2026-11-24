@@ -1,0 +1,85 @@
+{
+  "id": "ford-mustang-gt3-2024",
+  "name": "Ford Mustang GT3 (2024)",
+  "subtitle": "2024 WEC & IMSA Spec · 5.4L Coyote V8 · 540 CV · RWD",
+  "specs": "1280 kg · 540 CV · Hewland 6-vel seq · RWD · Multimatic Aero",
+  "accent": "#0d47a1",
+  "physics": {
+    "m": 1280,
+    "Izz": 1780,
+    "L": 2.775,
+    "a": 1.39,
+    "b": 1.385,
+    "tw": 1.69,
+    "h": 0.38,
+    "R": 0.35,
+    "mu": 1.7,
+    "B": 11.2,
+    "C": 1.52,
+    "driveF": 0,
+    "gears": [
+      3.1,
+      2.15,
+      1.6,
+      1.28,
+      1.06,
+      0.9
+    ],
+    "final": 3.5,
+    "rev": 3.1,
+    "eff": 0.96,
+    "cdA": 0.68,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.04,
+    "front": 2.5,
+    "rear": 2.5,
+    "clA": 0.94,
+    "aeroSplitF": 0.4,
+    "torqueBase": 420,
+    "torquePeak": 260,
+    "torqueDrop": 180,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 7.4,
+    "shiftUpRpm": 7400,
+    "shiftDownRpm": 5400,
+    "revLimitRpm": 8000,
+    "maxRpm": 8200,
+    "idleRpm": 1100
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.8
+  },
+  "wheelbase": 2.775,
+  "trackF": 1.7,
+  "trackR": 1.676,
+  "wheelR": 0.35,
+  "hubs": [
+    [
+      1.471,
+      0.344,
+      -0.851
+    ],
+    [
+      1.471,
+      0.344,
+      0.849
+    ],
+    [
+      -1.304,
+      0.353,
+      -0.839
+    ],
+    [
+      -1.304,
+      0.353,
+      0.837
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/ford-mustang-gt3-2024.glb",
+  "texture": "cars/textures/ford-mustang-gt3-2024.png"
+}

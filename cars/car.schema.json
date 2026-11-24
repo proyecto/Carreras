@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CarSpecification",
+  "description": "Especificación guiada por datos para vehículos en el simulador Carreras WebGPU",
+  "type": "object",
+  "required": ["id", "name", "physics", "hud", "hubs"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único del vehículo (slug kebab-case)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre comercial del vehículo visible en menús y HUD"
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "Subtítulo descriptivo con categoría, motor y potencia"
+    },
+    "specs": {
+      "type": "string",
+      "description": "Resumen técnico rápido (peso, potencia, transmisión, tracción, aero)"
+    },
+    "accent": {
+      "type": "string",
+      "description": "Color cromático de acento en formato hexadecimal (#rrggbb)",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "physics": {
+      "type": "object",
+      "description": "Parámetros del modelo físico de dinámica vehicular (Pacejka + aero + tren motriz)",
+      "required": ["m", "Izz", "L", "a", "b", "tw", "h", "R", "mu", "driveF", "gears", "final", "rev", "shiftUpRpm", "revLimitRpm"],
+      "properties": {
+        "m": { "type": "number", "description": "Masa total en kg (700 - 2200)" },
+        "Izz": { "type": "number", "description": "Momento de inercia de guiñada en kg·m²" },
+        "L": { "type": "number", "description": "Batalla / distancia entre ejes en metros (1.8 - 3.4)" },
+        "a": { "type": "number", "description": "Distancia del centro de gravedad al eje delantero en metros" },
+        "b": { "type": "number", "description": "Distancia del centro de gravedad al eje trasero en metros" },
+        "tw": { "type": "number", "description": "Ancho de vía en metros" },
+        "h": { "type": "number", "description": "Altura del centro de gravedad sobre el suelo en metros" },
+        "R": { "type": "number", "description": "Radio efectivo del neumático en metros (0.28 - 0.40)" },
+        "mu": { "type": "number", "description": "Coeficiente de fricción base del neumático (1.2 - 2.0)" },
+        "B": { "type": "number", "description": "Factor de rigidez Pacejka" },
+        "C": { "type": "number", "description": "Factor de forma de curva Pacejka" },
+        "driveF": { "type": "number", "description": "Reparto de tracción (0.0 = RWD, 1.0 = FWD, 0.5 = AWD)" },
+        "gears": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Relaciones de cambio de marchas hacia adelante (1ª a Nª)"
+        },
+        "final": { "type": "number", "description": "Relación del grupo diferencial final" },
+        "rev": { "type": "number", "description": "Relación de la marcha atrás" },
+        "eff": { "type": "number", "description": "Eficiencia mecánica de la transmisión (0.90 - 0.98)" },
+        "cdA": { "type": "number", "description": "Coeficiente de resistencia aerodinámica Cd × Área frontal A" },
+        "crr": { "type": "number", "description": "Coeficiente de resistencia a la rodadura de neumáticos" },
+        "brakeF": { "type": "number", "description": "Reparto de frenada delantero (0.50 - 0.70)" },
+        "halfW": { "type": "number", "description": "Semi-ancho para cálculo de colisiones en metros" },
+        "front": { "type": "number", "description": "Distancia del CG al frontal del coche en metros" },
+        "rear": { "type": "number", "description": "Distancia del CG a la zaga del coche en metros" },
+        "clA": { "type": "number", "description": "Coeficiente de sustentación negativa / carga aerodinámica (downforce Cl × A)" },
+        "aeroSplitF": { "type": "number", "description": "Reparto de downforce en eje delantero (0.35 - 0.50)" },
+        "torqueBase": { "type": "number", "description": "Par motor base a bajo régimen en N·m" },
+        "torquePeak": { "type": "number", "description": "Par motor adicional en la cúspide en N·m" },
+        "torqueDrop": { "type": "number", "description": "Tasa de caída de par pasada la cúspide" },
+        "torquePeakStart": { "type": "number", "description": "RPM / 1000 de inicio de zona de par máximo" },
+        "torquePeakSpan": { "type": "number", "description": "Amplitud en RPM / 1000 de la meseta de par" },
+        "torqueDropRpm": { "type": "number", "description": "RPM / 1000 donde empieza a decaer el par" },
+        "shiftUpRpm": { "type": "number", "description": "Régimen recomendado de subida de marcha" },
+        "shiftDownRpm": { "type": "number", "description": "Régimen de reducción de marcha" },
+        "revLimitRpm": { "type": "number", "description": "Corte de inyección / limitador de revoluciones" },
+        "maxRpm": { "type": "number", "description": "Régimen absoluto máximo del motor" },
+        "idleRpm": { "type": "number", "description": "Régimen de ralentí en vacío" }
+      }
+    },
+    "hud": {
+      "type": "object",
+      "required": ["maxKmh", "maxRpm", "redlineRpm"],
+      "properties": {
+        "maxKmh": { "type": "number", "description": "Escala máxima del velocímetro en km/h" },
+        "maxRpm": { "type": "number", "description": "Escala máxima del tacómetro en RPM / 1000 (ej. 9.0 = 9000)" },
+        "redlineRpm": { "type": "number", "description": "Inicio de la zona roja del tacómetro en RPM / 1000" }
+      }
+    },
+    "wheelbase": { "type": "number", "description": "Batalla entre ejes en metros" },
+    "trackF": { "type": "number", "description": "Vía delantera en metros" },
+    "trackR": { "type": "number", "description": "Vía trasera en metros" },
+    "wheelR": { "type": "number", "description": "Radio de rueda en metros" },
+    "hubs": {
+      "type": "array",
+      "description": "Coordenadas [X, Y, Z] de los 4 bujes de rueda: [del-izq, del-der, tras-izq, tras-der]",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": { "type": "number" }
+      }
+    },
+    "model": {
+      "type": "string",
+      "description": "Ruta relativa al modelo 3D en formato GLB (ej: 'cars/models/porsche-gt3.glb')"
+    },
+    "texture": {
+      "type": "string",
+      "description": "Ruta relativa a la textura atlas en formato PNG o WebP, o data URI base64"
+    },
+    "shaderSrc": {
+      "type": "string",
+      "description": "Nombre del material/shader WGSL personalizado. Si se omite, se usa 'mat_car_default'"
+    }
+  }
+}

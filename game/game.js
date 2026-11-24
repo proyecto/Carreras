@@ -457,13 +457,18 @@ function gameRestart() {
                : (k === 2 && typeof GS_RIVAL3 !== 'undefined') ? GS_RIVAL3
                : createGsRival();
 
-      const rName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : `RIVAL #${k + 1}`;
+      const rDriverName = `Rival #${k + 1}`;
+      const rCarName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : `RIVAL #${k + 1}`;
       const rCol = (rModel && rModel.accent) ? rModel.accent : colors[k % colors.length];
 
       const ds = -(k + 1) * 8.0;
       const dd = ((k % 2 === 0) ? 1 : -1) * Math.min(3.2, (TRK.hw || 6) * 0.45);
 
-      rivals.push({ veh, vin, ds, dd, model: rModel, gs, name: rName, col: rCol });
+      rivals.push({
+        veh, vin, ds, dd, model: rModel, gs,
+        name: rDriverName, driverName: rDriverName, carName: rCarName, col: rCol,
+        lapStart: 0, lapSeen: 0, lastLapTime: -1, bestLapTime: -1
+      });
     }
 
     if (typeof gridManagerInstance !== 'undefined') {
@@ -568,6 +573,14 @@ function lapCross() {
     if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
       Patterns.EventBusSingleton.emit('lap:completed', { laps: V.laps, lapTime: LAP[1], bestLap: LAP[2] });
     }
+    const totalLaps = (typeof GAME !== 'undefined' && GAME.totalLaps) ? GAME.totalLaps : null;
+    if (totalLaps && V.laps >= totalLaps) {
+      const rs = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : (typeof RACE_START !== 'undefined' ? RACE_START : null);
+      if (rs) rs.state = 'finished';
+      if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
+        Patterns.EventBusSingleton.emit('race:finished', { totalLaps, time: V.time, bestLap: LAP[2] });
+      }
+    }
   }
   GS.lapSeen = V.laps;
 }
@@ -630,7 +643,16 @@ function gamePose() {
   // Ruedas: transformaciones anteriores para motion blur coherente sin dispersión angular
   if (C.slotWheel[0] !== C.slotBody) { const D2 = GS.tmp2; m4mul(D2, objPrev(C.slotBody), T); for (let i = 0; i < 4; i++) m4mul(objPrev(C.slotWheel[i]), D2, objModel(C.slotWheel[i])); }
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
-  f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // Luces de salida en parrilla
+  const rs = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : (typeof RACE_START !== 'undefined' ? RACE_START : null);
+  const o2 = FO.car2;
+  if (rs && rs.active && rs.state === 'countdown') {
+    f[o2] = rs.lightsCount;
+    f[o2 + 1] = 1.0;
+  } else {
+    f[o2] = 0.0;
+    f[o2 + 1] = 0.0;
+  }
+  f[o2 + 2] = 0.0; f[o2 + 3] = 0.0;
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   const m = R.mirror;
   if (m) {
@@ -696,11 +718,11 @@ BUILD.push(async () => {
   if (!CAR && typeof CARS !== 'undefined') CAR = CARS.active || CARS.list[0];
   if (GAME.rivalEnabled !== false) {
     if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
-      gridManagerInstance.buildAll();
+      await gridManagerInstance.buildAll();
     } else {
       const rM = rivalObj();
       if (rM && typeof rM.build === 'function' && !rM.built) {
-        rM.build();
+        await rM.build();
         rM.built = true;
       }
     }

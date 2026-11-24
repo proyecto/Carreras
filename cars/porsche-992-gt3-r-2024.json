@@ -1,0 +1,85 @@
+{
+  "id": "porsche-992-gt3-r-2024",
+  "name": "Porsche 911 GT3 R (992)",
+  "subtitle": "2024 GT3 Spec · Manthey Grello #91 · 4.2L Flat-6 · 565 CV",
+  "specs": "1250 kg · 565 CV · Secuencial 6-vel · RWD · Manthey Aero",
+  "accent": "#f5c500",
+  "physics": {
+    "m": 1250,
+    "Izz": 1680,
+    "L": 2.507,
+    "a": 1.48,
+    "b": 1.027,
+    "tw": 1.69,
+    "h": 0.38,
+    "R": 0.34,
+    "mu": 1.74,
+    "B": 11.8,
+    "C": 1.54,
+    "driveF": 0,
+    "gears": [
+      2.9,
+      2.1,
+      1.62,
+      1.3,
+      1.08,
+      0.9
+    ],
+    "final": 3.55,
+    "rev": 3.1,
+    "eff": 0.96,
+    "cdA": 0.65,
+    "crr": 0.01,
+    "brakeF": 0.58,
+    "halfW": 1.02,
+    "front": 2.45,
+    "rear": 2.5,
+    "clA": 0.96,
+    "aeroSplitF": 0.38,
+    "torqueBase": 380,
+    "torquePeak": 220,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.55,
+    "torquePeakSpan": 4.5,
+    "torqueDropRpm": 8.5,
+    "shiftUpRpm": 8900,
+    "shiftDownRpm": 6600,
+    "revLimitRpm": 9250,
+    "maxRpm": 9400,
+    "idleRpm": 1250
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 10,
+    "redlineRpm": 9
+  },
+  "wheelbase": 2.507,
+  "trackF": 1.71,
+  "trackR": 1.68,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.301,
+      0.36,
+      -0.84
+    ],
+    [
+      1.301,
+      0.36,
+      0.84
+    ],
+    [
+      -1.206,
+      0.36,
+      -0.84
+    ],
+    [
+      -1.206,
+      0.36,
+      0.84
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/porsche-992-gt3-r-2024.glb",
+  "texture": "cars/textures/porsche-992-gt3-r-2024.png"
+}

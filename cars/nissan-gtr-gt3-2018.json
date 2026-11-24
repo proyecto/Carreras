@@ -1,0 +1,85 @@
+{
+  "id": "nissan-gtr-gt3-2018",
+  "name": "Nissan GT-R Nismo GT3",
+  "subtitle": "2018 GT3 Spec · 3.8L Twin-Turbo V6 VR38DETT · RWD",
+  "specs": "1290 kg · 550 CV · Hewland 6-vel seq · RWD · Nismo Aero",
+  "accent": "#e60012",
+  "physics": {
+    "m": 1290,
+    "Izz": 1790,
+    "L": 2.78,
+    "a": 1.418,
+    "b": 1.362,
+    "tw": 1.68,
+    "h": 0.4,
+    "R": 0.34,
+    "mu": 1.7,
+    "B": 11.2,
+    "C": 1.52,
+    "driveF": 0,
+    "gears": [
+      2.8,
+      2,
+      1.55,
+      1.25,
+      1.05,
+      0.88
+    ],
+    "final": 3.42,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.67,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.035,
+    "front": 2.5,
+    "rear": 2.45,
+    "clA": 0.92,
+    "aeroSplitF": 0.39,
+    "torqueBase": 400,
+    "torquePeak": 260,
+    "torqueDrop": 180,
+    "torquePeakStart": 0.45,
+    "torquePeakSpan": 5,
+    "torqueDropRpm": 7,
+    "shiftUpRpm": 7400,
+    "shiftDownRpm": 5400,
+    "revLimitRpm": 7600,
+    "maxRpm": 7800,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 335,
+    "maxRpm": 8,
+    "redlineRpm": 7.4
+  },
+  "wheelbase": 2.78,
+  "trackF": 1.686,
+  "trackR": 1.663,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.437,
+      0.307,
+      -0.843
+    ],
+    [
+      1.437,
+      0.307,
+      0.843
+    ],
+    [
+      -1.343,
+      0.305,
+      -0.831
+    ],
+    [
+      -1.343,
+      0.305,
+      0.831
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/nissan-gtr-gt3-2018.glb",
+  "texture": "cars/textures/nissan-gtr-gt3-2018.png"
+}

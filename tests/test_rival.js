@@ -60,10 +60,10 @@ function runRivalTestSuite() {
   vm.runInContext("this.applyCarPhysics = applyCarPhysics; this.vehicleReset = vehicleReset; this.vehicleStep = vehicleStep; this.vehicleCarCollide = vehicleCarCollide; this.VEH = VEH; this.VEH_RIVAL = VEH_RIVAL; this.VIN_RIVAL = VIN_RIVAL;", ctx);
 
   const carsObj = ctx.window.CARS || ctx.CARS;
-  const carList = ctx.window.CAR_LIST || [];
-  if (carList.length > 0) {
-    const carCode = fs.readFileSync(path.join(root, 'cars', carList[0]), 'utf8');
-    vm.runInContext(carCode, ctx);
+  const carManifestList = ctx.window.CAR_MANIFEST || [];
+  if (carManifestList.length > 0) {
+    const spec = JSON.parse(fs.readFileSync(path.join(root, carManifestList[0].json), 'utf8'));
+    ctx.CarFactory.createFromSpec(spec);
     ctx.applyCarPhysics(carsObj.list[0]);
   }
 

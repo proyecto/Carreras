@@ -184,6 +184,7 @@ body {
 }
 
 #hm,
+#hp,
 #hg,
 #ht,
 #hs,
@@ -198,6 +199,11 @@ body {
 
 #hm {
   left: 1.6vh;
+  top: 1.6vh
+}
+
+#hp {
+  right: 1.6vh;
   top: 1.6vh
 }
 
@@ -811,7 +817,8 @@ body {
   flex-wrap: wrap;
 }
 
-.rival-count-wrapper {
+.rival-count-wrapper,
+.lap-count-wrapper {
   display: inline-flex;
   align-items: center;
   gap: .45em;
@@ -824,18 +831,21 @@ body {
   transition: all .18s ease;
 }
 
-.rival-count-wrapper.is-hidden {
+.rival-count-wrapper.is-hidden,
+.lap-count-wrapper.is-hidden {
   display: none !important;
 }
 
-.rival-count-label {
+.rival-count-label,
+.lap-count-label {
   font-size: .84em;
   font-weight: 600;
   color: rgba(220, 225, 235, .8);
   white-space: nowrap;
 }
 
-.rival-count-select {
+.rival-count-select,
+.lap-count-select {
   background: #11151c;
   border: 1px solid rgba(255, 255, 255, .3);
   color: #facc15;

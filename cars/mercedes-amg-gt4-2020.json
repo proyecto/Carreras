@@ -1,0 +1,85 @@
+{
+  "id": "mercedes-amg-gt4-2020",
+  "name": "Mercedes-AMG GT4",
+  "subtitle": "2020 GT4 Spec · 4.0L Biturbo V8 M178 · 510 CV · RWD",
+  "specs": "1390 kg · 510 CV · 6-vel seq · RWD · AMG Customer Racing Aero",
+  "accent": "#00a3e0",
+  "physics": {
+    "m": 1390,
+    "Izz": 1880,
+    "L": 2.631,
+    "a": 1.34,
+    "b": 1.291,
+    "tw": 1.67,
+    "h": 0.4,
+    "R": 0.335,
+    "mu": 1.68,
+    "B": 11.2,
+    "C": 1.5,
+    "driveF": 0,
+    "gears": [
+      3.05,
+      2.18,
+      1.65,
+      1.32,
+      1.09,
+      0.9
+    ],
+    "final": 3.38,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.69,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.02,
+    "front": 2.45,
+    "rear": 2.42,
+    "clA": 0.88,
+    "aeroSplitF": 0.4,
+    "torqueBase": 450,
+    "torquePeak": 260,
+    "torqueDrop": 180,
+    "torquePeakStart": 0.42,
+    "torquePeakSpan": 4.2,
+    "torqueDropRpm": 7,
+    "shiftUpRpm": 7200,
+    "shiftDownRpm": 5000,
+    "revLimitRpm": 7600,
+    "maxRpm": 8000,
+    "idleRpm": 1000
+  },
+  "hud": {
+    "maxKmh": 310,
+    "maxRpm": 8,
+    "redlineRpm": 7.2
+  },
+  "wheelbase": 2.631,
+  "trackF": 1.67,
+  "trackR": 1.66,
+  "wheelR": 0.335,
+  "hubs": [
+    [
+      1.344,
+      0.324,
+      -0.812
+    ],
+    [
+      1.344,
+      0.324,
+      0.812
+    ],
+    [
+      -1.287,
+      0.333,
+      -0.83
+    ],
+    [
+      -1.287,
+      0.333,
+      0.83
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/mercedes-amg-gt4-2020.glb",
+  "texture": "cars/textures/mercedes-amg-gt4-2020.png"
+}

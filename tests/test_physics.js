@@ -55,12 +55,11 @@ function runPhysicsTestSuite() {
   ctx.trackBuild(trackGp);
 
   const carsObj = ctx.window.CARS || ctx.CARS;
-  const carList = ctx.window.CAR_LIST || [];
+  const carManifestList = ctx.window.CAR_MANIFEST || [];
 
-  for (const carFile of carList) {
-    const carPath = path.join(root, 'cars', carFile);
-    const carCode = fs.readFileSync(carPath, 'utf8');
-    vm.runInContext(carCode, ctx);
+  for (const m of carManifestList) {
+    const spec = JSON.parse(fs.readFileSync(path.join(root, m.json), 'utf8'));
+    ctx.CarFactory.createFromSpec(spec);
   }
 
   // Cargar físicas

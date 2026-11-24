@@ -1,0 +1,86 @@
+{
+  "id": "mclaren-x2-2018",
+  "name": "McLaren Ultimate Vision GT",
+  "subtitle": "2018 Vision Gran Turismo Concept · 4.0L Twin-Turbo V8 Hybrid · AWD",
+  "specs": "1000 kg · 1150 CV · Ground Effect Aero · Active Aero · AWD",
+  "accent": "#ff6600",
+  "physics": {
+    "m": 1000,
+    "Izz": 1350,
+    "L": 2.68,
+    "a": 1.34,
+    "b": 1.34,
+    "tw": 1.7,
+    "h": 0.32,
+    "R": 0.326,
+    "mu": 1.75,
+    "B": 12,
+    "C": 1.55,
+    "driveF": 0.35,
+    "gears": [
+      3.98,
+      2.61,
+      1.9,
+      1.48,
+      1.16,
+      0.91,
+      0.69
+    ],
+    "final": 3.3,
+    "rev": 3.2,
+    "eff": 0.95,
+    "cdA": 0.55,
+    "crr": 0.01,
+    "brakeF": 0.62,
+    "halfW": 0.98,
+    "front": 2.55,
+    "rear": 2.55,
+    "clA": 1.3,
+    "aeroSplitF": 0.38,
+    "torqueBase": 480,
+    "torquePeak": 420,
+    "torqueDrop": 260,
+    "torquePeakStart": 0.55,
+    "torquePeakSpan": 5.5,
+    "torqueDropRpm": 8.5,
+    "shiftUpRpm": 8800,
+    "shiftDownRpm": 6000,
+    "revLimitRpm": 9200,
+    "maxRpm": 9500,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 420,
+    "maxRpm": 9.5,
+    "redlineRpm": 8.8
+  },
+  "wheelbase": 2.68,
+  "trackF": 1.518,
+  "trackR": 1.476,
+  "wheelR": 0.326,
+  "hubs": [
+    [
+      1.838,
+      0.326,
+      -0.767
+    ],
+    [
+      1.838,
+      0.326,
+      0.751
+    ],
+    [
+      -1.836,
+      0.326,
+      -0.745
+    ],
+    [
+      -1.836,
+      0.326,
+      0.731
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/mclaren-x2-2018.glb",
+  "texture": "cars/textures/mclaren-x2-2018.png"
+}

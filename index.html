@@ -50,7 +50,7 @@
       track</div>
     <canvas id="hmirror"></canvas>
     <canvas id="hlights"></canvas>
-    <canvas id="hm"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas>
+    <canvas id="hm"></canvas><canvas id="hp"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas>
     <div id="tag"></div>
   </div>
 
@@ -87,6 +87,11 @@
             <div id="rival-count-wrapper" class="rival-count-wrapper">
               <label for="rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
               <select id="rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              </select>
+            </div>
+            <div id="lap-count-wrapper" class="lap-count-wrapper">
+              <label for="lap-count-select" class="lap-count-label" data-i18n="lap_count_label">Vueltas:</label>
+              <select id="lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)" aria-label="Número de vueltas">
               </select>
             </div>
           </div>
@@ -131,6 +136,11 @@
             <div id="opt-rival-count-wrapper" class="rival-count-wrapper">
               <label for="opt-rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
               <select id="opt-rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              </select>
+            </div>
+            <div id="opt-lap-count-wrapper" class="lap-count-wrapper">
+              <label for="opt-lap-count-select" class="lap-count-label" data-i18n="lap_count_label">Vueltas:</label>
+              <select id="opt-lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)" aria-label="Número de vueltas">
               </select>
             </div>
             <div id="opt-rival-info" class="opt-rival-info">
@@ -362,12 +372,10 @@
         document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v9"><\/script>');
       }
 
-      // --- D. Coche activo y rivales IA bajo demanda ---
+      // --- D. Selección de coche activo y rivales IA (carga asíncrona JSON en main.js) ---
       const carManifest = window.CAR_MANIFEST || [];
       const carEntry = (carId && carManifest.find(c => c.id === carId)) || carManifest[0];
-      if (carEntry && carEntry.file) {
-        document.write('<script src="cars/' + carEntry.file + '?v=racing_mirror_f1_v9"><\/script>');
-      }
+      window.__activeCarEntry = carEntry;
 
       const rivalEnabled = rivalParam !== null
         ? (rivalParam === '1' || rivalParam === 'true')
@@ -406,17 +414,6 @@
           }
         }
         window.__rivalCarEntries = rivalEntries;
-
-        // Cargar los scripts únicos necesarios para todos los rivales
-        const loadedFiles = new Set();
-        if (carEntry && carEntry.file) loadedFiles.add(carEntry.file);
-
-        for (const r of rivalEntries) {
-          if (r && r.file && !loadedFiles.has(r.file)) {
-            loadedFiles.add(r.file);
-            document.write('<script src="cars/' + r.file + '?v=racing_mirror_f1_v9"><\/script>');
-          }
-        }
       }
     })();
   </script>

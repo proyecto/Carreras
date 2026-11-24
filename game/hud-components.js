@@ -355,11 +355,16 @@ const HudComponents = {
       m.fillStyle = 'rgba(255, 255, 255, 0.45)';
       m.fillText('TIEMPOS DE VUELTA', padX, yStart + Math.round(r * 0.075));
 
-      const lapNumber = (lapData.lapCount !== undefined) ? (lapData.lapCount + 1) : 1;
+      const totalLaps = (typeof GAME !== 'undefined' && GAME.totalLaps) ? GAME.totalLaps : null;
+      const isFinished = totalLaps && lapData.lapCount >= totalLaps;
+      const lapNumber = isFinished ? totalLaps : (lapData.lapCount !== undefined ? lapData.lapCount + 1 : 1);
       m.textAlign = 'right';
       m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-      m.fillStyle = '#ff5a36';
-      m.fillText('VUELTA ' + lapNumber, W - padX, yStart + Math.round(r * 0.075));
+      m.fillStyle = isFinished ? '#4ade80' : '#ff5a36';
+      const lapText = isFinished
+        ? 'META · ' + totalLaps + '/' + totalLaps
+        : ('VUELTA ' + lapNumber + (totalLaps ? ' / ' + totalLaps : ''));
+      m.fillText(lapText, W - padX, yStart + Math.round(r * 0.075));
 
       // Filas de cronometraje perfectamente espaciadas
       const rowStep = Math.round(r * 0.105);
@@ -483,6 +488,191 @@ const HudComponents = {
   },
 
   /**
+   * Componente: Tabla de Posiciones y Clasificación en Paralelo (HUD Derecho #hp)
+   * Diseño compacto de 2 líneas por piloto:
+   *  Línea 1: Posición · Piloto · Coche
+   *  Línea 2: MEJOR <tiempo> | ÚLTIMA <tiempo>
+   */
+  LeaderboardTower: {
+    draw(p, r, Hh, W, allCars = [], totalLaps = null) {
+      if (!p || !allCars || !allCars.length) return;
+
+      const getTextWidth = (ctx, txt, fallbackW) => {
+        if (ctx && typeof ctx.measureText === 'function') {
+          const m = ctx.measureText(txt);
+          if (m && typeof m.width === 'number') return m.width;
+        }
+        return fallbackW || ((txt || '').length * 8);
+      };
+
+      const padX = Math.round(r * 0.12);
+      const headerH = Math.round(r * 0.32);
+      const rowsStartY = headerH + Math.round(r * 0.05);
+      const rowStepY = Math.round(r * 0.34);
+      const cardH = Math.round(r * 0.30);
+      const cardW = W - padX * 2;
+      const cardX = padX;
+
+      const maxPossibleRows = Math.max(1, Math.floor((Hh - rowsStartY - Math.round(r * 0.06)) / rowStepY));
+      const numRows = Math.min(maxPossibleRows, allCars.length);
+      const boxH = Math.min(Hh, rowsStartY + numRows * rowStepY + Math.round(r * 0.06));
+
+      p.clearRect(0, 0, W, Hh);
+
+      // Fondo de cristal translúcido oscuro
+      p.beginPath();
+      if (typeof p.roundRect === 'function') {
+        p.roundRect(0, 0, W, boxH, Math.round(r * 0.14));
+      } else {
+        p.rect(0, 0, W, boxH);
+      }
+      p.fillStyle = 'rgba(9, 11, 14, 0.78)';
+      p.fill();
+      p.lineWidth = Math.max(1, Math.round(r * 0.016));
+      p.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      p.stroke();
+
+      // 1. Título superior del panel
+      p.textAlign = 'left';
+      p.textBaseline = 'top';
+      p.font = '700 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      p.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      p.fillText('CLASIFICACIÓN', padX, Math.round(r * 0.08));
+
+      p.textAlign = 'right';
+      p.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+      p.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      const carsCountText = allCars.length + (allCars.length === 1 ? ' COCHE' : ' COCHES');
+      p.fillText(carsCountText, W - padX, Math.round(r * 0.085));
+
+      // Línea divisoria superior
+      p.beginPath();
+      p.moveTo(Math.round(r * 0.10), headerH);
+      p.lineTo(W - Math.round(r * 0.10), headerH);
+      p.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      p.lineWidth = Math.max(1, Math.round(r * 0.010));
+      p.stroke();
+
+      // 2. Tarjetas de clasificación (2 líneas por participante)
+      const fL1 = Math.round(r * 0.080);
+      const fCar = Math.round(r * 0.074);
+      const fLbl = Math.round(r * 0.065);
+      const fTime = Math.round(r * 0.074);
+
+      for (let i = 0; i < numRows; i++) {
+        const c = allCars[i];
+        const ry = rowsStartY + i * rowStepY;
+
+        // Fondo y borde de tarjeta individual
+        p.beginPath();
+        if (typeof p.roundRect === 'function') {
+          p.roundRect(cardX, ry, cardW, cardH, Math.round(r * 0.04));
+        } else {
+          p.rect(cardX, ry, cardW, cardH);
+        }
+
+        if (c.isPlayer) {
+          p.fillStyle = 'rgba(255, 90, 54, 0.16)';
+          p.fill();
+          p.strokeStyle = 'rgba(255, 90, 54, 0.45)';
+          p.lineWidth = Math.max(1, Math.round(r * 0.012));
+          p.stroke();
+
+          // Barra de acento lateral del jugador
+          p.fillStyle = '#ff5a36';
+          if (typeof p.fillRect === 'function') {
+            p.fillRect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH - Math.round(r * 0.08));
+          } else {
+            p.beginPath();
+            p.rect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH - Math.round(r * 0.08));
+            p.fill();
+          }
+        } else {
+          p.fillStyle = (i % 2 === 0) ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.02)';
+          p.fill();
+          p.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+          p.lineWidth = Math.max(1, Math.round(r * 0.010));
+          p.stroke();
+        }
+
+        // --- LÍNEA 1: Posición · Piloto · Coche ---
+        const line1Y = ry + Math.round(r * 0.038);
+        p.textAlign = 'left';
+        p.textBaseline = 'top';
+
+        // Posición con color de podio
+        const posStr = 'P' + (i + 1);
+        const posCol = (i === 0) ? '#facc15' : (i === 1) ? '#cbd5e1' : (i === 2) ? '#f59e0b' : 'rgba(255, 255, 255, 0.60)';
+        p.font = '800 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = posCol;
+        let curX = cardX + Math.round(r * (c.isPlayer ? 0.060 : 0.040));
+        p.fillText(posStr, curX, line1Y);
+        curX += getTextWidth(p, posStr, fL1 * 0.6) + Math.round(r * 0.025);
+
+        // Separador 1
+        p.font = '400 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.30)';
+        p.fillText('·', curX, line1Y);
+        curX += getTextWidth(p, '·', fL1 * 0.3) + Math.round(r * 0.025);
+
+        // Piloto
+        const driverName = c.driverName || (c.isPlayer ? 'TÚ' : `Rival #${i + 1}`);
+        p.font = (c.isPlayer ? '800 ' : '700 ') + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = c.isPlayer ? '#ff5a36' : '#ffffff';
+        p.fillText(driverName, curX, line1Y);
+        curX += getTextWidth(p, driverName, fL1 * 0.6) + Math.round(r * 0.025);
+
+        // Separador 2
+        p.font = '400 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.30)';
+        p.fillText('·', curX, line1Y);
+        curX += getTextWidth(p, '·', fL1 * 0.3) + Math.round(r * 0.025);
+
+        // Coche (con truncado inteligente si excede el ancho disponible)
+        let carStr = c.carName || 'GT3';
+        p.font = '500 ' + fCar + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = c.isPlayer ? 'rgba(255, 255, 255, 0.90)' : 'rgba(255, 255, 255, 0.65)';
+        const maxCarW = Math.max(Math.round(r * 0.25), (cardX + cardW - Math.round(r * 0.04)) - curX);
+        if (getTextWidth(p, carStr, fCar * 0.6) > maxCarW) {
+          while (carStr.length > 3 && getTextWidth(p, carStr + '…', fCar * 0.6) > maxCarW) {
+            carStr = carStr.slice(0, -1);
+          }
+          carStr += '…';
+        }
+        p.fillText(carStr, curX, line1Y);
+
+        // --- LÍNEA 2: Tiempos (MEJOR a la izquierda, ÚLTIMA a la derecha) ---
+        const line2Y = ry + Math.round(r * 0.170);
+
+        // MEJOR vuelta
+        p.textAlign = 'left';
+        p.font = '700 ' + fLbl + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.38)';
+        const xLeftStart = cardX + Math.round(r * (c.isPlayer ? 0.060 : 0.040));
+        p.fillText('MEJOR', xLeftStart, line2Y);
+        const mejorLblW = getTextWidth(p, 'MEJOR ', fLbl * 0.6);
+
+        p.font = '700 ' + fTime + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = (c.bestLap > 0) ? '#c084fc' : 'rgba(255, 255, 255, 0.35)';
+        p.fillText(HudComponents.formatLapTime(c.bestLap), xLeftStart + mejorLblW, line2Y);
+
+        // ÚLTIMA vuelta
+        p.textAlign = 'right';
+        p.font = '700 ' + fTime + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = (c.lastLap > 0) ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.35)';
+        const lastTimeStr = HudComponents.formatLapTime(c.lastLap);
+        const xRightEnd = cardX + cardW - Math.round(r * 0.040);
+        p.fillText(lastTimeStr, xRightEnd, line2Y);
+        const lastTimeW = getTextWidth(p, ' ' + lastTimeStr, fTime * 0.6);
+
+        p.font = '700 ' + fLbl + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.38)';
+        p.fillText('ÚLTIMA', xRightEnd - lastTimeW, line2Y);
+      }
+    }
+  },
+
+  /**
    * Componente 4: Minimapa del Circuito (Sección 4 del HUD Lateral)
    * Altura nominal: yS3 a Hh
    */
@@ -579,7 +769,8 @@ const HudComponents = {
     draw(ctx, clights, raceStart) {
       if (!ctx || !clights || !raceStart) return;
 
-      if (!raceStart.active && raceStart.state !== 'lights_out') {
+      const has3dGantry = (typeof TRACKS !== 'undefined' && TRACKS.active && TRACKS.active.id === 'nurburgring-gp');
+      if (has3dGantry || (!raceStart.active && raceStart.state !== 'lights_out')) {
         if (clights.style.display !== 'none') clights.style.display = 'none';
         return;
       }

@@ -1,0 +1,86 @@
+{
+  "id": "ferrari-daytona-sp3-2023",
+  "name": "Ferrari Daytona SP3 (2023)",
+  "subtitle": "Icona Series · 6.5L Atmospheric V12 F140HC · 840 CV · RWD",
+  "specs": "1485 kg · 840 CV · F1 7-vel Dual-Clutch · RWD · Rosso Magma",
+  "accent": "#d40000",
+  "physics": {
+    "m": 1485,
+    "Izz": 1850,
+    "L": 2.65,
+    "a": 1.3,
+    "b": 1.35,
+    "tw": 1.67,
+    "h": 0.36,
+    "R": 0.345,
+    "mu": 1.78,
+    "B": 12,
+    "C": 1.56,
+    "driveF": 0,
+    "gears": [
+      3.08,
+      2.19,
+      1.63,
+      1.29,
+      1.03,
+      0.84,
+      0.69
+    ],
+    "final": 4.1,
+    "rev": 3.2,
+    "eff": 0.96,
+    "cdA": 0.66,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.05,
+    "front": 2.35,
+    "rear": 2.4,
+    "clA": 1.25,
+    "aeroSplitF": 0.44,
+    "torqueBase": 480,
+    "torquePeak": 320,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 9,
+    "shiftUpRpm": 9100,
+    "shiftDownRpm": 6600,
+    "revLimitRpm": 9500,
+    "maxRpm": 9600,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 350,
+    "maxRpm": 10,
+    "redlineRpm": 9.2
+  },
+  "wheelbase": 2.65,
+  "trackF": 1.66,
+  "trackR": 1.68,
+  "wheelR": 0.345,
+  "hubs": [
+    [
+      1.32,
+      0.33,
+      -0.83
+    ],
+    [
+      1.32,
+      0.33,
+      0.83
+    ],
+    [
+      -1.33,
+      0.34,
+      -0.84
+    ],
+    [
+      -1.33,
+      0.34,
+      0.84
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/ferrari-daytona-sp3-2023.glb",
+  "texture": "cars/textures/ferrari-daytona-sp3-2023.png"
+}

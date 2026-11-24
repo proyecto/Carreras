@@ -104,16 +104,18 @@ function buildTestScene() {
 }
 async function main() {
   try {
-    // Selecciona el coche y circuito activos (?car=<id>&track=<id>, última selección o predeterminados)
+    const carManifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
     const saved = GAME.ui ? loadSelection() : {};
-    const activeCar = CARS.select(Q.get('car') || saved.car);
-    const activeTrack = TRACKS.select(Q.get('track') || saved.track);
+    const reqCarId = (typeof Q !== 'undefined' ? Q.get('car') : null) || saved.car;
+    const activeCarEntry = (typeof window !== 'undefined' && window.__activeCarEntry)
+      || (reqCarId && carManifest.find(c => c.id === reqCarId))
+      || carManifest[0];
 
-    if (activeCar && activeTrack) {
-      updateLoadingHeader(activeCar.name, activeTrack.name);
+    // Carga asíncrona de la especificación JSON pura del vehículo activo si no está inicializado
+    if (activeCarEntry && typeof CarFactory !== 'undefined' && (!CARS.byId[activeCarEntry.id] || !CARS.byId[activeCarEntry.id].build)) {
+      setLoadingProgress(3, 'loading_init_gpu', 'Cargando especificación del vehículo…');
+      await CarFactory.loadFromJSON(activeCarEntry.json);
     }
-    setLoadingProgress(5, 'loading_init_gpu', 'Inicializando WebGPU…');
-    await new Promise(r => setTimeout(r, 16));
 
     // Configuración del rival IA: habilitado por defecto salvo indicación expresa
     const rivalParam = (typeof Q !== 'undefined') ? Q.get('rival') : null;
@@ -129,6 +131,38 @@ async function main() {
       ? Math.max(1, Math.min(15, rivalCountParam || (typeof window !== 'undefined' && window.__rivalCount) || saved.rivalCount || 1))
       : 0;
     GAME.rivalCount = rivalCount;
+
+    // Carga asíncrona de especificaciones JSON puras para los rivales de la parrilla
+    if (rivalEnabled && typeof CarFactory !== 'undefined') {
+      const rivalEntries = (typeof window !== 'undefined' && window.__rivalCarEntries) || [];
+      if (rivalEntries.length > 0) {
+        for (const rEntry of rivalEntries) {
+          if (rEntry && (!CARS.byId[rEntry.id] || !CARS.byId[rEntry.id].build)) {
+            await CarFactory.loadFromJSON(rEntry.json);
+          }
+        }
+      } else {
+        const fallbackRival = carManifest.find(c => !activeCarEntry || c.id !== activeCarEntry.id) || carManifest[0];
+        if (fallbackRival && (!CARS.byId[fallbackRival.id] || !CARS.byId[fallbackRival.id].build)) {
+          await CarFactory.loadFromJSON(fallbackRival.json);
+        }
+      }
+    }
+
+    // Selecciona el coche y circuito activos (?car=<id>&track=<id>, última selección o predeterminados)
+    const activeCar = CARS.select(activeCarEntry ? activeCarEntry.id : reqCarId);
+    const activeTrack = TRACKS.select(Q.get('track') || saved.track);
+
+    if (activeCar && activeTrack) {
+      updateLoadingHeader(activeCar.name, activeTrack.name);
+    }
+    setLoadingProgress(10, 'loading_init_gpu', 'Inicializando WebGPU…');
+    await new Promise(r => setTimeout(r, 16));
+    GAME.rivalCount = rivalCount;
+
+    const lapsParam = (typeof Q !== 'undefined') ? (parseInt(Q.get('laps') || Q.get('totalLaps'), 10)) : null;
+    const totalLaps = Math.max(1, Math.min(50, lapsParam || (typeof window !== 'undefined' && window.__totalLaps) || saved.totalLaps || 3));
+    GAME.totalLaps = totalLaps;
 
     if (rivalEnabled) {
       const rivalId = (typeof window !== 'undefined' && window.__rivalCarId) || (typeof Q !== 'undefined' && Q.get('rivalCar')) || saved.rivalCar;
@@ -161,7 +195,7 @@ async function main() {
     setLoadingProgress(45, 'loading_build_car', 'Construyendo bólido y rivales…');
     // Construye el coche activo antes del resto de la escena
     if (activeCar && typeof activeCar.build === 'function') {
-      activeCar.build();
+      await activeCar.build();
       activeCar.built = true;
       if (GAME.mode === 'car') {
         buildTestGround();
@@ -173,7 +207,7 @@ async function main() {
     if (rivalEnabled && CARS.list && CARS.list.length > 0) {
       for (const c of CARS.list) {
         if (c && typeof c.build === 'function' && !c.built) {
-          c.build();
+          await c.build();
           c.built = true;
         }
       }

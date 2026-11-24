@@ -1,0 +1,87 @@
+{
+  "id": "bmw-m3-touring-2026",
+  "name": "BMW M3 Touring 24H",
+  "subtitle": "2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD",
+  "specs": "1560 kg · 530 CV · 8-vel M Steptronic · RWD · Shell Helix Aero",
+  "accent": "#ffcc00",
+  "physics": {
+    "m": 1560,
+    "Izz": 2150,
+    "L": 2.899,
+    "a": 1.48,
+    "b": 1.42,
+    "tw": 1.72,
+    "h": 0.42,
+    "R": 0.35,
+    "mu": 1.68,
+    "B": 11,
+    "C": 1.5,
+    "driveF": 0,
+    "gears": [
+      3.1,
+      2.25,
+      1.72,
+      1.38,
+      1.15,
+      0.98,
+      0.84,
+      0.72
+    ],
+    "final": 3.15,
+    "rev": 3.2,
+    "eff": 0.96,
+    "cdA": 0.72,
+    "crr": 0.01,
+    "brakeF": 0.62,
+    "halfW": 1.05,
+    "front": 2.5,
+    "rear": 2.45,
+    "clA": 0.85,
+    "aeroSplitF": 0.4,
+    "torqueBase": 420,
+    "torquePeak": 290,
+    "torqueDrop": 170,
+    "torquePeakStart": 0.4,
+    "torquePeakSpan": 5,
+    "torqueDropRpm": 7.2,
+    "shiftUpRpm": 7200,
+    "shiftDownRpm": 5200,
+    "revLimitRpm": 7500,
+    "maxRpm": 7800,
+    "idleRpm": 1100
+  },
+  "hud": {
+    "maxKmh": 325,
+    "maxRpm": 8,
+    "redlineRpm": 7.2
+  },
+  "wheelbase": 2.899,
+  "trackF": 1.723,
+  "trackR": 1.72,
+  "wheelR": 0.35,
+  "hubs": [
+    [
+      1.586,
+      0.426,
+      -0.862
+    ],
+    [
+      1.586,
+      0.426,
+      0.86
+    ],
+    [
+      -1.314,
+      0.431,
+      -0.86
+    ],
+    [
+      -1.314,
+      0.431,
+      0.86
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/bmw-m3-touring-2026.glb",
+  "texture": "cars/textures/bmw-m3-touring-2026.png"
+}

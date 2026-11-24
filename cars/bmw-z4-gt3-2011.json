@@ -1,0 +1,85 @@
+{
+  "id": "bmw-z4-gt3-2011",
+  "name": "BMW Z4 GT3 (2011)",
+  "subtitle": "2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 CV · RWD",
+  "specs": "1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Crowne Plaza Livery",
+  "accent": "#1c69d4",
+  "physics": {
+    "m": 1190,
+    "Izz": 1650,
+    "L": 2.476,
+    "a": 1.25,
+    "b": 1.226,
+    "tw": 1.67,
+    "h": 0.38,
+    "R": 0.343,
+    "mu": 1.73,
+    "B": 11.8,
+    "C": 1.54,
+    "driveF": 0,
+    "gears": [
+      2.9,
+      2.1,
+      1.62,
+      1.3,
+      1.08,
+      0.91
+    ],
+    "final": 3.44,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.7,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.01,
+    "front": 2.3,
+    "rear": 2.25,
+    "clA": 1.05,
+    "aeroSplitF": 0.42,
+    "torqueBase": 400,
+    "torquePeak": 230,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.48,
+    "torquePeakSpan": 4.6,
+    "torqueDropRpm": 8,
+    "shiftUpRpm": 8100,
+    "shiftDownRpm": 5800,
+    "revLimitRpm": 8500,
+    "maxRpm": 8800,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 320,
+    "maxRpm": 9,
+    "redlineRpm": 8.2
+  },
+  "wheelbase": 2.476,
+  "trackF": 1.669,
+  "trackR": 1.669,
+  "wheelR": 0.343,
+  "hubs": [
+    [
+      1.193,
+      0.267,
+      -0.834
+    ],
+    [
+      1.193,
+      0.267,
+      0.835
+    ],
+    [
+      -1.283,
+      0.267,
+      -0.834
+    ],
+    [
+      -1.283,
+      0.267,
+      0.835
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/bmw-z4-gt3-2011.glb",
+  "texture": "cars/textures/bmw-z4-gt3-2011.png"
+}

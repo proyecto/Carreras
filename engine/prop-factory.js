@@ -136,11 +136,11 @@ const PropFactory = {
           mb.push(typeof m4mul === 'function' ? m4mul(m4(), m4translate(mt, s - hwB - 0.46, y, -2.0 + k), rotZ) : mt);
           mb.mat(2, 150, 60);
           this.setColor(mb, 0.02, 0.02, 0.022);
-          mb.cyl(0, 0, 0, 0.165, 0.2, 0.175, 14, false, false);
-          mb.cyl(0, 0, 0, 0.15, 0.2, 0.16, 14, false, false);
-          mb.mat(18, 80, 0);
-          this.setColor(mb, 0.9, 0.012, 0.004);
-          mb.cyl(0, 0, 0, 0.14, 0.035, 0.12, 14, false, true);
+          mb.cyl(0, 0, 0, 0.185, 0.2, 0.195, 16, false, false);
+          mb.cyl(0, 0, 0, 0.17, 0.2, 0.18, 16, false, false);
+          mb.mat(18, 255, k + 1, 0);
+          this.setColor(mb, 1.0, 0.02, 0.01);
+          mb.cyl(0, 0, 0, 0.165, 0.04, 0.145, 16, false, true);
           mb.pop();
         }
       }

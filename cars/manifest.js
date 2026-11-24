@@ -1,214 +1,264 @@
-'use strict';
+"use strict";
 // Catálogo y metadatos de coches disponibles.
-// Cada entrada define la ficha visual para el menú de selección sin tener que cargar los megabytes de mallas y texturas 3D.
+// Cada entrada define la ficha visual para el menú de selección y las rutas a sus especificaciones JSON, modelos GLB y texturas.
 window.CAR_MANIFEST = [
   {
-    file: 'ford-mustang-gt3-2024.js',
-    id: 'ford-mustang-gt3-2024',
-    name: 'Ford Mustang GT3 (2024)',
-    subtitle: '2024 WEC & IMSA Spec · 5.4L Coyote V8 · 540 CV · RWD',
-    specs: '1280 kg · 540 CV · Hewland 6-vel seq · RWD · Multimatic Aero',
-    accent: '#0d47a1'
+    "id": "ford-mustang-gt3-2024",
+    "name": "Ford Mustang GT3 (2024)",
+    "subtitle": "2024 WEC & IMSA Spec · 5.4L Coyote V8 · 540 CV · RWD",
+    "specs": "1280 kg · 540 CV · Hewland 6-vel seq · RWD · Multimatic Aero",
+    "accent": "#0d47a1",
+    "json": "cars/ford-mustang-gt3-2024.json",
+    "model": "cars/models/ford-mustang-gt3-2024.glb",
+    "texture": "cars/textures/ford-mustang-gt3-2024.png"
   },
   {
-    file: 'ford-mustang-gt3.js',
-    id: 'ford-mustang-gt3',
-    name: 'Ford Mustang GT3',
-    subtitle: 'Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD',
-    specs: '1270 kg · 535 CV · 6-vel seq · RWD · Multimatic Carbon Aero',
-    accent: '#002244'
+    "id": "ford-mustang-gt3",
+    "name": "Ford Mustang GT3",
+    "subtitle": "Ford Performance GT3 Racer · 5.4L V8 · Carbon Spec · RWD",
+    "specs": "1270 kg · 535 CV · 6-vel seq · RWD · Multimatic Carbon Aero",
+    "accent": "#002244",
+    "json": "cars/ford-mustang-gt3.json",
+    "model": "cars/models/ford-mustang-gt3.glb",
+    "texture": "cars/textures/ford-mustang-gt3.png"
   },
   {
-    file: 'porsche-911-1979.js',
-    id: 'porsche-911-1979',
-    name: 'Porsche 911 / 935 Turbo',
-    subtitle: '1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD',
-    specs: '1040 kg · 750 CV · Moby Dick Aero · Chasis Gr.5 Competición · RWD',
-    accent: '#e8251e'
+    "id": "porsche-911-1979",
+    "name": "Porsche 911 / 935 Turbo",
+    "subtitle": "1979 Porsche 935 Slantnose · Flat-6 Twin-Turbo · RWD",
+    "specs": "1040 kg · 750 CV · Moby Dick Aero · Chasis Gr.5 Competición · RWD",
+    "accent": "#e8251e",
+    "json": "cars/porsche-911-1979.json",
+    "model": "cars/models/porsche-911-1979.glb",
+    "texture": "cars/textures/porsche-911-1979.png"
   },
   {
-    file: 'mclaren-x2-2018.js',
-    id: 'mclaren-x2-2018',
-    name: 'McLaren Ultimate Vision GT',
-    subtitle: '2018 Vision Gran Turismo Concept · 4.0L Twin-Turbo V8 Hybrid · AWD',
-    specs: '1000 kg · 1150 CV · Ground Effect Aero · Active Aero · AWD',
-    accent: '#ff6600'
+    "id": "mclaren-x2-2018",
+    "name": "McLaren Ultimate Vision GT",
+    "subtitle": "2018 Vision Gran Turismo Concept · 4.0L Twin-Turbo V8 Hybrid · AWD",
+    "specs": "1000 kg · 1150 CV · Ground Effect Aero · Active Aero · AWD",
+    "accent": "#ff6600",
+    "json": "cars/mclaren-x2-2018.json",
+    "model": "cars/models/mclaren-x2-2018.glb",
+    "texture": "cars/textures/mclaren-x2-2018.png"
   },
   {
-    file: 'bmw-m8-gte-2018.js',
-    id: 'bmw-m8-gte-2018',
-    name: 'BMW M8 GTE',
-    subtitle: '2018 Le Mans & IMSA Endurance Racer · 4.0L Twin-Turbo V8 · RWD',
-    specs: '1220 kg · 600 CV · Le Mans Aero Spec · Xtrac 6-speed seq · RWD',
-    accent: '#1c69d4'
+    "id": "bmw-m8-gte-2018",
+    "name": "BMW M8 GTE",
+    "subtitle": "2018 Le Mans & IMSA Endurance Racer · 4.0L Twin-Turbo V8 · RWD",
+    "specs": "1220 kg · 600 CV · Le Mans Aero Spec · Xtrac 6-speed seq · RWD",
+    "accent": "#1c69d4",
+    "json": "cars/bmw-m8-gte-2018.json",
+    "model": "cars/models/bmw-m8-gte-2018.glb",
+    "texture": "cars/textures/bmw-m8-gte-2018.png"
   },
   {
-    file: 'mercedes-amg-gt3-2020.js',
-    id: 'mercedes-amg-gt3-2020',
-    name: 'Mercedes-AMG GT3 Evo',
-    subtitle: '2020 GT3 Spec · 6.2L V8 atmosférico M159 · 550 CV',
-    specs: '1285 kg · 550 CV · Hewland 6-vel seq · RWD · Shark Nose Aero',
-    accent: '#c0c0c0'
+    "id": "mercedes-amg-gt3-2020",
+    "name": "Mercedes-AMG GT3 Evo",
+    "subtitle": "2020 GT3 Spec · 6.2L V8 atmosférico M159 · 550 CV",
+    "specs": "1285 kg · 550 CV · Hewland 6-vel seq · RWD · Shark Nose Aero",
+    "accent": "#c0c0c0",
+    "json": "cars/mercedes-amg-gt3-2020.json",
+    "model": "cars/models/mercedes-amg-gt3-2020.glb",
+    "texture": "cars/textures/mercedes-amg-gt3-2020.png"
   },
   {
-    file: 'porsche-992-gt3-r-2024.js',
-    id: 'porsche-992-gt3-r-2024',
-    name: 'Porsche 911 GT3 R (992)',
-    subtitle: '2024 GT3 Spec · Manthey Grello #91 · 4.2L Flat-6 · 565 CV',
-    specs: '1250 kg · 565 CV · Secuencial 6-vel · RWD · Manthey Aero',
-    accent: '#f5c500'
+    "id": "porsche-992-gt3-r-2024",
+    "name": "Porsche 911 GT3 R (992)",
+    "subtitle": "2024 GT3 Spec · Manthey Grello #91 · 4.2L Flat-6 · 565 CV",
+    "specs": "1250 kg · 565 CV · Secuencial 6-vel · RWD · Manthey Aero",
+    "accent": "#f5c500",
+    "json": "cars/porsche-992-gt3-r-2024.json",
+    "model": "cars/models/porsche-992-gt3-r-2024.glb",
+    "texture": "cars/textures/porsche-992-gt3-r-2024.png"
   },
   {
-    file: 'nissan-gtr-gt3-2018.js',
-    id: 'nissan-gtr-gt3-2018',
-    name: 'Nissan GT-R Nismo GT3',
-    subtitle: '2018 GT3 Spec · 3.8L Twin-Turbo V6 VR38DETT · RWD',
-    specs: '1290 kg · 550 CV · Hewland 6-vel seq · RWD · Nismo Aero',
-    accent: '#e60012'
+    "id": "nissan-gtr-gt3-2018",
+    "name": "Nissan GT-R Nismo GT3",
+    "subtitle": "2018 GT3 Spec · 3.8L Twin-Turbo V6 VR38DETT · RWD",
+    "specs": "1290 kg · 550 CV · Hewland 6-vel seq · RWD · Nismo Aero",
+    "accent": "#e60012",
+    "json": "cars/nissan-gtr-gt3-2018.json",
+    "model": "cars/models/nissan-gtr-gt3-2018.glb",
+    "texture": "cars/textures/nissan-gtr-gt3-2018.png"
   },
   {
-    file: 'mclaren-720s-gt3-2020.js',
-    id: 'mclaren-720s-gt3-2020',
-    name: 'McLaren 720S GT3',
-    subtitle: '2020 GT3 Spec · 4.0L Twin-Turbo V8 M840T · RWD',
-    specs: '1220 kg · 500 CV · 6-vel seq · RWD · MonoCage II Aero',
-    accent: '#ff8000'
+    "id": "mclaren-720s-gt3-2020",
+    "name": "McLaren 720S GT3",
+    "subtitle": "2020 GT3 Spec · 4.0L Twin-Turbo V8 M840T · RWD",
+    "specs": "1220 kg · 500 CV · 6-vel seq · RWD · MonoCage II Aero",
+    "accent": "#ff8000",
+    "json": "cars/mclaren-720s-gt3-2020.json",
+    "model": "cars/models/mclaren-720s-gt3-2020.glb",
+    "texture": "cars/textures/mclaren-720s-gt3-2020.png"
   },
   {
-    file: 'audi-r8-lms-evo-2020.js',
-    id: 'audi-r8-lms-evo-2020',
-    name: 'Audi R8 LMS Evo',
-    subtitle: '2020 GT3 Spec · 5.2L Naturally-Aspirated V10 · RWD',
-    specs: '1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Aero',
-    accent: '#e60000'
+    "id": "audi-r8-lms-evo-2020",
+    "name": "Audi R8 LMS Evo",
+    "subtitle": "2020 GT3 Spec · 5.2L Naturally-Aspirated V10 · RWD",
+    "specs": "1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Aero",
+    "accent": "#e60000",
+    "json": "cars/audi-r8-lms-evo-2020.json",
+    "model": "cars/models/audi-r8-lms-evo-2020.glb",
+    "texture": "cars/textures/audi-r8-lms-evo-2020.png"
   },
   {
-    file: 'bmw-m3-touring-2026.js',
-    id: 'bmw-m3-touring-2026',
-    name: 'BMW M3 Touring 24H',
-    subtitle: '2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD',
-    specs: '1560 kg · 530 CV · 8-vel M Steptronic · RWD · Shell Helix Aero',
-    accent: '#ffcc00'
+    "id": "bmw-m3-touring-2026",
+    "name": "BMW M3 Touring 24H",
+    "subtitle": "2026 24H Nürburgring Spec · 3.0L Twin-Turbo I6 S58 · RWD",
+    "specs": "1560 kg · 530 CV · 8-vel M Steptronic · RWD · Shell Helix Aero",
+    "accent": "#ffcc00",
+    "json": "cars/bmw-m3-touring-2026.json",
+    "model": "cars/models/bmw-m3-touring-2026.glb",
+    "texture": "cars/textures/bmw-m3-touring-2026.png"
   },
   {
-    file: 'mclaren-650s-gt3-2015.js',
-    id: 'mclaren-650s-gt3-2015',
-    name: 'McLaren 650S GT3',
-    subtitle: '2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD',
-    specs: '1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero',
-    accent: '#ff5500'
+    "id": "mclaren-650s-gt3-2015",
+    "name": "McLaren 650S GT3",
+    "subtitle": "2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD",
+    "specs": "1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero",
+    "accent": "#ff5500",
+    "json": "cars/mclaren-650s-gt3-2015.json",
+    "model": "cars/models/mclaren-650s-gt3-2015.glb",
+    "texture": "cars/textures/mclaren-650s-gt3-2015.png"
   },
   {
-    file: 'mercedes-amg-gt4-2020.js',
-    id: 'mercedes-amg-gt4-2020',
-    name: 'Mercedes-AMG GT4',
-    subtitle: '2020 GT4 Spec · 4.0L Biturbo V8 M178 · 510 CV · RWD',
-    specs: '1390 kg · 510 CV · 6-vel seq · RWD · AMG Customer Racing Aero',
-    accent: '#00a3e0'
+    "id": "mercedes-amg-gt4-2020",
+    "name": "Mercedes-AMG GT4",
+    "subtitle": "2020 GT4 Spec · 4.0L Biturbo V8 M178 · 510 CV · RWD",
+    "specs": "1390 kg · 510 CV · 6-vel seq · RWD · AMG Customer Racing Aero",
+    "accent": "#00a3e0",
+    "json": "cars/mercedes-amg-gt4-2020.json",
+    "model": "cars/models/mercedes-amg-gt4-2020.glb",
+    "texture": "cars/textures/mercedes-amg-gt4-2020.png"
   },
   {
-    file: 'ferrari-296-challenge-2024.js',
-    id: 'ferrari-296-challenge-2024',
-    name: 'Ferrari 296 Challenge',
-    subtitle: '2024 Trofeo Pirelli & GT Spec · 3.0L Twin-Turbo 120° V6 · 700 CV · RWD',
-    specs: '1330 kg · 700 CV · F1 7-vel doble embrague · RWD · Carbon High-Downforce Aero',
-    accent: '#d40000'
+    "id": "ferrari-296-challenge-2024",
+    "name": "Ferrari 296 Challenge",
+    "subtitle": "2024 Trofeo Pirelli & GT Spec · 3.0L Twin-Turbo 120° V6 · 700 CV · RWD",
+    "specs": "1330 kg · 700 CV · F1 7-vel doble embrague · RWD · Carbon High-Downforce Aero",
+    "accent": "#d40000",
+    "json": "cars/ferrari-296-challenge-2024.json",
+    "model": "cars/models/ferrari-296-challenge-2024.glb",
+    "texture": "cars/textures/ferrari-296-challenge-2024.jpg"
   },
   {
-    file: 'bmw-z4-gt3-2011.js',
-    id: 'bmw-z4-gt3-2011',
-    name: 'BMW Z4 GT3 (2011)',
-    subtitle: '2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 CV · RWD',
-    specs: '1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Crowne Plaza Livery',
-    accent: '#1c69d4'
+    "id": "bmw-z4-gt3-2011",
+    "name": "BMW Z4 GT3 (2011)",
+    "subtitle": "2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 CV · RWD",
+    "specs": "1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Crowne Plaza Livery",
+    "accent": "#1c69d4",
+    "json": "cars/bmw-z4-gt3-2011.json",
+    "model": "cars/models/bmw-z4-gt3-2011.glb",
+    "texture": "cars/textures/bmw-z4-gt3-2011.png"
   },
   {
-    file: 'bmw-m4-gt3-evo-2026.js',
-    id: 'bmw-m4-gt3-evo-2026',
-    name: 'BMW M4 GT3 EVO (2026)',
-    subtitle: '2026 FIA GT3 EVO Spec · 3.0L TwinPower Turbo P58 · 590 CV · RWD',
-    specs: '1265 kg · 590 CV · Xtrac 6-vel seq · RWD · BMW M Motorsport',
-    accent: '#0066b2'
+    "id": "bmw-m4-gt3-evo-2026",
+    "name": "BMW M4 GT3 EVO (2026)",
+    "subtitle": "2026 FIA GT3 EVO Spec · 3.0L TwinPower Turbo P58 · 590 CV · RWD",
+    "specs": "1265 kg · 590 CV · Xtrac 6-vel seq · RWD · BMW M Motorsport",
+    "accent": "#0066b2",
+    "json": "cars/bmw-m4-gt3-evo-2026.json",
+    "model": "cars/models/bmw-m4-gt3-evo-2026.glb",
+    "texture": "cars/textures/bmw-m4-gt3-evo-2026.png"
   },
   {
-    file: 'toyota-gr-gt3-2024.js',
-    id: 'toyota-gr-gt3-2024',
-    name: 'Toyota GR GT3 (2024)',
-    subtitle: 'FIA GT3 Concept · 4.0L V8 Twin-Turbo · 650 CV · RWD',
-    specs: '1280 kg · 650 CV · Hewland 6-vel seq · RWD · Gazoo Racing',
-    accent: '#e60012'
+    "id": "toyota-gr-gt3-2024",
+    "name": "Toyota GR GT3 (2024)",
+    "subtitle": "FIA GT3 Concept · 4.0L V8 Twin-Turbo · 650 CV · RWD",
+    "specs": "1280 kg · 650 CV · Hewland 6-vel seq · RWD · Gazoo Racing",
+    "accent": "#e60012",
+    "json": "cars/toyota-gr-gt3-2024.json",
+    "model": "cars/models/toyota-gr-gt3-2024.glb",
+    "texture": "cars/textures/toyota-gr-gt3-2024.png"
   },
   {
-    file: 'bentley-continental-gt3-pikes-peak.js',
-    id: 'bentley-continental-gt3-pikes-peak',
-    name: 'Bentley Continental GT3 Pikes Peak',
-    subtitle: 'Pikes Peak Time Attack 1 · 4.0L V8 Twin-Turbo Biofuel · 750 CV · RWD',
-    specs: '1300 kg · 750 CV · 6-vel seq · RWD · Pikes Peak Aero & Biofuel',
-    accent: '#005a36'
+    "id": "bentley-continental-gt3-pikes-peak",
+    "name": "Bentley Continental GT3 Pikes Peak",
+    "subtitle": "Pikes Peak Time Attack 1 · 4.0L V8 Twin-Turbo Biofuel · 750 CV · RWD",
+    "specs": "1300 kg · 750 CV · 6-vel seq · RWD · Pikes Peak Aero & Biofuel",
+    "accent": "#005a36",
+    "json": "cars/bentley-continental-gt3-pikes-peak.json",
+    "model": "cars/models/bentley-continental-gt3-pikes-peak.glb",
+    "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png"
   },
   {
-    file: 'maserati-mc20-gt3-2024.js',
-    id: 'maserati-mc20-gt3-2024',
-    name: 'Maserati MC20 GT3 (2024)',
-    subtitle: 'FIA GT3 Spec · 3.0L V6 Nettuno Twin-Turbo · 620 CV · RWD',
-    specs: '1270 kg · 620 CV · 6-vel seq · RWD · Maserati Corse',
-    accent: '#0b2341'
+    "id": "maserati-mc20-gt3-2024",
+    "name": "Maserati MC20 GT3 (2024)",
+    "subtitle": "FIA GT3 Spec · 3.0L V6 Nettuno Twin-Turbo · 620 CV · RWD",
+    "specs": "1270 kg · 620 CV · 6-vel seq · RWD · Maserati Corse",
+    "accent": "#0b2341",
+    "json": "cars/maserati-mc20-gt3-2024.json",
+    "model": "cars/models/maserati-mc20-gt3-2024.glb",
+    "texture": "cars/textures/maserati-mc20-gt3-2024.png"
   },
   {
-    file: 'lamborghini-huracan-gt3-2023.js',
-    id: 'lamborghini-huracan-gt3-2023',
-    name: 'Lamborghini Huracán GT3 (2023)',
-    subtitle: 'EVO2 Spec · 5.2L V10 Atmospheric · 640 CV · RWD',
-    specs: '1230 kg · 640 CV · Hör 6-vel seq · RWD · Squadra Corse',
-    accent: '#739600'
+    "id": "lamborghini-huracan-gt3-2023",
+    "name": "Lamborghini Huracán GT3 (2023)",
+    "subtitle": "EVO2 Spec · 5.2L V10 Atmospheric · 640 CV · RWD",
+    "specs": "1230 kg · 640 CV · Hör 6-vel seq · RWD · Squadra Corse",
+    "accent": "#739600",
+    "json": "cars/lamborghini-huracan-gt3-2023.json",
+    "model": "cars/models/lamborghini-huracan-gt3-2023.glb",
+    "texture": "cars/textures/lamborghini-huracan-gt3-2023.png"
   },
   {
-    file: 'audi-r8-lms-gt3-2019.js',
-    id: 'audi-r8-lms-gt3-2019',
-    name: 'Audi R8 LMS GT3 (2019)',
-    subtitle: 'FIA GT3 Spec · 5.2L V10 FSI Atmospheric · 585 CV · RWD',
-    specs: '1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Customer Racing',
-    accent: '#bb0a30'
+    "id": "audi-r8-lms-gt3-2019",
+    "name": "Audi R8 LMS GT3 (2019)",
+    "subtitle": "FIA GT3 Spec · 5.2L V10 FSI Atmospheric · 585 CV · RWD",
+    "specs": "1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Customer Racing",
+    "accent": "#bb0a30",
+    "json": "cars/audi-r8-lms-gt3-2019.json",
+    "model": "cars/models/audi-r8-lms-gt3-2019.glb",
+    "texture": "cars/textures/audi-r8-lms-gt3-2019.png"
   },
   {
-    file: 'ferrari-daytona-sp3-2023.js',
-    id: 'ferrari-daytona-sp3-2023',
-    name: 'Ferrari Daytona SP3 (2023)',
-    subtitle: 'Icona Series · 6.5L Atmospheric V12 F140HC · 840 CV · RWD',
-    specs: '1485 kg · 840 CV · F1 7-vel Dual-Clutch · RWD · Rosso Magma',
-    accent: '#d40000'
+    "id": "ferrari-daytona-sp3-2023",
+    "name": "Ferrari Daytona SP3 (2023)",
+    "subtitle": "Icona Series · 6.5L Atmospheric V12 F140HC · 840 CV · RWD",
+    "specs": "1485 kg · 840 CV · F1 7-vel Dual-Clutch · RWD · Rosso Magma",
+    "accent": "#d40000",
+    "json": "cars/ferrari-daytona-sp3-2023.json",
+    "model": "cars/models/ferrari-daytona-sp3-2023.glb",
+    "texture": "cars/textures/ferrari-daytona-sp3-2023.png"
   },
   {
-    file: 'toyota-gr-supra-gt300-2023.js',
-    id: 'toyota-gr-supra-gt300-2023',
-    name: 'Toyota GR Supra GT300 (2023)',
-    subtitle: 'Super GT GT300 · 5.2L V8 Atmospheric 2UR-GSE · 500 CV · RWD',
-    specs: '1200 kg · 500 CV · Hewland 6-vel seq · RWD · Green Brave Livery',
-    accent: '#00853f'
+    "id": "toyota-gr-supra-gt300-2023",
+    "name": "Toyota GR Supra GT300 (2023)",
+    "subtitle": "Super GT GT300 · 5.2L V8 Atmospheric 2UR-GSE · 500 CV · RWD",
+    "specs": "1200 kg · 500 CV · Hewland 6-vel seq · RWD · Green Brave Livery",
+    "accent": "#00853f",
+    "json": "cars/toyota-gr-supra-gt300-2023.json",
+    "model": "cars/models/toyota-gr-supra-gt300-2023.glb",
+    "texture": "cars/textures/toyota-gr-supra-gt300-2023.png"
   },
   {
-    file: 'ferrari-296-gt3-2024.js',
-    id: 'ferrari-296-gt3-2024',
-    name: 'Ferrari 296 GT3 (2024)',
-    subtitle: 'FIA GT3 Spec · 3.0L V6 Twin-Turbo 120° · 600 CV · RWD',
-    specs: '1250 kg · 600 CV · Xtrac 6-vel seq · RWD · AF Corse Livery',
-    accent: '#cc0000'
+    "id": "ferrari-296-gt3-2024",
+    "name": "Ferrari 296 GT3 (2024)",
+    "subtitle": "FIA GT3 Spec · 3.0L V6 Twin-Turbo 120° · 600 CV · RWD",
+    "specs": "1250 kg · 600 CV · Xtrac 6-vel seq · RWD · AF Corse Livery",
+    "accent": "#cc0000",
+    "json": "cars/ferrari-296-gt3-2024.json",
+    "model": "cars/models/ferrari-296-gt3-2024.glb",
+    "texture": "cars/textures/ferrari-296-gt3-2024.png"
   },
   {
-    file: 'porsche-911-gt3-r-rennsport-2024.js',
-    id: 'porsche-911-gt3-r-rennsport-2024',
-    name: 'Porsche 911 GT3 R Rennsport',
-    subtitle: 'Limited Rennsport Edition · 4.2L Boxer 6 Atmospheric · 620 CV · RWD',
-    specs: '1240 kg · 620 CV · 6-vel seq · RWD · Laguna Seca Rennsport Reunion',
-    accent: '#d5001c'
+    "id": "porsche-911-gt3-r-rennsport-2024",
+    "name": "Porsche 911 GT3 R Rennsport",
+    "subtitle": "Limited Rennsport Edition · 4.2L Boxer 6 Atmospheric · 620 CV · RWD",
+    "specs": "1240 kg · 620 CV · 6-vel seq · RWD · Laguna Seca Rennsport Reunion",
+    "accent": "#d5001c",
+    "json": "cars/porsche-911-gt3-r-rennsport-2024.json",
+    "model": "cars/models/porsche-911-gt3-r-rennsport-2024.glb",
+    "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png"
   }
 ];
 
 // Compatibilidad con CAR_LIST para tests y scripts
-window.CAR_LIST = window.CAR_MANIFEST.map(c => c.file);
+window.CAR_LIST = window.CAR_MANIFEST.map(c => c.json);
 
 // Registrar metadatos en CARS si el registro ya está disponible
-if (typeof CARS !== 'undefined') {
+if (typeof CARS !== "undefined") {
   for (const item of window.CAR_MANIFEST) {
     CARS.register({
       id: item.id,
@@ -216,7 +266,9 @@ if (typeof CARS !== 'undefined') {
       subtitle: item.subtitle,
       specs: item.specs,
       accent: item.accent,
-      file: item.file
+            json: item.json,
+      model: item.model,
+      texture: item.texture
     });
   }
 }

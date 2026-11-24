@@ -1,0 +1,85 @@
+{
+  "id": "mercedes-amg-gt3-2020",
+  "name": "Mercedes-AMG GT3 Evo",
+  "subtitle": "2020 GT3 Spec · 6.2L V8 atmosférico M159 · 550 CV",
+  "specs": "1285 kg · 550 CV · Hewland 6-vel seq · RWD · Shark Nose Aero",
+  "accent": "#c0c0c0",
+  "physics": {
+    "m": 1285,
+    "Izz": 1770,
+    "L": 2.63,
+    "a": 1.34,
+    "b": 1.29,
+    "tw": 1.69,
+    "h": 0.39,
+    "R": 0.34,
+    "mu": 1.71,
+    "B": 11.4,
+    "C": 1.52,
+    "driveF": 0,
+    "gears": [
+      2.85,
+      2.05,
+      1.58,
+      1.27,
+      1.06,
+      0.89
+    ],
+    "final": 3.48,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.68,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.03,
+    "front": 2.48,
+    "rear": 2.46,
+    "clA": 0.94,
+    "aeroSplitF": 0.4,
+    "torqueBase": 420,
+    "torquePeak": 240,
+    "torqueDrop": 170,
+    "torquePeakStart": 0.5,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 7.5,
+    "shiftUpRpm": 7700,
+    "shiftDownRpm": 5600,
+    "revLimitRpm": 8000,
+    "maxRpm": 8200,
+    "idleRpm": 1100
+  },
+  "hud": {
+    "maxKmh": 335,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.8
+  },
+  "wheelbase": 2.63,
+  "trackF": 1.698,
+  "trackR": 1.675,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.39,
+      0.34,
+      -0.831
+    ],
+    [
+      1.39,
+      0.34,
+      0.831
+    ],
+    [
+      -1.24,
+      0.34,
+      -0.831
+    ],
+    [
+      -1.24,
+      0.34,
+      0.831
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/mercedes-amg-gt3-2020.glb",
+  "texture": "cars/textures/mercedes-amg-gt3-2020.png"
+}

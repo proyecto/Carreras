@@ -114,13 +114,14 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
   testAssert(typeof HudComponents.CornerAdvisory.draw === 'function', 'CornerAdvisory.draw existe');
   testAssert(typeof HudComponents.LapTelemetry.draw === 'function', 'LapTelemetry.draw existe');
   testAssert(typeof HudComponents.TimingTower.draw === 'function', 'TimingTower.draw existe');
+  testAssert(typeof HudComponents.LeaderboardTower.draw === 'function', 'LeaderboardTower.draw existe');
   testAssert(typeof HudComponents.Minimap.draw === 'function', 'Minimap.draw existe');
   testAssert(typeof HudComponents.StartLights.draw === 'function', 'StartLights.draw existe');
 
   // Mock canvas 2D context
   const mockCtx = {
     font: '', fillStyle: '', strokeStyle: '', textAlign: '', textBaseline: '', lineWidth: 1,
-    clearRect: () => {}, beginPath: () => {}, roundRect: () => {}, arc: () => {}, fill: () => {}, stroke: () => {},
+    clearRect: () => {}, beginPath: () => {}, roundRect: () => {}, arc: () => {}, fill: () => {}, stroke: () => {}, fillRect: () => {},
     fillText: () => {}, measureText: (txt) => ({ width: (txt || '').length * 8 }), createRadialGradient: () => ({ addColorStop: () => {} }),
     save: () => {}, restore: () => {}, clip: () => {}, moveTo: () => {}, lineTo: () => {}, closePath: () => {}, setLineDash: () => {}, rect: () => {}
   };
@@ -138,6 +139,46 @@ console.log('--- [TEST SUITE] Validación Módulos SOLID (RaceDirector, CameraSy
     HudComponents.TimingTower.draw(mockCtx, 100, 500, 250, 98, mockTrk, 120, [], 'GT3');
     HudComponents.Minimap.draw(mockCtx, 100, 500, 250, 162, [125, 300, 0, 0, 0.2], [10, 0, 20], [], 5, 'Nürburgring GP', '0.5 / 5.0 km');
     HudComponents.StartLights.draw(mockCtx, { width: 400, height: 100, style: {} }, { active: true, state: 'countdown', lightsCount: 3 });
+
+    // Verificación de supresión de semáforo 2D en Nürburgring GP en favor del pórtico 3D
+    global.TRACKS = { active: { id: 'nurburgring-gp' } };
+    const mockLights2D = { width: 400, height: 100, style: { display: 'block' } };
+    HudComponents.StartLights.draw(mockCtx, mockLights2D, { active: true, state: 'countdown', lightsCount: 3 });
+    testAssert(mockLights2D.style.display === 'none', 'El semáforo 2D se oculta en Nürburgring GP para usar el semáforo 3D del pórtico/arco');
+
+    // Verificación de formato de vueltas con totalLaps
+    global.GAME = { totalLaps: 5 };
+    let renderedText = '';
+    const captureCtx = Object.assign({}, mockCtx, {
+      fillText: (txt) => { renderedText += txt + ';'; }
+    });
+    HudComponents.LapTelemetry.draw(captureCtx, 100, 500, 250, 46, { curTime: 45.2, lastTime: 92.1, bestTime: 91.5, lapCount: 2 });
+    testAssert(renderedText.includes('VUELTA 3 / 5'), 'LapTelemetry formatea correctamente VUELTA X / Y');
+
+    // Verificación de fin de carrera tras completar totalLaps
+    renderedText = '';
+    HudComponents.LapTelemetry.draw(captureCtx, 100, 500, 250, 46, { curTime: 45.2, lastTime: 92.1, bestTime: 91.5, lapCount: 5 });
+    testAssert(renderedText.includes('META · 5/5'), 'LapTelemetry muestra estado META al completar todas las vueltas');
+
+    // Verificación de LeaderboardTower (HUD derecho en paralelo)
+    const mockLeaderboardCars = [
+      { isPlayer: true, driverName: 'TÚ', carName: 'Porsche 911 GT3 R', prog: 1500, bestLap: 104.32, lastLap: 105.10, col: '#ff5a36' },
+      { isPlayer: false, driverName: 'Rival #1', carName: 'Ferrari 296 GT3', prog: 1450, bestLap: 105.80, lastLap: 106.20, col: '#facc15' },
+      { isPlayer: false, driverName: 'Rival #2', carName: 'BMW M4 GT3', prog: 1300, bestLap: -1, lastLap: -1, col: '#38bdf8' }
+    ];
+    let lbText = '';
+    const lbCtx = Object.assign({}, mockCtx, {
+      fillText: (txt) => { lbText += txt + ';'; }
+    });
+    HudComponents.LeaderboardTower.draw(lbCtx, 100, 500, 270, mockLeaderboardCars, 5);
+    testAssert(lbText.includes('CLASIFICACIÓN;') && lbText.includes('MEJOR;') && lbText.includes('ÚLTIMA;'),
+      'LeaderboardTower renderiza encabezados CLASIFICACIÓN, MEJOR, ÚLTIMA en 2 líneas');
+    testAssert(lbText.includes('P1;') && lbText.includes('TÚ;') && lbText.includes('Porsche 911 GT3 R;') && lbText.includes('1:44.32;'),
+      'LeaderboardTower renderiza datos del jugador en 2 líneas (posición, piloto, coche y mejor vuelta)');
+    testAssert(lbText.includes('Rival #1;') && lbText.includes('Ferrari 296 GT3;') && lbText.includes('1:46.20;'),
+      'LeaderboardTower renderiza datos de rivales');
+    testAssert(lbText.includes('-:--.--;'),
+      'LeaderboardTower maneja tiempos no completados con formato -:--.--');
   } catch (err) {
     drawThrew = true;
     console.error(err);

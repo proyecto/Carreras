@@ -3,8 +3,8 @@
 // Panel en pantalla: velocímetro, tacómetro, marcha, cronómetro de vuelta, última y mejor vuelta, estadísticas y minimapa con radar de curvas.
 // Cuatro lienzos 2D sobre el juego. Cero asignaciones por frame: relojes y trazado estático pre-renderizados.
 const HUD = {
-  cg: null, ct: null, cs: null, cm: null,
-  g: null, t: null, s: null, m: null,
+  cg: null, ct: null, cs: null, cm: null, cp: null, cmirror: null, clights: null,
+  g: null, t: null, s: null, m: null, p: null, gl: null,
   face: null, hub: null, bgT: null, bgS: null, bgMap: null,
   mapTrans: new Float64Array(5), // [cX, cZ, midTrackX, midTrackZ, scale]
   A: null, B: null, C: null,
@@ -29,12 +29,14 @@ function hudInit() {
   H.ct = document.getElementById('ht');
   H.cs = document.getElementById('hs');
   H.cm = document.getElementById('hm');
+  H.cp = document.getElementById('hp');
   H.cmirror = document.getElementById('hmirror');
   H.clights = document.getElementById('hlights');
   H.g = H.cg ? H.cg.getContext('2d') : null;
   H.t = H.ct ? H.ct.getContext('2d') : null;
   H.s = H.cs ? H.cs.getContext('2d') : null;
   if (H.cm) H.m = H.cm.getContext('2d');
+  if (H.cp) H.p = H.cp.getContext('2d');
   if (H.clights) H.gl = H.clights.getContext('2d');
   hudLayout();
   addEventListener('resize', hudLayout);
@@ -69,18 +71,15 @@ function hudBuildMap(W, Hh, r) {
   g.strokeStyle = 'rgba(255, 255, 255, 0.16)';
   g.stroke();
 
-  // Divisores horizontales entre las 4 secciones modulares
+  // Divisores horizontales entre las secciones modulares del HUD izquierdo
   const yS1 = Math.round(r * 0.90); // Fin aviso de curva y radar dinámico
-  const yS2 = Math.round(r * 1.42); // Fin telemetría de vuelta
-  const yS3 = Math.round(r * 2.06); // Fin torre de clasificación
+  const yS2 = Math.round(r * 1.42); // Fin telemetría de vuelta (a continuación inicia el minimapa)
 
   g.beginPath();
   g.moveTo(Math.round(r * 0.10), yS1);
   g.lineTo(W - Math.round(r * 0.10), yS1);
   g.moveTo(Math.round(r * 0.10), yS2);
   g.lineTo(W - Math.round(r * 0.10), yS2);
-  g.moveTo(Math.round(r * 0.10), yS3);
-  g.lineTo(W - Math.round(r * 0.10), yS3);
   g.strokeStyle = 'rgba(255, 255, 255, 0.12)';
   g.lineWidth = Math.max(1, Math.round(r * 0.012));
   g.stroke();
@@ -88,7 +87,7 @@ function hudBuildMap(W, Hh, r) {
   // (Nota de arquitectura: Los textos y títulos se delegan a HudComponents para garantizar
   // tipografía dinámica de alta legibilidad sin solapamientos entre capas de canvas)
 
-  // Trazado del circuito en la Sección 4 (Minimapa inferior)
+  // Trazado del circuito en la Sección 3 (Minimapa inferior ampliado)
   const trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (trk && trk.N > 1 && trk.x && trk.z) {
     let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
@@ -99,13 +98,13 @@ function hudBuildMap(W, Hh, r) {
     }
     const mapMargin = Math.round(r * 0.16);
     const boxW = W - mapMargin * 2;
-    const y4Top = yS3 + Math.round(r * 0.18);
-    const boxH = Hh - y4Top - mapMargin;
+    const yMapTop = yS2 + Math.round(r * 0.18);
+    const boxH = Hh - yMapTop - mapMargin;
     const spanX = Math.max(10, maxX - minX);
     const spanZ = Math.max(10, maxZ - minZ);
     const scale = Math.min(boxW / spanX, boxH / spanZ);
     const cX = mapMargin + boxW * 0.5;
-    const cZ = y4Top + boxH * 0.5;
+    const cZ = yMapTop + boxH * 0.5;
     const midTrackX = (minX + maxX) * 0.5;
     const midTrackZ = (minZ + maxZ) * 0.5;
 
@@ -182,7 +181,7 @@ function hudLayout() {
   H.bgS = hudStrip(H.cs, sLabels, [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   H.K.fill(-9);
 
-  // Columna lateral izquierda (Siguiente curva, Telemetría de vuelta, Posición F1, Minimapa)
+  // Columna lateral izquierda (Siguiente curva, Telemetría de vuelta, Minimapa)
   if (H.cm) {
     const mW = Math.round(r * 2.70), mH = Math.round(r * 5.20);
     H.cm.width = mW; H.cm.height = mH;
@@ -193,6 +192,18 @@ function hudLayout() {
     H.cm.style.bottom = 'auto';
     H.cm.style.transform = 'none';
     hudBuildMap(mW, mH, r);
+  }
+
+  // Panel lateral derecho en paralelo (Tabla de clasificación: Posición, Piloto, Coche, Mejor y Última vuelta)
+  if (H.cp) {
+    const pW = Math.round(r * 2.70), pH = Math.round(r * 5.20);
+    H.cp.width = pW; H.cp.height = pH;
+    H.cp.style.width = pW / dpr + 'px'; H.cp.style.height = pH / dpr + 'px';
+    H.cp.style.top = '1.6vh';
+    H.cp.style.right = '1.6vh';
+    H.cp.style.left = 'auto';
+    H.cp.style.bottom = 'auto';
+    H.cp.style.transform = 'none';
   }
 
   // Semáforo de salida FIA
@@ -221,7 +232,7 @@ function hudDec(g, A, v10, x, y) {
   hudInt(g, A, (v10 / 10) | 0, 3, x, y, 1); hudCh(g, A, 12, x + w * 3, y, 1); hudCh(g, A, v10 % 10, x + w * 3 + A.w[12], y, 1);
 }
 
-// Renderiza la columna lateral (Curva arriba, Telemetría de vuelta, Clasificación F1, Minimapa abajo)
+// Renderiza la columna lateral izquierda (Curva arriba, Telemetría de vuelta, Minimapa abajo)
 function hudDrawMinimap() {
   const H = HUD, m = H.m, trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (!H.cm || !m || !H.bgMap || !trk || trk.N < 2) return;
@@ -231,7 +242,6 @@ function hudDrawMinimap() {
 
   const yS1 = Math.round(r * 0.90);
   const yS2 = Math.round(r * 1.42);
-  const yS3 = Math.round(r * 2.06);
 
   m.clearRect(0, 0, W, Hh);
   m.drawImage(H.bgMap, 0, 0);
@@ -242,7 +252,7 @@ function hudDrawMinimap() {
   const bestLapSec = (typeof LAP !== 'undefined' && LAP[2] > 0) ? LAP[2] : -1;
   const lapCount = (typeof VEH !== 'undefined' && VEH.laps !== undefined) ? VEH.laps : 0;
 
-  // Lista de rivales para torre de posiciones y minimapa (exclusivamente modelos reales)
+  // Lista de rivales para minimapa (exclusivamente modelos reales)
   const rivals = [];
   if (typeof GAME !== 'undefined' && GAME.rivalEnabled === false) {
     // Modo práctica en solitario: sin rivales
@@ -267,15 +277,10 @@ function hudDrawMinimap() {
       lapCount: lapCount
     });
 
-    // SECCIÓN 3: Torre de clasificación F1 (yS2 a yS3)
-    const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
-    const carName = (typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name.split(' ')[0] : 'GT3';
-    HudComponents.TimingTower.draw(m, r, Hh, W, yS2, trk, curProg, rivals, carName);
-
-    // SECCIÓN 4: Minimapa del circuito con radar de rivales (yS3 a Hh)
+    // SECCIÓN 3: Minimapa del circuito con radar de rivales (yS2 a Hh)
     const trackName = (trk.spec && (trk.spec.name || trk.spec.id)) || 'CIRCUITO';
     const distText = ((curM * 0.001) % (trk.L * 0.001)).toFixed(1) + ' / ' + (trk.L * 0.001).toFixed(1) + ' km';
-    HudComponents.Minimap.draw(m, r, Hh, W, yS3, H.mapTrans, [GS.cx, GS.cy, GS.cz], rivals, (typeof VEH !== 'undefined' ? VEH.time : 0), trackName, distText);
+    HudComponents.Minimap.draw(m, r, Hh, W, yS2, H.mapTrans, [GS.cx, GS.cy, GS.cz], rivals, (typeof VEH !== 'undefined' ? VEH.time : 0), trackName, distText);
     return;
   }
 
@@ -388,8 +393,14 @@ function hudDrawMinimap() {
   m.fillText('TIEMPOS DE VUELTA', padX, yS1 + Math.round(r * 0.075));
   m.textAlign = 'right';
   m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  m.fillStyle = '#ff5a36';
-  m.fillText('VUELTA ' + (lapCount + 1), W - padX, yS1 + Math.round(r * 0.075));
+  const totalLaps = (typeof GAME !== 'undefined' && GAME.totalLaps) ? GAME.totalLaps : null;
+  const isFinished = totalLaps && lapCount >= totalLaps;
+  const lapNum = isFinished ? totalLaps : (lapCount + 1);
+  const lapTxt = isFinished
+    ? 'META · ' + totalLaps + '/' + totalLaps
+    : ('VUELTA ' + lapNum + (totalLaps ? ' / ' + totalLaps : ''));
+  m.fillStyle = isFinished ? '#4ade80' : '#ff5a36';
+  m.fillText(lapTxt, W - padX, yS1 + Math.round(r * 0.075));
 
   const fmtTime = s => {
     if (s === undefined || s === null || s < 0) return '-:--.--';
@@ -417,83 +428,16 @@ function hudDrawMinimap() {
     m.fillText(fmtTime(tRows[i].time), W - padX, ry);
   }
 
-  // 3. Torre de clasificación (Sección 3)
-  m.textAlign = 'left';
-  m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  m.fillText('POSICIÓN EN CARRERA', padX, yS2 + Math.round(r * 0.075));
-
-  const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
-  const carName = (typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name.split(' ')[0] : 'GT3';
-  const allCars = [{ name: `TÚ (${carName})`, prog: curProg, isPlayer: true, col: '#ff5a36' }];
-  for (let i = 0; i < rivals.length; i++) {
-    if (rivals[i] && rivals[i].veh) {
-      allCars.push({ name: rivals[i].name || `RIVAL`, prog: rivals[i].veh.laps * trk.L + rivals[i].veh.lapS, isPlayer: false, col: rivals[i].col || '#facc15' });
-    }
-  }
-  allCars.sort((a, b) => b.prog - a.prog);
-  const playerIdx = allCars.findIndex(c => c.isPlayer);
-  const playerPos = playerIdx + 1;
-  const leaderProg = allCars[0].prog;
-  const refSpeed = Math.max(15, (typeof VEH !== 'undefined' && VEH.speed > 5) ? VEH.speed : 30);
-
-  m.textAlign = 'right';
-  m.font = '800 ' + Math.round(r * 0.135) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-  m.fillStyle = playerPos === 1 ? '#4ade80' : playerPos === 2 ? '#facc15' : playerPos === 3 ? '#38bdf8' : '#ef4444';
-  m.fillText('P' + playerPos + (allCars.length > 1 ? `/${allCars.length}` : ''), W - padX, yS2 + Math.round(r * 0.045));
-
-  const posColors = ['#facc15', '#94a3b8', '#d97706', '#64748b'];
-  const rStartY = yS2 + Math.round(r * 0.185);
-  const rStepY = Math.round(r * 0.098);
-
-  let displayIndices = [];
-  if (allCars.length <= 4) {
-    for (let i = 0; i < allCars.length; i++) displayIndices.push(i);
-  } else {
-    if (playerIdx < 4) {
-      displayIndices = [0, 1, 2, 3];
-    } else {
-      const ahead = playerIdx - 1;
-      const current = playerIdx;
-      const behind = playerIdx + 1 < allCars.length ? playerIdx + 1 : playerIdx - 2;
-      displayIndices = Array.from(new Set([0, ahead, current, behind])).sort((a, b) => a - b);
-    }
-  }
-
-  for (let slot = 0; slot < displayIndices.length; slot++) {
-    const i = displayIndices[slot];
-    const cObj = allCars[i], ry = rStartY + slot * rStepY;
-    const isLead = (i === 0);
-    const gapM = Math.max(0, leaderProg - cObj.prog);
-    const gapSec = (gapM / refSpeed).toFixed(1);
-    m.textAlign = 'left';
-    m.font = '800 ' + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillStyle = (i === 0) ? '#facc15' : (i === 1) ? '#94a3b8' : (i === 2) ? '#d97706' : '#64748b';
-    m.fillText(String(i + 1), padX, ry);
-    m.font = (cObj.isPlayer ? '800 ' : '600 ') + Math.round(r * 0.082) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    m.fillStyle = cObj.isPlayer ? '#ff5a36' : '#ffffff';
-    m.fillText(cObj.name, padX + Math.round(r * 0.14), ry);
-    m.textAlign = 'right';
-    m.font = '700 ' + Math.round(r * 0.080) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-    if (isLead) {
-      m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      m.fillText('LÍDER', W - padX, ry);
-    } else {
-      m.fillStyle = cObj.isPlayer ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
-      m.fillText('+' + gapSec + 's', W - padX, ry);
-    }
-  }
-
-  // 4. Radar Minimapa (Sección 4)
+  // 3. Radar Minimapa (Sección 3 ampliada)
   const trackTitle = (trk.spec && (trk.spec.name || trk.spec.id)) || 'CIRCUITO';
   m.textAlign = 'left';
   m.font = '600 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  m.fillText('CIRCUITO', padX, yS3 + Math.round(r * 0.075));
+  m.fillText('CIRCUITO', padX, yS2 + Math.round(r * 0.075));
   m.textAlign = 'right';
   m.font = '700 ' + Math.round(r * 0.075) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
   m.fillStyle = 'rgba(255, 255, 255, 0.55)';
-  m.fillText(trackTitle.toUpperCase(), W - padX, yS3 + Math.round(r * 0.075));
+  m.fillText(trackTitle.toUpperCase(), W - padX, yS2 + Math.round(r * 0.075));
 
   const cX = H.mapTrans[0], cZ = H.mapTrans[1];
   const midTrackX = H.mapTrans[2], midTrackZ = H.mapTrans[3];
@@ -507,12 +451,87 @@ function hudDrawMinimap() {
   m.fill();
 }
 
+// Renderiza la tabla de clasificación en el panel derecho (#hp)
+function hudDrawLeaderboard() {
+  const H = HUD;
+  if (!H.cp || !H.p) return;
+  const r = H.L[3], W = H.cp.width, Hh = H.cp.height;
+  const trk = (typeof TRK !== 'undefined' ? TRK : null);
+  if (!trk) return;
+
+  const curProg = (typeof VEH !== 'undefined') ? (VEH.laps * trk.L + VEH.lapS) : 0;
+  const pCarName = (typeof CAR !== 'undefined' && CAR && (CAR.name || CAR.id))
+    ? (CAR.name || CAR.id)
+    : ((typeof CARS !== 'undefined' && CARS.active && CARS.active.name) ? CARS.active.name : 'GT3');
+  const pDriverName = (typeof I18N !== 'undefined') ? (I18N.t('hud_player_name') || 'TÚ') : 'TÚ';
+  const pBestLap = (typeof LAP !== 'undefined' && LAP[2] > 0) ? LAP[2] : -1;
+  const pLastLap = (typeof LAP !== 'undefined' && LAP[1] > 0) ? LAP[1] : -1;
+
+  const allCars = [
+    {
+      isPlayer: true,
+      driverName: pDriverName,
+      carName: pCarName,
+      prog: curProg,
+      bestLap: pBestLap,
+      lastLap: pLastLap,
+      col: '#ff5a36'
+    }
+  ];
+
+  if (typeof GAME === 'undefined' || GAME.rivalEnabled !== false) {
+    if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+      for (let i = 0; i < gridManagerInstance.rivals.length; i++) {
+        const rCar = gridManagerInstance.rivals[i];
+        if (rCar && rCar.veh) {
+          const prog = rCar.veh.laps * trk.L + rCar.veh.lapS;
+          allCars.push({
+            isPlayer: false,
+            driverName: rCar.driverName || rCar.name || `Rival #${i + 1}`,
+            carName: rCar.carName || (rCar.model && (rCar.model.name || rCar.model.id)) || 'GT3',
+            prog: prog,
+            bestLap: (rCar.bestLapTime > 0) ? rCar.bestLapTime : -1,
+            lastLap: (rCar.lastLapTime > 0) ? rCar.lastLapTime : -1,
+            col: rCar.col || '#facc15'
+          });
+        }
+      }
+    } else if (typeof VEH_RIVAL !== 'undefined' && typeof CARS !== 'undefined' && CARS.rival) {
+      const rCarObj = CARS.rival;
+      const prog = VEH_RIVAL.laps * trk.L + VEH_RIVAL.lapS;
+      allCars.push({
+        isPlayer: false,
+        driverName: 'Rival #1',
+        carName: rCarObj.name || rCarObj.id || 'GT3',
+        prog: prog,
+        bestLap: -1,
+        lastLap: -1,
+        col: rCarObj.accent || '#38bdf8'
+      });
+    }
+  }
+
+  allCars.sort((a, b) => b.prog - a.prog);
+  const totalLaps = (typeof GAME !== 'undefined' && GAME.totalLaps) ? GAME.totalLaps : null;
+
+  if (typeof HudComponents !== 'undefined' && HudComponents.LeaderboardTower) {
+    HudComponents.LeaderboardTower.draw(H.p, r, Hh, W, allCars, totalLaps);
+  }
+}
+
 // Renderiza el semáforo de salida FIA de 5 luces rojas/verdes
 function hudDrawStartLights() {
   const H = HUD;
   if (!H.clights || !H.gl) return;
   const rs = (typeof raceDirectorInstance !== 'undefined') ? raceDirectorInstance : (typeof RACE_START !== 'undefined' ? RACE_START : null);
   if (!rs || (!rs.active && rs.state !== 'lights_out')) {
+    if (H.clights.style.display !== 'none') H.clights.style.display = 'none';
+    return;
+  }
+  // En circuitos con pórtico 3D físico (como Nürburgring GP), las luces de salida se muestran
+  // directamente sobre el arco/marquesina 3D frente a la parrilla, ocultando el HUD 2D.
+  const has3dGantry = (typeof TRACKS !== 'undefined' && TRACKS.active && TRACKS.active.id === 'nurburgring-gp');
+  if (has3dGantry) {
     if (H.clights.style.display !== 'none') H.clights.style.display = 'none';
     return;
   }
@@ -649,8 +668,11 @@ function hudDraw() {
     // ahora reside de forma unificada en el HUD lateral (HudComponents.LapTelemetry).
   }
 
-  // Dibuja la columna lateral (curva, telemetría, posición y minimapa)
-  if (H.vis) hudDrawMinimap();
+  // Dibuja la columna lateral izquierda (curva, telemetría y minimapa) y derecha (tabla de clasificación)
+  if (H.vis) {
+    hudDrawMinimap();
+    hudDrawLeaderboard();
+  }
 
   // Dibuja el semáforo de salida FIA
   hudDrawStartLights();
@@ -670,6 +692,7 @@ function hudShow(on) {
   HUD.cg.style.display = on ? 'block' : 'none';
   if (HUD.ct) HUD.ct.style.display = 'none'; // El cartel superior se mantiene oculto permanentemente
   if (HUD.cm) HUD.cm.style.display = on ? 'block' : 'none';
+  if (HUD.cp) HUD.cp.style.display = on ? 'block' : 'none';
   if (HUD.cmirror) HUD.cmirror.style.display = on ? 'block' : 'none';
   HUD.K.fill(-9);
 }

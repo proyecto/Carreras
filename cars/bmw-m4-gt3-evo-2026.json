@@ -1,0 +1,85 @@
+{
+  "id": "bmw-m4-gt3-evo-2026",
+  "name": "BMW M4 GT3 EVO (2026)",
+  "subtitle": "2026 FIA GT3 EVO Spec · 3.0L TwinPower Turbo P58 · 590 CV · RWD",
+  "specs": "1265 kg · 590 CV · Xtrac 6-vel seq · RWD · BMW M Motorsport",
+  "accent": "#0066b2",
+  "physics": {
+    "m": 1265,
+    "Izz": 1780,
+    "L": 2.917,
+    "a": 1.46,
+    "b": 1.457,
+    "tw": 1.68,
+    "h": 0.37,
+    "R": 0.346,
+    "mu": 1.76,
+    "B": 11.9,
+    "C": 1.55,
+    "driveF": 0,
+    "gears": [
+      2.9,
+      2.15,
+      1.68,
+      1.35,
+      1.12,
+      0.94
+    ],
+    "final": 3.38,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.72,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.04,
+    "front": 2.45,
+    "rear": 2.4,
+    "clA": 1.12,
+    "aeroSplitF": 0.44,
+    "torqueBase": 440,
+    "torquePeak": 260,
+    "torqueDrop": 170,
+    "torquePeakStart": 0.42,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 7.8,
+    "shiftUpRpm": 7600,
+    "shiftDownRpm": 5400,
+    "revLimitRpm": 8000,
+    "maxRpm": 8200,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 330,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.7
+  },
+  "wheelbase": 2.917,
+  "trackF": 1.679,
+  "trackR": 1.68,
+  "wheelR": 0.346,
+  "hubs": [
+    [
+      1.579,
+      0.343,
+      -0.84
+    ],
+    [
+      1.578,
+      0.343,
+      0.839
+    ],
+    [
+      -1.338,
+      0.343,
+      -0.84
+    ],
+    [
+      -1.339,
+      0.343,
+      0.84
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/bmw-m4-gt3-evo-2026.glb",
+  "texture": "cars/textures/bmw-m4-gt3-evo-2026.png"
+}

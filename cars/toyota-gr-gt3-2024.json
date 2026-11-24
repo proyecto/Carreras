@@ -1,0 +1,85 @@
+{
+  "id": "toyota-gr-gt3-2024",
+  "name": "Toyota GR GT3 (2024)",
+  "subtitle": "FIA GT3 Concept · 4.0L V8 Twin-Turbo · 650 CV · RWD",
+  "specs": "1280 kg · 650 CV · Hewland 6-vel seq · RWD · Gazoo Racing",
+  "accent": "#e60012",
+  "physics": {
+    "m": 1280,
+    "Izz": 1750,
+    "L": 2.728,
+    "a": 1.364,
+    "b": 1.364,
+    "tw": 1.7,
+    "h": 0.36,
+    "R": 0.34,
+    "mu": 1.77,
+    "B": 12,
+    "C": 1.56,
+    "driveF": 0,
+    "gears": [
+      2.85,
+      2.1,
+      1.64,
+      1.32,
+      1.1,
+      0.92
+    ],
+    "final": 3.4,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.69,
+    "crr": 0.01,
+    "brakeF": 0.61,
+    "halfW": 1.07,
+    "front": 2.4,
+    "rear": 2.38,
+    "clA": 1.15,
+    "aeroSplitF": 0.43,
+    "torqueBase": 460,
+    "torquePeak": 260,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.4,
+    "torquePeakSpan": 5,
+    "torqueDropRpm": 8,
+    "shiftUpRpm": 7800,
+    "shiftDownRpm": 5600,
+    "revLimitRpm": 8200,
+    "maxRpm": 8500,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 340,
+    "maxRpm": 9,
+    "redlineRpm": 8
+  },
+  "wheelbase": 2.728,
+  "trackF": 1.7,
+  "trackR": 1.7,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.361,
+      0.326,
+      -0.85
+    ],
+    [
+      1.361,
+      0.326,
+      0.85
+    ],
+    [
+      -1.367,
+      0.344,
+      -0.85
+    ],
+    [
+      -1.367,
+      0.344,
+      0.85
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/toyota-gr-gt3-2024.glb",
+  "texture": "cars/textures/toyota-gr-gt3-2024.png"
+}

@@ -47,29 +47,56 @@ function runCarsTestSuite() {
   vm.runInContext(regCode, ctx);
   vm.runInContext(manifest, ctx);
 
-  const carList = ctx.window.CAR_LIST || [];
   const carManifest = ctx.window.CAR_MANIFEST || [];
-  assert(carList.length === 25, `Se esperan 25 coches en CAR_LIST, se encontraron ${carList.length}`);
   assert(carManifest.length === 25, `Se esperan 25 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);
   for (const m of carManifest) {
     assert(typeof m.id === 'string' && m.id.length > 0, `[manifest] ID válido: ${m.id}`);
-    assert(typeof m.file === 'string' && m.file.endsWith('.js'), `[manifest] Archivo JS válido: ${m.file}`);
     assert(typeof m.name === 'string' && m.name.length > 0, `[manifest] Nombre definido: ${m.name}`);
-  }
+    assert(typeof m.json === 'string' && m.json.endsWith('.json'), `[manifest] Ruta JSON definida: ${m.json}`);
+    assert(typeof m.model === 'string' && m.model.endsWith('.glb'), `[manifest] Ruta GLB definida: ${m.model}`);
+    assert(typeof m.texture === 'string' && (m.texture.endsWith('.png') || m.texture.endsWith('.jpg')), `[manifest] Ruta textura definida: ${m.texture}`);
 
-  for (const carFile of carList) {
-    const filePath = path.join(root, 'cars', carFile);
-    assert(fs.existsSync(filePath), `El archivo ${carFile} existe en disco`);
+    // Confirmar que el archivo .js legacy de este coche fue eliminado
+    const legacyJsPath = path.join(root, 'cars', `${m.id}.js`);
+    assert(!fs.existsSync(legacyJsPath), `[limpieza] Archivo JS legacy eliminado con éxito: ${m.id}.js`);
 
-    const carCode = fs.readFileSync(filePath, 'utf8');
-    vm.runInContext(carCode, ctx);
+    const jsonDiskPath = path.join(root, m.json);
+    assert(fs.existsSync(jsonDiskPath), `[assets] Archivo JSON existe en disco: ${m.json}`);
+    if (fs.existsSync(jsonDiskPath)) {
+      const spec = JSON.parse(fs.readFileSync(jsonDiskPath, 'utf8'));
+      assert(spec.id === m.id, `[assets] JSON spec.id coincide con manifest: ${m.id}`);
+      assert(typeof spec.physics === 'object' && spec.physics !== null, `[${m.id}] Especificación física en JSON presente`);
+      assert(Array.isArray(spec.hubs) && spec.hubs.length === 4, `[${m.id}] 4 bujes de rueda en JSON`);
 
-    // Obtener el coche registrado
+      // Registrar coche en CARS mediante CarFactory.createFromSpec
+      ctx.CarFactory.createFromSpec(spec);
+    }
+
+    const glbDiskPath = path.join(root, m.model);
+    assert(fs.existsSync(glbDiskPath), `[assets] Modelo 3D GLB existe en disco: ${m.model}`);
+    if (fs.existsSync(glbDiskPath)) {
+      const glbStat = fs.statSync(glbDiskPath);
+      assert(glbStat.size > 100000, `[assets] Modelo GLB tiene tamaño real (>100KB): ${(glbStat.size / 1024 / 1024).toFixed(2)} MB`);
+      const fd = fs.openSync(glbDiskPath, 'r');
+      const headerBuf = Buffer.alloc(12);
+      fs.readSync(fd, headerBuf, 0, 12, 0);
+      fs.closeSync(fd);
+      assert(headerBuf.readUInt32LE(0) === 0x46546C67, `[assets] Cabecera binaria glTF 2.0 válida: ${m.model}`);
+    }
+
+    const texDiskPath = path.join(root, m.texture);
+    assert(fs.existsSync(texDiskPath), `[assets] Textura existe en disco: ${m.texture}`);
+    if (fs.existsSync(texDiskPath)) {
+      const texStat = fs.statSync(texDiskPath);
+      assert(texStat.size > 10000, `[assets] Textura tiene tamaño real (>10KB): ${(texStat.size / 1024).toFixed(0)} KB`);
+    }
+
+    // Obtener el coche registrado en CARS
     const carsObj = ctx.window.CARS || ctx.CARS;
     const allCars = carsObj && Array.isArray(carsObj.list) ? carsObj.list : [];
-    const car = allCars.find(c => carCode.includes(`id: '${c.id}'`) || carCode.includes(`id: "${c.id}"`));
+    const car = allCars.find(c => c.id === m.id);
 
-    assert(!!car, `El coche ${carFile} se registró correctamente en CARS`);
+    assert(!!car, `El coche ${m.id} se registró correctamente en CARS`);
     if (!car) continue;
 
     // 1. Identificación y metadatos

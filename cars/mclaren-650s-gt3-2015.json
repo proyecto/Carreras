@@ -1,0 +1,85 @@
+{
+  "id": "mclaren-650s-gt3-2015",
+  "name": "McLaren 650S GT3",
+  "subtitle": "2015 GT3 Spec · 3.8L Twin-Turbo V8 M838T · RWD",
+  "specs": "1240 kg · 500 CV · 6-vel seq · RWD · MonoCell Aero",
+  "accent": "#ff5500",
+  "physics": {
+    "m": 1240,
+    "Izz": 1690,
+    "L": 2.67,
+    "a": 1.335,
+    "b": 1.335,
+    "tw": 1.7,
+    "h": 0.38,
+    "R": 0.34,
+    "mu": 1.72,
+    "B": 11.3,
+    "C": 1.53,
+    "driveF": 0,
+    "gears": [
+      2.88,
+      2.08,
+      1.6,
+      1.29,
+      1.07,
+      0.89
+    ],
+    "final": 3.38,
+    "rev": 3.1,
+    "eff": 0.96,
+    "cdA": 0.67,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.02,
+    "front": 2.45,
+    "rear": 2.4,
+    "clA": 0.95,
+    "aeroSplitF": 0.42,
+    "torqueBase": 380,
+    "torquePeak": 270,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.42,
+    "torquePeakSpan": 5.2,
+    "torqueDropRpm": 7.2,
+    "shiftUpRpm": 7400,
+    "shiftDownRpm": 5400,
+    "revLimitRpm": 7600,
+    "maxRpm": 7800,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 335,
+    "maxRpm": 8.5,
+    "redlineRpm": 7.5
+  },
+  "wheelbase": 2.67,
+  "trackF": 1.701,
+  "trackR": 1.685,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.211,
+      0.343,
+      -0.851
+    ],
+    [
+      1.211,
+      0.343,
+      0.851
+    ],
+    [
+      -1.45,
+      0.343,
+      -0.842
+    ],
+    [
+      -1.45,
+      0.343,
+      0.842
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/mclaren-650s-gt3-2015.glb",
+  "texture": "cars/textures/mclaren-650s-gt3-2015.png"
+}

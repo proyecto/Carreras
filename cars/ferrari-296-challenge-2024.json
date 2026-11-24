@@ -1,0 +1,86 @@
+{
+  "id": "ferrari-296-challenge-2024",
+  "name": "Ferrari 296 Challenge",
+  "subtitle": "2024 Trofeo Pirelli & GT Spec · 3.0L Twin-Turbo 120° V6 · 700 CV · RWD",
+  "specs": "1330 kg · 700 CV · F1 7-vel doble embrague · RWD · Carbon High-Downforce Aero",
+  "accent": "#d40000",
+  "physics": {
+    "m": 1330,
+    "Izz": 1720,
+    "L": 2.607,
+    "a": 1.141,
+    "b": 1.466,
+    "tw": 1.65,
+    "h": 0.37,
+    "R": 0.35,
+    "mu": 1.76,
+    "B": 12,
+    "C": 1.55,
+    "driveF": 0,
+    "gears": [
+      3.08,
+      2.19,
+      1.63,
+      1.29,
+      1.05,
+      0.87,
+      0.74
+    ],
+    "final": 3.65,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.66,
+    "crr": 0.01,
+    "brakeF": 0.58,
+    "halfW": 1.01,
+    "front": 2.38,
+    "rear": 2.4,
+    "clA": 1.15,
+    "aeroSplitF": 0.43,
+    "torqueBase": 480,
+    "torquePeak": 310,
+    "torqueDrop": 210,
+    "torquePeakStart": 0.45,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 7.8,
+    "shiftUpRpm": 8200,
+    "shiftDownRpm": 5800,
+    "revLimitRpm": 8600,
+    "maxRpm": 9000,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 345,
+    "maxRpm": 9.5,
+    "redlineRpm": 8.5
+  },
+  "wheelbase": 2.607,
+  "trackF": 1.648,
+  "trackR": 1.622,
+  "wheelR": 0.35,
+  "hubs": [
+    [
+      1.141,
+      0.336,
+      -0.824
+    ],
+    [
+      1.141,
+      0.336,
+      0.824
+    ],
+    [
+      -1.466,
+      0.367,
+      -0.811
+    ],
+    [
+      -1.466,
+      0.367,
+      0.811
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/ferrari-296-challenge-2024.glb",
+  "texture": "cars/textures/ferrari-296-challenge-2024.jpg"
+}

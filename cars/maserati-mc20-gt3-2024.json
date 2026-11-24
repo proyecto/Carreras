@@ -1,0 +1,85 @@
+{
+  "id": "maserati-mc20-gt3-2024",
+  "name": "Maserati MC20 GT3 (2024)",
+  "subtitle": "FIA GT3 Spec · 3.0L V6 Nettuno Twin-Turbo · 620 CV · RWD",
+  "specs": "1270 kg · 620 CV · 6-vel seq · RWD · Maserati Corse",
+  "accent": "#0b2341",
+  "physics": {
+    "m": 1270,
+    "Izz": 1720,
+    "L": 2.7,
+    "a": 1.35,
+    "b": 1.35,
+    "tw": 1.68,
+    "h": 0.35,
+    "R": 0.34,
+    "mu": 1.76,
+    "B": 11.9,
+    "C": 1.55,
+    "driveF": 0,
+    "gears": [
+      2.9,
+      2.12,
+      1.66,
+      1.33,
+      1.1,
+      0.92
+    ],
+    "final": 3.42,
+    "rev": 3,
+    "eff": 0.96,
+    "cdA": 0.68,
+    "crr": 0.01,
+    "brakeF": 0.6,
+    "halfW": 1.08,
+    "front": 2.38,
+    "rear": 2.35,
+    "clA": 1.14,
+    "aeroSplitF": 0.43,
+    "torqueBase": 440,
+    "torquePeak": 290,
+    "torqueDrop": 160,
+    "torquePeakStart": 0.4,
+    "torquePeakSpan": 4.8,
+    "torqueDropRpm": 8,
+    "shiftUpRpm": 7800,
+    "shiftDownRpm": 5500,
+    "revLimitRpm": 8200,
+    "maxRpm": 8500,
+    "idleRpm": 1200
+  },
+  "hud": {
+    "maxKmh": 335,
+    "maxRpm": 9,
+    "redlineRpm": 8
+  },
+  "wheelbase": 2.7,
+  "trackF": 1.68,
+  "trackR": 1.68,
+  "wheelR": 0.34,
+  "hubs": [
+    [
+      1.35,
+      0.33,
+      -0.84
+    ],
+    [
+      1.35,
+      0.33,
+      0.84
+    ],
+    [
+      -1.35,
+      0.34,
+      -0.84
+    ],
+    [
+      -1.35,
+      0.34,
+      0.84
+    ]
+  ],
+  "shaderSrc": "mat_car_default",
+  "model": "cars/models/maserati-mc20-gt3-2024.glb",
+  "texture": "cars/textures/maserati-mc20-gt3-2024.png"
+}

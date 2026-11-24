@@ -1,5 +1,6 @@
 'use strict';
 const { runCarsTestSuite } = require('./test_cars');
+const { runCarFactoryTestSuite } = require('./test_car_factory');
 const { runTracksTestSuite } = require('./test_tracks');
 const { runPhysicsTestSuite } = require('./test_physics');
 const { runShaderTests } = require('./test_shaders');
@@ -25,6 +26,10 @@ try {
   const carsRes = runCarsTestSuite();
   totalPassed += carsRes.passed;
   totalFailed += carsRes.failed;
+
+  const carFactoryRes = runCarFactoryTestSuite();
+  totalPassed += carFactoryRes.passed;
+  totalFailed += carFactoryRes.failed;
 
   const tracksRes = runTracksTestSuite();
   totalPassed += tracksRes.passed;
