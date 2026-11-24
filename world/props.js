@@ -445,6 +445,10 @@ function propsBuild() {
     TRK.spec.buildProps({
       mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng, toStraight
     });
+  } else if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.buildVegasUrbanProps === 'function' && TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
+    TrackFactory.buildVegasUrbanProps({
+      mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng
+    });
   } else if (typeof buildVegasUrbanProps === 'function' && TRK.spec && (TRK.spec.urban || TRK.spec.id === 'las-vegas-strip')) {
     buildVegasUrbanProps({
       mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng

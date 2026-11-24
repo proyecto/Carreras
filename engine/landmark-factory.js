@@ -134,7 +134,7 @@ const LandmarkFactory = {
       }
     }
 
-    const nCabins = 28;
+    const nCabins = 28; // 28 Cabinas
     for (let c = 0; c < nCabins; c++) {
       const ang = (c / nCabins) * PI2;
       const cy = hrHubY + Math.sin(ang) * hrR, cz = Math.cos(ang) * hrR;

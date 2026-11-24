@@ -117,18 +117,19 @@ function runTracksTestSuite() {
     console.log(`  ✓ ${track.name.padEnd(28)} [${track.id}]`);
   }
 
-  // 6. Validación de patrocinio y escenografía de boxes (engine/atlas-factory.js + engine/landmark-factory.js + world/props.js + world/props-vegas.js)
+  // 6. Validación de patrocinio y escenografía de boxes (engine/atlas-factory.js + engine/landmark-factory.js + engine/prop-factory.js + world/props.js)
   const atlasFactoryPath = path.join(root, 'engine/atlas-factory.js');
   assert(fs.existsSync(atlasFactoryPath), 'Módulo separado de AtlasFactory (engine/atlas-factory.js) presente');
   const atlasCode = fs.existsSync(atlasFactoryPath) ? fs.readFileSync(atlasFactoryPath, 'utf8') : '';
   const landmarkPath = path.join(root, 'engine/landmark-factory.js');
   assert(fs.existsSync(landmarkPath), 'Módulo separado de LandmarkFactory (engine/landmark-factory.js) presente');
   const landmarkCode = fs.existsSync(landmarkPath) ? fs.readFileSync(landmarkPath, 'utf8') : '';
+  const propFactoryPath = path.join(root, 'engine/prop-factory.js');
+  assert(fs.existsSync(propFactoryPath), 'Módulo separado de PropFactory (engine/prop-factory.js) presente');
   const propsBaseCode = fs.readFileSync(path.join(root, 'world/props.js'), 'utf8');
-  const vegasPropsPath = path.join(root, 'world/props-vegas.js');
-  assert(fs.existsSync(vegasPropsPath), 'Módulo separado de props de Las Vegas (world/props-vegas.js) presente para carga condicional');
-  const vegasPropsCode = fs.existsSync(vegasPropsPath) ? fs.readFileSync(vegasPropsPath, 'utf8') : '';
-  const propsCode = atlasCode + '\n' + landmarkCode + '\n' + propsBaseCode + '\n' + vegasPropsCode;
+  const vegasJsonSpec = JSON.parse(fs.readFileSync(path.join(root, 'tracks/las-vegas-strip.json'), 'utf8'));
+  assert(vegasJsonSpec.props && vegasJsonSpec.props.perimeterJerseyWall, 'Especificación declarativa JSON de props de Las Vegas presente');
+  const propsCode = atlasCode + '\n' + landmarkCode + '\n' + propFactoryCode + '\n' + propsBaseCode;
 
   assert(!propsCode.includes('ARARA PNEUS') && !propsCode.includes('CIRCUITO SERRA DA MATA') && !propsCode.includes('OFICINA DO TONHO'), 'Erradicación total de textos residuales no oficiales');
   assert(propsCode.includes('HEINEKEN 0.0') && propsCode.includes('TAG HEUER') && propsCode.includes('ARAMCO') && propsCode.includes('PIRELLI'), 'Patrocinadores oficiales F1 y Las Vegas presentes en el atlas');

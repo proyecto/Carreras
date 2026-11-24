@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Carreras</title>
-  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v13">
+  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v15">
   <script>
     window.addEventListener('error', function (e) {
       var st = document.getElementById('loading-status');
@@ -308,75 +308,74 @@
   </div>
 
   <!-- 1. Shaders WGSL del núcleo y mundo -->
-  <script src="shaders/core.js?v=racing_mirror_f1_v13"></script>
-  <script src="shaders/lighting.js?v=racing_mirror_f1_v13"></script>
-  <script src="shaders/post.js?v=racing_mirror_f1_v13"></script>
-  <script src="shaders/world.js?v=racing_mirror_f1_v13"></script>
-  <script src="shaders/glass.js?v=racing_mirror_f1_v13"></script>
+  <script src="shaders/core.js?v=racing_mirror_f1_v15"></script>
+  <script src="shaders/lighting.js?v=racing_mirror_f1_v15"></script>
+  <script src="shaders/post.js?v=racing_mirror_f1_v15"></script>
+  <script src="shaders/world.js?v=racing_mirror_f1_v15"></script>
+  <script src="shaders/glass.js?v=racing_mirror_f1_v15"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/gpu.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/mesh.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/registry.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/renderer.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/post.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/sky.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/forward.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/perf.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/patterns.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/car-factory.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/track-factory.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/prop-factory.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v13"></script>
-  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v13"></script>
+  <script src="engine/math.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/gpu.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/mesh.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/registry.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/renderer.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/post.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/sky.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/forward.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/perf.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/patterns.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/car-factory.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/track-factory.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/prop-factory.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v15"></script>
+  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v15"></script>
 
   <!-- 3. Constructores base del mundo (pista, terreno, objetos base) -->
-  <script src="world/track-builder.js?v=racing_mirror_f1_v13"></script>
-  <script src="world/track-mesh.js?v=racing_mirror_f1_v13"></script>
-  <script src="world/props.js?v=racing_mirror_f1_v13"></script>
-  <script src="world/track-glb.js?v=racing_mirror_f1_v13"></script>
+  <script src="world/track-builder.js?v=racing_mirror_f1_v15"></script>
+  <script src="world/track-mesh.js?v=racing_mirror_f1_v15"></script>
+  <script src="world/props.js?v=racing_mirror_f1_v15"></script>
+  <script src="world/track-glb.js?v=racing_mirror_f1_v15"></script>
 
   <!-- 4. Catálogos JSON puros y carga modular de vegetación y entorno -->
-  <script src="shaders/vegetation.js?v=racing_mirror_f1_v13"></script>
-  <script src="world/vegetation.js?v=racing_mirror_f1_v13"></script>
-  <script src="world/props-vegas.js?v=racing_mirror_f1_v13"></script>
+  <script src="shaders/vegetation.js?v=racing_mirror_f1_v15"></script>
+  <script src="world/vegetation.js?v=racing_mirror_f1_v15"></script>
   <script>
-        window.__manifestPromise = Promise.all([
-          fetch('tracks/manifest.json').then(r => r.json()),
-          fetch('cars/manifest.json').then(r => r.json())
-        ]).then(([tracks, cars]) => {
-          window.TRACK_MANIFEST = tracks;
-          window.TRACK_LIST = tracks.map(t => t.json);
-          window.CAR_MANIFEST = cars;
-          window.CAR_LIST = cars.map(c => c.json);
-          if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
-            for (const t of tracks) TrackFactory.register(t);
-          } else if (typeof TRACKS !== 'undefined') {
-            for (const t of tracks) TRACKS.register(t);
-          }
-            if (typeof CARS !== 'undefined') {
-              for (const c of cars) CARS.register(c);
-            }
-      }).catch (e => console.warn('[manifest] Error cargando manifiestos JSON:', e));
+    window.__manifestPromise = Promise.all([
+      fetch('tracks/manifest.json').then(r => r.json()),
+      fetch('cars/manifest.json').then(r => r.json())
+    ]).then(([tracks, cars]) => {
+      window.TRACK_MANIFEST = tracks;
+      window.TRACK_LIST = tracks.map(t => t.json);
+      window.CAR_MANIFEST = cars;
+      window.CAR_LIST = cars.map(c => c.json);
+      if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
+        for (const t of tracks) TrackFactory.register(t);
+      } else if (typeof TRACKS !== 'undefined') {
+        for (const t of tracks) TRACKS.register(t);
+      }
+      if (typeof CARS !== 'undefined') {
+        for (const c of cars) CARS.register(c);
+      }
+    }).catch(e => console.warn('[manifest] Error cargando manifiestos JSON:', e));
   </script>
 
   <!-- 5. Física, IA, red, directores y componentes del juego -->
-  <script src="game/i18n.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/physics.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/ai.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/network.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/fx.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/race-director.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/camera-system.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/grid-manager.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/game.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/audio.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/hud-components.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/hud.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/ui.js?v=racing_mirror_f1_v13"></script>
-  <script src="game/main.js?v=racing_mirror_f1_v13"></script>
+  <script src="game/i18n.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/physics.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/ai.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/network.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/fx.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/race-director.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/camera-system.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/grid-manager.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/game.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/audio.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/hud-components.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/hud.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/ui.js?v=racing_mirror_f1_v15"></script>
+  <script src="game/main.js?v=racing_mirror_f1_v15"></script>
 </body>
 
 </html>

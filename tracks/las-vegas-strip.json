@@ -5293,6 +5293,183 @@
     "type": "flat"
   },
   "props": {
-    "vegasUrban": true
+    "vegasUrban": true,
+    "perimeterJerseyWall": {
+      "step": 4.0,
+      "wallHeight": 1.0,
+      "fenceHeight": 3.5,
+      "postSpacing": 4.0
+    },
+    "pitWall": {
+      "step": 4.0,
+      "wallHeight": 1.05,
+      "fenceHeight": 2.7
+    },
+    "tecproBarriers": [
+      {
+        "s0": 95,
+        "s1": 145,
+        "side": 1,
+        "offset": 0.45
+      },
+      {
+        "s0": 1900,
+        "s1": 1980,
+        "side": -1,
+        "offset": 0.45
+      },
+      {
+        "s0": 3320,
+        "s1": 3400,
+        "side": 1,
+        "offset": 0.45
+      },
+      {
+        "s0": 5040,
+        "s1": 5160,
+        "side": 1,
+        "offset": 0.45
+      }
+    ],
+    "runoffs": [
+      {
+        "name": "C1 Koval Hairpin",
+        "s0": 80,
+        "s1": 160,
+        "side": 1,
+        "color": [
+          0.05,
+          0.35,
+          0.95
+        ],
+        "sponsor": "heineken",
+        "sponsorS0": 112,
+        "sponsorS1": 138
+      },
+      {
+        "name": "C5 Sphere",
+        "s0": 1880,
+        "s1": 2010,
+        "side": -1
+      },
+      {
+        "name": "C12 Strip Entry",
+        "s0": 3300,
+        "s1": 3430,
+        "side": 1,
+        "accent": [
+          0.0,
+          0.88,
+          1.0
+        ]
+      },
+      {
+        "name": "C14 Strip Exit",
+        "s0": 5010,
+        "s1": 5190,
+        "side": 1
+      }
+    ],
+    "trackMarkings": [
+      {
+        "type": "neon_arrows",
+        "s": 4940,
+        "label": "LAS VEGAS",
+        "colors": [
+          "#ff1fa6",
+          "#00e0ff"
+        ]
+      }
+    ],
+    "paddockBuildingF1": {
+      "s0": -140,
+      "s1": 140,
+      "floors": 3,
+      "roofLogo": true
+    },
+    "triWingTowers": [
+      {
+        "name": "The Venetian",
+        "s": 900,
+        "d": -80,
+        "height": 145,
+        "facingYaw": 0.8
+      },
+      {
+        "name": "The Mirage",
+        "s": 2200,
+        "d": 90,
+        "height": 115,
+        "facingYaw": -0.6
+      },
+      {
+        "name": "Caesars Tower",
+        "s": 4200,
+        "d": 85,
+        "height": 125,
+        "facingYaw": 2.4
+      }
+    ],
+    "landmarks": [
+      {
+        "type": "msg_sphere",
+        "pos": [
+          -750,
+          0,
+          -1410
+        ],
+        "radius": 64
+      },
+      {
+        "type": "high_roller",
+        "pos": [
+          -240,
+          0,
+          -920
+        ],
+        "cabins": 28
+      },
+      {
+        "type": "venetian_resort",
+        "campanile": true
+      },
+      {
+        "type": "strip_hotels",
+        "wynn": true,
+        "caesars": true,
+        "cosmopolitan": true
+      },
+      {
+        "type": "eiffel_tower",
+        "s": 4100,
+        "height": 165,
+        "balloon": true
+      },
+      {
+        "type": "bellagio_fountains",
+        "s": 4650,
+        "lakeW": 140,
+        "lakeD": 65
+      }
+    ],
+    "urbanCanyon": {
+      "step": 40,
+      "minDist": 16.0,
+      "curveMinDist": 22.0
+    },
+    "streetLights": {
+      "step": 35,
+      "height": 15.5,
+      "fixtures": 4
+    },
+    "pedestrianBridges": [
+      0,
+      800,
+      1750,
+      3600,
+      4250,
+      4800,
+      5600
+    ]
   }
 }

@@ -168,6 +168,9 @@ const TrackFactory = {
    * Delegación unificada de escenografía de Las Vegas / circuito urbano
    */
   buildVegasUrbanProps(ctx) {
+    if (typeof PropFactory !== 'undefined' && typeof PropFactory.createVegasUrbanProps === 'function') {
+      return PropFactory.createVegasUrbanProps(ctx, (ctx && ctx.TRK && ctx.TRK.spec && ctx.TRK.spec.props) || {});
+    }
     if (typeof buildVegasUrbanProps === 'function') {
       return buildVegasUrbanProps(ctx);
     }
@@ -192,261 +195,263 @@ const TrackFactory = {
     if (!spec.id || typeof spec.id !== 'string') errors.push('Falta spec.id (string requerido).');
     if (!spec.name || typeof spec.name !== 'string') errors.push('Falta spec.name (string requerido).');
 
-      // Si es solo una entrada de catálogo / manifest (aún sin geometría cargada en memoria)
-      if (!spec.points && (spec.file || spec.json || !spec.hw)) {
-        return { valid: errors.length === 0, errors, isManifest: true };
-      }
+    // Si es solo una entrada de catálogo / manifest (aún sin geometría cargada en memoria)
+    if (!spec.points && (spec.file || spec.json || !spec.hw)) {
+      return { valid: errors.length === 0, errors, isManifest: true };
+    }
 
-      if (typeof spec.hw !== 'number' || spec.hw < 3.0 || spec.hw > 15.0) {
-        errors.push(`spec.hw inválido (${spec.hw}): debe estar entre 3.0 y 15.0 m.`);
-      }
-      if (!Array.isArray(spec.points) || spec.points.length < 3) {
-        errors.push('spec.points debe ser un array con al menos 3 vértices [x, z].');
-      } else {
-        let hasNaN = false;
-        for (let i = 0; i < Math.min(spec.points.length, 50); i++) {
-          const pt = spec.points[i];
-          if (!Array.isArray(pt) || pt.length < 2 || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) {
-            hasNaN = true; break;
-          }
+    if (typeof spec.hw !== 'number' || spec.hw < 3.0 || spec.hw > 15.0) {
+      errors.push(`spec.hw inválido (${spec.hw}): debe estar entre 3.0 y 15.0 m.`);
+    }
+    if (!Array.isArray(spec.points) || spec.points.length < 3) {
+      errors.push('spec.points debe ser un array con al menos 3 vértices [x, z].');
+    } else {
+      let hasNaN = false;
+      for (let i = 0; i < Math.min(spec.points.length, 50); i++) {
+        const pt = spec.points[i];
+        if (!Array.isArray(pt) || pt.length < 2 || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) {
+          hasNaN = true; break;
         }
-        if (hasNaN) errors.push('spec.points contiene coordenadas no numéricas o NaN.');
       }
-      if (!Array.isArray(spec.corners)) errors.push('spec.corners debe ser un Array.');
-      if (!spec.pit || typeof spec.pit !== 'object') errors.push('spec.pit debe ser un objeto de definición de boxes.');
-      if (!spec.stand || typeof spec.stand !== 'object') errors.push('spec.stand debe ser un objeto de tribunas.');
-      if (typeof spec.naturalH !== 'function' && (!spec.terrain || typeof spec.terrain !== 'object')) {
-        errors.push('spec.naturalH debe ser una función de relieve o definir spec.terrain.');
-      }
+      if (hasNaN) errors.push('spec.points contiene coordenadas no numéricas o NaN.');
+    }
+    if (!Array.isArray(spec.corners)) errors.push('spec.corners debe ser un Array.');
+    if (!spec.pit || typeof spec.pit !== 'object') errors.push('spec.pit debe ser un objeto de definición de boxes.');
+    if (!spec.stand || typeof spec.stand !== 'object') errors.push('spec.stand debe ser un objeto de tribunas.');
+    if (typeof spec.naturalH !== 'function' && (!spec.terrain || typeof spec.terrain !== 'object')) {
+      errors.push('spec.naturalH debe ser una función de relieve o definir spec.terrain.');
+    }
 
-      return { valid: errors.length === 0, errors };
-    },
+    return { valid: errors.length === 0, errors };
+  },
 
-    /**
-     * Genera la función matemática naturalH a partir de la especificación declarativa JSON.
-     */
-    createNaturalH(terrainSpec) {
-      if (!terrainSpec || typeof terrainSpec !== 'object') {
-        return function naturalH() { return 0.0; };
-      }
-
-      if (terrainSpec.type === 'ardennes' || terrainSpec.type === 'waves') {
-        const w1 = terrainSpec.wave1 || { freqX: 0.002, ampX: 25, freqZ: 0.002, ampZ: 30 };
-        const w2 = terrainSpec.wave2 || { freqX: 0.008, freqZ: 0.006, amp: 6 };
-        return function naturalH(x, z) {
-          const a = Math.sin(x * w1.freqX) * w1.ampX + Math.cos(z * w1.freqZ) * w1.ampZ;
-          const b = Math.sin(x * w2.freqX + z * w2.freqZ) * w2.amp;
-          return a + b;
-        };
-      }
-
-      if (terrainSpec.type === 'eifel') {
-        const castle = terrainSpec.castle || { x: 1050, z: -2150, radius: 1600, height: 115 };
-        const flatBox = terrainSpec.flatBox || [-190, 270, -85, 95];
-        const cp = terrainSpec.controlPoints || [];
-        return function naturalH(x, z) {
-          const distCastle = Math.hypot(x - castle.x, z - castle.z);
-          const cVal = Math.max(0, 1.0 - distCastle / castle.radius) * castle.height;
-
-          if (x >= flatBox[0] && x <= flatBox[1] && z >= flatBox[2] && z <= flatBox[3]) {
-            return 0.0;
-          }
-
-          let num = 0, den = 0;
-          for (let i = 0; i < cp.length; i++) {
-            const p = cp[i], dx = x - p[0], dz = z - p[1];
-            const w = 1.0 / (dx * dx + dz * dz + 1600.0);
-            num += p[2] * w;
-            den += w;
-          }
-          let finalY = den > 0 ? num / den : 0;
-
-          const dMetaX = Math.max(0, Math.max(flatBox[0] - x, x - flatBox[1]));
-          const dMetaZ = Math.max(0, Math.max(flatBox[2] - z, z - flatBox[3]));
-          const dMeta = Math.hypot(dMetaX, dMetaZ);
-          if (dMeta < 60.0) {
-            const t = dMeta / 60.0;
-            finalY *= t * t;
-          }
-
-          const micro = Math.sin(x * 0.005 + 1.1) * 2.2 + Math.cos(z * 0.004 - 0.7) * 1.8;
-          const microWeight = dMeta < 40 ? 0 : Math.min(1, (dMeta - 40) / 40);
-
-          return finalY + cVal + micro * microWeight;
-        };
-      }
-
+  /**
+   * Genera la función matemática naturalH a partir de la especificación declarativa JSON.
+   */
+  createNaturalH(terrainSpec) {
+    if (!terrainSpec || typeof terrainSpec !== 'object') {
       return function naturalH() { return 0.0; };
-    },
+    }
 
-    /**
-     * Construye escenografía a partir de la especificación declarativa JSON de props.
-     */
-    buildPropsFromSpec(ctx, propsSpec) {
-      if (!ctx || !propsSpec) return;
+    if (terrainSpec.type === 'ardennes' || terrainSpec.type === 'waves') {
+      const w1 = terrainSpec.wave1 || { freqX: 0.002, ampX: 25, freqZ: 0.002, ampZ: 30 };
+      const w2 = terrainSpec.wave2 || { freqX: 0.008, freqZ: 0.006, amp: 6 };
+      return function naturalH(x, z) {
+        const a = Math.sin(x * w1.freqX) * w1.ampX + Math.cos(z * w1.freqZ) * w1.ampZ;
+        const b = Math.sin(x * w2.freqX + z * w2.freqZ) * w2.amp;
+        return a + b;
+      };
+    }
 
-      if (propsSpec.vegasUrban) {
-        if (typeof buildVegasUrbanProps === 'function') {
-          buildVegasUrbanProps(ctx);
-        } else if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.buildVegasUrbanProps === 'function') {
-          TrackFactory.buildVegasUrbanProps(ctx);
+    if (terrainSpec.type === 'eifel') {
+      const castle = terrainSpec.castle || { x: 1050, z: -2150, radius: 1600, height: 115 };
+      const flatBox = terrainSpec.flatBox || [-190, 270, -85, 95];
+      const cp = terrainSpec.controlPoints || [];
+      return function naturalH(x, z) {
+        const distCastle = Math.hypot(x - castle.x, z - castle.z);
+        const cVal = Math.max(0, 1.0 - distCastle / castle.radius) * castle.height;
+
+        if (x >= flatBox[0] && x <= flatBox[1] && z >= flatBox[2] && z <= flatBox[3]) {
+          return 0.0;
         }
-        return;
-      }
 
-      if (typeof PropFactory === 'undefined') return;
-
-      if (Array.isArray(propsSpec.grandstands)) {
-        for (const gs of propsSpec.grandstands) {
-          if (gs.type === 'mercedes_arena') {
-            PropFactory.createMercedesArenaGrandstand(ctx, gs);
-          } else {
-            PropFactory.createGrandstand(ctx, gs);
-          }
+        let num = 0, den = 0;
+        for (let i = 0; i < cp.length; i++) {
+          const p = cp[i], dx = x - p[0], dz = z - p[1];
+          const w = 1.0 / (dx * dx + dz * dz + 1600.0);
+          num += p[2] * w;
+          den += w;
         }
-      }
+        let finalY = den > 0 ? num / den : 0;
 
-      if (propsSpec.pitBuilding) {
-        PropFactory.createPitBuilding(ctx, propsSpec.pitBuilding);
-      }
-
-      if (propsSpec.castle) {
-        PropFactory.createMedievalCastle(ctx, propsSpec.castle);
-      }
-
-      if (Array.isArray(propsSpec.sausageKerbs)) {
-        PropFactory.createSausageKerbs(ctx, { kerbs: propsSpec.sausageKerbs });
-      }
-
-      if (Array.isArray(propsSpec.paddockTrucks) && ctx.mb && typeof ctx.P === 'function') {
-        const padI0 = ctx.mb.ni;
-        for (const trk of propsSpec.paddockTrucks) {
-          const p = ctx.P(trk.s, trk.d);
-          let tx = p[3], tz = p[4];
-          if (trk.yaw) {
-            const c = Math.cos(trk.yaw), sn = Math.sin(trk.yaw);
-            const a = tx * c - tz * sn, b = tx * sn + tz * c;
-            tx = a; tz = b;
-          }
-          if (typeof m4basis === 'function' && typeof m4 === 'function') {
-            const m = m4basis(m4(), tx, 0, tz, 0, 1, 0, -tz, 0, tx, p[0], p[1], p[2]);
-            ctx.mb.push(m);
-            PropFactory.createPaddockTruck({ mb: ctx.mb }, { color: trk.color });
-            ctx.mb.pop();
-          }
+        const dMetaX = Math.max(0, Math.max(flatBox[0] - x, x - flatBox[1]));
+        const dMetaZ = Math.max(0, Math.max(flatBox[2] - z, z - flatBox[3]));
+        const dMeta = Math.hypot(dMetaX, dMetaZ);
+        if (dMeta < 60.0) {
+          const t = dMeta / 60.0;
+          finalY *= t * t;
         }
-        if (ctx.S1) ctx.S1.add(ctx.mb, padI0, 7, 1400);
-      }
 
-      if (Array.isArray(propsSpec.brakeDistanceSigns)) {
-        PropFactory.createBrakeDistanceSigns(ctx, { zones: propsSpec.brakeDistanceSigns });
-      }
+        const micro = Math.sin(x * 0.005 + 1.1) * 2.2 + Math.cos(z * 0.004 - 0.7) * 1.8;
+        const microWeight = dMeta < 40 ? 0 : Math.min(1, (dMeta - 40) / 40);
 
-      if (Array.isArray(propsSpec.armcoGuardrails)) {
-        PropFactory.createArmcoGuardrail(ctx, { zones: propsSpec.armcoGuardrails });
-      }
-    },
+        return finalY + cVal + micro * microWeight;
+      };
+    }
 
-    /**
-     * Crea e hidrata un objeto de circuito a partir de una especificación JSON.
-     */
-    createFromSpec(spec) {
-      if (!spec || typeof spec !== 'object') {
-        throw new Error('[TrackFactory] createFromSpec requiere un objeto de especificación válido');
-      }
+    return function naturalH() { return 0.0; };
+  },
 
-      const track = Object.assign({}, spec);
+  /**
+   * Construye escenografía a partir de la especificación declarativa JSON de props.
+   */
+  buildPropsFromSpec(ctx, propsSpec) {
+    if (!ctx || !propsSpec) return;
 
-      if (typeof track.naturalH !== 'function') {
-        track.naturalH = this.createNaturalH(spec.terrain);
-      }
+if (propsSpec.type === 'vegas' || propsSpec.perimeterJerseyWall) {
+  if (typeof PropFactory !== 'undefined' && typeof PropFactory.createVegasUrbanProps === 'function') {
+    PropFactory.createVegasUrbanProps(ctx, propsSpec);
+  } else if (typeof buildVegasUrbanProps === 'function') {
+    buildVegasUrbanProps(ctx);
+  } else if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.buildVegasUrbanProps === 'function') {
+    TrackFactory.buildVegasUrbanProps(ctx);
+  }
+  return;
+}
 
-      if (typeof track.buildProps !== 'function' && spec.props) {
-        track.buildProps = (ctx) => {
-          this.buildPropsFromSpec(ctx, spec.props);
-        };
-      }
+if (typeof PropFactory === 'undefined') return;
 
-      this.register(track);
-      return track;
-    },
+if (Array.isArray(propsSpec.grandstands)) {
+  for (const gs of propsSpec.grandstands) {
+    if (gs.type === 'mercedes_arena') {
+      PropFactory.createMercedesArenaGrandstand(ctx, gs);
+    } else {
+      PropFactory.createGrandstand(ctx, gs);
+    }
+  }
+}
+
+if (propsSpec.pitBuilding) {
+  PropFactory.createPitBuilding(ctx, propsSpec.pitBuilding);
+}
+
+if (propsSpec.castle) {
+  PropFactory.createMedievalCastle(ctx, propsSpec.castle);
+}
+
+if (Array.isArray(propsSpec.sausageKerbs)) {
+  PropFactory.createSausageKerbs(ctx, { kerbs: propsSpec.sausageKerbs });
+}
+
+if (Array.isArray(propsSpec.paddockTrucks) && ctx.mb && typeof ctx.P === 'function') {
+  const padI0 = ctx.mb.ni;
+  for (const trk of propsSpec.paddockTrucks) {
+    const p = ctx.P(trk.s, trk.d);
+    let tx = p[3], tz = p[4];
+    if (trk.yaw) {
+      const c = Math.cos(trk.yaw), sn = Math.sin(trk.yaw);
+      const a = tx * c - tz * sn, b = tx * sn + tz * c;
+      tx = a; tz = b;
+    }
+    if (typeof m4basis === 'function' && typeof m4 === 'function') {
+      const m = m4basis(m4(), tx, 0, tz, 0, 1, 0, -tz, 0, tx, p[0], p[1], p[2]);
+      ctx.mb.push(m);
+      PropFactory.createPaddockTruck({ mb: ctx.mb }, { color: trk.color });
+      ctx.mb.pop();
+    }
+  }
+  if (ctx.S1) ctx.S1.add(ctx.mb, padI0, 7, 1400);
+}
+
+if (Array.isArray(propsSpec.brakeDistanceSigns)) {
+  PropFactory.createBrakeDistanceSigns(ctx, { zones: propsSpec.brakeDistanceSigns });
+}
+
+if (Array.isArray(propsSpec.armcoGuardrails)) {
+  PropFactory.createArmcoGuardrail(ctx, { zones: propsSpec.armcoGuardrails });
+}
+      },
+
+/**
+ * Crea e hidrata un objeto de circuito a partir de una especificación JSON.
+ */
+createFromSpec(spec) {
+  if (!spec || typeof spec !== 'object') {
+    throw new Error('[TrackFactory] createFromSpec requiere un objeto de especificación válido');
+  }
+
+  const track = Object.assign({}, spec);
+
+  if (typeof track.naturalH !== 'function') {
+    track.naturalH = this.createNaturalH(spec.terrain);
+  }
+
+  if (typeof track.buildProps !== 'function' && spec.props) {
+    track.buildProps = (ctx) => {
+      this.buildPropsFromSpec(ctx, spec.props);
+    };
+  }
+
+  this.register(track);
+  return track;
+},
 
   /**
    * Carga asíncrona de un circuito desde un archivo JSON.
    * Isomórfico: funciona en Node.js (fs) y navegador (fetch).
    */
   async loadFromJSON(url) {
-      let spec = null;
-      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-        try {
-          const nodeFs = require('fs');
-          const nodePath = require('path');
-          const cleanPath = url.replace(/^[a-zA-Z]+:\/\/[^/]+/, '');
-          const filePath = nodePath.isAbsolute(cleanPath) ? cleanPath : nodePath.resolve(process.cwd(), cleanPath);
-          if (nodeFs.existsSync(filePath)) {
-            spec = JSON.parse(nodeFs.readFileSync(filePath, 'utf8'));
-          }
-        } catch (e) {
-          // Fallback a fetch
-        }
+  let spec = null;
+  if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    try {
+      const nodeFs = require('fs');
+      const nodePath = require('path');
+      const cleanPath = url.replace(/^[a-zA-Z]+:\/\/[^/]+/, '');
+      const filePath = nodePath.isAbsolute(cleanPath) ? cleanPath : nodePath.resolve(process.cwd(), cleanPath);
+      if (nodeFs.existsSync(filePath)) {
+        spec = JSON.parse(nodeFs.readFileSync(filePath, 'utf8'));
       }
-      if (!spec) {
-        const safeUrl = encodeURI(url);
-        const res = await fetch(safeUrl);
-        if (!res.ok) throw new Error(`[TrackFactory] Error al cargar circuito desde JSON: ${safeUrl} (HTTP ${res.status})`);
-        spec = await res.json();
-      }
-
-      return this.createFromSpec(spec);
-    },
-
-    /**
-     * Registra un circuito validándolo previamente.
-     */
-    register(spec) {
-      const validation = this.validateTrack(spec);
-      if (!validation.valid) {
-        console.warn(`[TrackFactory] Advertencias al registrar circuito ${spec?.id}:`, validation.errors);
-      }
-      if (typeof TRACKS !== 'undefined' && typeof TRACKS.register === 'function') {
-        return TRACKS.register(spec);
-      }
-      if (typeof window !== 'undefined' && window.TRACKS && typeof window.TRACKS.register === 'function') {
-        return window.TRACKS.register(spec);
-      }
-      return spec;
-    },
-
-    /**
-     * Obtiene un circuito registrado por su ID.
-     */
-    getTrack(id) {
-      if (typeof TRACKS !== 'undefined' && typeof TRACKS.get === 'function') {
-        return TRACKS.get(id);
-      }
-      if (typeof window !== 'undefined' && window.TRACKS && typeof window.TRACKS.get === 'function') {
-        return window.TRACKS.get(id);
-      }
-      return null;
-    },
-
-    /**
-     * Devuelve todos los circuitos registrados.
-     */
-    getAllTracks() {
-      if (typeof TRACKS !== 'undefined' && Array.isArray(TRACKS.list)) {
-        return TRACKS.list;
-      }
-      if (typeof window !== 'undefined' && window.TRACKS && Array.isArray(window.TRACKS.list)) {
-        return window.TRACKS.list;
-      }
-      return [];
+    } catch (e) {
+      // Fallback a fetch
     }
-  };
+  }
+  if (!spec) {
+    const safeUrl = encodeURI(url);
+    const res = await fetch(safeUrl);
+    if (!res.ok) throw new Error(`[TrackFactory] Error al cargar circuito desde JSON: ${safeUrl} (HTTP ${res.status})`);
+    spec = await res.json();
+  }
 
-  // Exposición en navegadores y entornos de prueba
-  if(typeof window !== 'undefined') {
-    window.TrackFactory = TrackFactory;
+  return this.createFromSpec(spec);
+},
+
+/**
+ * Registra un circuito validándolo previamente.
+ */
+register(spec) {
+  const validation = this.validateTrack(spec);
+  if (!validation.valid) {
+    console.warn(`[TrackFactory] Advertencias al registrar circuito ${spec?.id}:`, validation.errors);
+  }
+  if (typeof TRACKS !== 'undefined' && typeof TRACKS.register === 'function') {
+    return TRACKS.register(spec);
+  }
+  if (typeof window !== 'undefined' && window.TRACKS && typeof window.TRACKS.register === 'function') {
+    return window.TRACKS.register(spec);
+  }
+  return spec;
+},
+
+/**
+ * Obtiene un circuito registrado por su ID.
+ */
+getTrack(id) {
+  if (typeof TRACKS !== 'undefined' && typeof TRACKS.get === 'function') {
+    return TRACKS.get(id);
+  }
+  if (typeof window !== 'undefined' && window.TRACKS && typeof window.TRACKS.get === 'function') {
+    return window.TRACKS.get(id);
+  }
+  return null;
+},
+
+/**
+ * Devuelve todos los circuitos registrados.
+ */
+getAllTracks() {
+  if (typeof TRACKS !== 'undefined' && Array.isArray(TRACKS.list)) {
+    return TRACKS.list;
+  }
+  if (typeof window !== 'undefined' && window.TRACKS && Array.isArray(window.TRACKS.list)) {
+    return window.TRACKS.list;
+  }
+  return [];
+}
+    };
+
+// Exposición en navegadores y entornos de prueba
+if (typeof window !== 'undefined') {
+  window.TrackFactory = TrackFactory;
 }
 if (typeof globalThis !== 'undefined') {
   globalThis.TrackFactory = TrackFactory;
