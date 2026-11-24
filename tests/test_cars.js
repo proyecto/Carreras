@@ -22,10 +22,13 @@ function runCarsTestSuite() {
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const carFactoryCode = fs.readFileSync(path.join(root, 'engine/car-factory.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
-  const manifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
+  const carManifestData = JSON.parse(fs.readFileSync(path.join(root, 'cars/manifest.json'), 'utf8'));
 
   const ctx = {
-    window: {},
+    window: {
+      CAR_MANIFEST: carManifestData,
+      CAR_LIST: carManifestData.map(c => c.json)
+    },
     document: { createElement: () => ({ getContext: () => ({}) }) },
     Float32Array,
     Uint32Array,
@@ -45,7 +48,9 @@ function runCarsTestSuite() {
   vm.runInContext(mathCode, ctx);
   vm.runInContext(carFactoryCode, ctx);
   vm.runInContext(regCode, ctx);
-  vm.runInContext(manifest, ctx);
+  for (const item of carManifestData) {
+    if (ctx.window.CARS) ctx.window.CARS.register(item);
+  }
 
   const carManifest = ctx.window.CAR_MANIFEST || [];
   assert(carManifest.length === 25, `Se esperan 25 coches en CAR_MANIFEST para carga bajo demanda, se encontraron ${carManifest.length}`);

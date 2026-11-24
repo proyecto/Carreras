@@ -1,0 +1,26 @@
+[
+  {
+    "id": "nurburgring-gp",
+    "name": "Nürburgring GP",
+    "subtitle": "GP-Strecke",
+    "specs": "5,15 km · 15 curvas · Ancho FIA GT3 · Trazado oficial de Gran Premio",
+    "json": "tracks/nurburgring-gp.json"
+  },
+  {
+    "id": "spa-francorchamps",
+    "name": "Spa-Francorchamps",
+    "subtitle": "Circuit de Spa-Francorchamps",
+    "specs": "7,004 km · 19 curvas · La Source, Eau Rouge, Raidillon, Pouhon & Blanchimont",
+    "json": "tracks/spa-francorchamps.json"
+  },
+  {
+    "id": "las-vegas-strip",
+    "name": "Las Vegas Strip",
+    "subtitle": "Las Vegas Strip Circuit · Night GP",
+    "specs": "6,20 km · 17 curvas · Carrera Nocturna · The Strip & MSG Sphere",
+    "night": true,
+    "urban": true,
+    "noVegetation": true,
+    "json": "tracks/las-vegas-strip.json"
+  }
+]

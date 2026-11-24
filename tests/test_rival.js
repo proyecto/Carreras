@@ -26,10 +26,13 @@ function runRivalTestSuite() {
   const trackGpSpec = JSON.parse(fs.readFileSync(path.join(root, 'tracks/nurburgring-gp.json'), 'utf8'));
   const physCode = fs.readFileSync(path.join(root, 'game/physics.js'), 'utf8');
   const aiCode = fs.readFileSync(path.join(root, 'game/ai.js'), 'utf8');
-  const carManifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
+  const carManifestList = JSON.parse(fs.readFileSync(path.join(root, 'cars/manifest.json'), 'utf8'));
 
   const ctx = {
-    window: {},
+    window: {
+      CAR_MANIFEST: carManifestList,
+      CAR_LIST: carManifestList.map(c => c.json)
+    },
     document: { createElement: () => ({ getContext: () => ({}) }) },
     Float32Array,
     Uint32Array,
@@ -51,7 +54,9 @@ function runRivalTestSuite() {
   vm.runInContext(tbCode, ctx);
   vm.runInContext("this.TRK = TRK; this.trackBuild = trackBuild;", ctx);
   ctx.TrackFactory.createFromSpec(trackGpSpec);
-  vm.runInContext(carManifest, ctx);
+  if (ctx.window.CARS) {
+    for (const item of carManifestList) ctx.window.CARS.register(item);
+  }
 
   // Inicializar circuito y calcular trazada de IA
   const tracksObj = ctx.window.TRACKS || ctx.TRACKS;
@@ -62,7 +67,6 @@ function runRivalTestSuite() {
   vm.runInContext("this.applyCarPhysics = applyCarPhysics; this.vehicleReset = vehicleReset; this.vehicleStep = vehicleStep; this.vehicleCarCollide = vehicleCarCollide; this.VEH = VEH; this.VEH_RIVAL = VEH_RIVAL; this.VIN_RIVAL = VIN_RIVAL;", ctx);
 
   const carsObj = ctx.window.CARS || ctx.CARS;
-  const carManifestList = ctx.window.CAR_MANIFEST || [];
   if (carManifestList.length > 0) {
     const spec = JSON.parse(fs.readFileSync(path.join(root, carManifestList[0].json), 'utf8'));
     ctx.CarFactory.createFromSpec(spec);

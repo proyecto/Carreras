@@ -1,7 +1,4 @@
-"use strict";
-// Catálogo y metadatos de coches disponibles.
-// Cada entrada define la ficha visual para el menú de selección y las rutas a sus especificaciones JSON, modelos GLB y texturas.
-window.CAR_MANIFEST = [
+[
   {
     "id": "ford-mustang-gt3-2024",
     "name": "Ford Mustang GT3 (2024)",
@@ -252,23 +249,4 @@ window.CAR_MANIFEST = [
     "model": "cars/models/porsche-911-gt3-r-rennsport-2024.glb",
     "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png"
   }
-];
-
-// Compatibilidad con CAR_LIST para tests y scripts
-window.CAR_LIST = window.CAR_MANIFEST.map(c => c.json);
-
-// Registrar metadatos en CARS si el registro ya está disponible
-if (typeof CARS !== "undefined") {
-  for (const item of window.CAR_MANIFEST) {
-    CARS.register({
-      id: item.id,
-      name: item.name,
-      subtitle: item.subtitle,
-      specs: item.specs,
-      accent: item.accent,
-            json: item.json,
-      model: item.model,
-      texture: item.texture
-    });
-  }
-}
+]

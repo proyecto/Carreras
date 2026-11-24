@@ -104,6 +104,39 @@ function buildTestScene() {
 }
 async function main() {
   try {
+    // 0. Espera o carga asíncrona de los manifiestos JSON
+    if (typeof window !== 'undefined' && window.__manifestPromise) {
+      await window.__manifestPromise;
+    }
+    if (typeof window !== 'undefined' && (!window.CAR_MANIFEST || window.CAR_MANIFEST.length === 0)) {
+      try {
+        const resC = await fetch('cars/manifest.json');
+        window.CAR_MANIFEST = await resC.json();
+      } catch (e) {
+        console.warn('[main] Fallo al cargar cars/manifest.json:', e);
+      }
+      window.CAR_LIST = (window.CAR_MANIFEST || []).map(c => c.json);
+      if (typeof CARS !== 'undefined') {
+        for (const item of (window.CAR_MANIFEST || [])) CARS.register(item);
+      }
+    }
+    if (typeof window !== 'undefined' && (!window.TRACK_MANIFEST || window.TRACK_MANIFEST.length === 0)) {
+      try {
+        const resT = await fetch('tracks/manifest.json');
+        window.TRACK_MANIFEST = await resT.json();
+      } catch (e) {
+        console.warn('[main] Fallo al cargar tracks/manifest.json:', e);
+      }
+      window.TRACK_LIST = (window.TRACK_MANIFEST || []).map(t => t.json);
+      for (const item of (window.TRACK_MANIFEST || [])) {
+        if (typeof TrackFactory !== 'undefined' && typeof TrackFactory.register === 'function') {
+          TrackFactory.register(item);
+        } else if (typeof TRACKS !== 'undefined') {
+          TRACKS.register(item);
+        }
+      }
+    }
+
     const carManifest = (typeof window !== 'undefined' && window.CAR_MANIFEST) || [];
     const saved = GAME.ui ? loadSelection() : {};
     const reqCarId = (typeof Q !== 'undefined' ? Q.get('car') : null) || saved.car;
@@ -144,7 +177,29 @@ async function main() {
 
     // Carga asíncrona de especificaciones JSON puras para los rivales de la parrilla
     if (rivalEnabled) {
-      const rivalEntries = (typeof window !== 'undefined' && window.__rivalCarEntries) || [];
+      let rivalEntries = (typeof window !== 'undefined' && window.__rivalCarEntries) || [];
+      if (rivalEntries.length === 0 && carManifest.length > 0) {
+        const availableRivals = carManifest.filter(c => !activeCarEntry || c.id !== activeCarEntry.id);
+        const pool = availableRivals.length > 0 ? availableRivals : carManifest;
+        const reqRivalCarId = (typeof Q !== 'undefined' ? Q.get('rivalCar') : null) || saved.rivalCar;
+        let chosenRival = reqRivalCarId && carManifest.find(c => c.id === reqRivalCarId);
+        if (!chosenRival || (activeCarEntry && chosenRival.id === activeCarEntry.id)) {
+          chosenRival = pool[Math.floor(Math.random() * pool.length)];
+        }
+        rivalEntries = [];
+        if (chosenRival) rivalEntries.push(chosenRival);
+        for (let i = 0; i < pool.length && rivalEntries.length < rivalCount; i++) {
+          if (pool[i].id !== chosenRival.id) rivalEntries.push(pool[i]);
+        }
+        for (let i = 0; i < carManifest.length && rivalEntries.length < rivalCount; i++) {
+          if (!rivalEntries.some(r => r.id === carManifest[i].id)) rivalEntries.push(carManifest[i]);
+        }
+        if (typeof window !== 'undefined') {
+          window.__rivalCarEntries = rivalEntries;
+          window.__rivalCarId = chosenRival ? chosenRival.id : null;
+        }
+      }
+
       const loadRivalJSON = async (jsonUrl) => {
         if (typeof CarFactory !== 'undefined' && typeof CarFactory.loadFromJSON === 'function') {
           return await CarFactory.loadFromJSON(jsonUrl);

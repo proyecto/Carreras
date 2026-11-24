@@ -7,6 +7,7 @@ En el simulador **Carreras WebGPU**, los coches utilizan una arquitectura guiada
 ## 🏎️ Cómo añadir un coche nuevo en 3 sencillos pasos
 
 ### Paso 1: Crea la especificación del coche (`cars/mi-coche.json` o `cars/mi-coche.spec.js`)
+
 Puedes copiar y modificar la plantilla base de [car.template.json](file:///Users/rafaelruiz/Documents/proyectos/Carreras/cars/car.template.json):
 
 ```json
@@ -75,6 +76,7 @@ Puedes copiar y modificar la plantilla base de [car.template.json](file:///Users
 
 > [!TIP]
 > Si deseas definirlo en formato JS para no requerir servidor HTTP local (`file://`), puedes crear `cars/mi-coche.js` envolviendo la especificación en:
+>
 > ```javascript
 > 'use strict';
 > (() => {
@@ -89,7 +91,9 @@ Puedes copiar y modificar la plantilla base de [car.template.json](file:///Users
 ---
 
 ### Paso 2: Modelo 3D y Texturas
+
 `CarFactory` soporta los siguientes formatos de geometría:
+
 1. **Modelo GLB (`.glb`)**: Exportado directamente desde Blender con mallas nombradas `body` (carrocería), `glass` (cristales) y `wheel` (ruedas).
 2. **Búferes de vértices e índices**: Puedes pasar arrays de vértices o cadenas Base64 en `bodyV`, `bodyI`, `glassV`, `glassI`, `wheelV`, `wheelI`.
 3. **Textura Atlas**: Imagen PNG o WebP, o cadena Data URI.
@@ -98,17 +102,21 @@ Si no defines un shader específico, `CarFactory` asigna automáticamente el mat
 
 ---
 
-### Paso 3: Regístralo en el catálogo (`cars/manifest.js`)
-Añade una entrada al array `CAR_MANIFEST`:
 
-```javascript
+### Paso 3: Regístralo en el catálogo (`cars/manifest.json`)
+
+Añade una entrada al array de `cars/manifest.json`:
+
+```json
 {
-  file: 'mi-coche.js', // o spec: 'mi-coche.json'
-  id: 'mi-coche-gt3',
-  name: 'Mi Coche GT3',
-  subtitle: '2024 GT3 Spec · 4.0L V8 · 550 CV · RWD',
-  specs: '1250 kg · 550 CV · Secuencial 6-vel · RWD',
-  accent: '#ff3300'
+  "id": "mi-coche-gt3",
+  "name": "Mi Coche GT3",
+  "subtitle": "2024 GT3 Spec · 4.0L V8 · 550 CV · RWD",
+  "specs": "1250 kg · 550 CV · Secuencial 6-vel · RWD",
+  "accent": "#ff3300",
+  "json": "cars/mi-coche-gt3.json",
+  "model": "cars/models/mi-coche-gt3.glb",
+  "texture": "cars/textures/mi-coche-gt3.png"
 }
 ```
 

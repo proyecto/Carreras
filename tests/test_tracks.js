@@ -25,10 +25,13 @@ function runTracksTestSuite() {
   const atlasFactoryCode = fs.readFileSync(path.join(root, 'engine/atlas-factory.js'), 'utf8');
   const landmarkFactoryCode = fs.readFileSync(path.join(root, 'engine/landmark-factory.js'), 'utf8');
   const vegetationFactoryCode = fs.readFileSync(path.join(root, 'engine/vegetation-factory.js'), 'utf8');
-  const manifest = fs.readFileSync(path.join(root, 'tracks/manifest.js'), 'utf8');
+  const trackManifestData = JSON.parse(fs.readFileSync(path.join(root, 'tracks/manifest.json'), 'utf8'));
 
   const ctx = {
-    window: {},
+    window: {
+      TRACK_MANIFEST: trackManifestData,
+      TRACK_LIST: trackManifestData.map(t => t.json)
+    },
     document: { createElement: () => ({ getContext: () => ({ scale() { }, fillRect() { }, strokeRect() { }, beginPath() { }, moveTo() { }, lineTo() { }, bezierCurveTo() { }, quadraticCurveTo() { }, closePath() { }, fill() { }, stroke() { }, save() { }, restore() { }, translate() { }, transform() { }, createLinearGradient: () => ({ addColorStop() { } }), createRadialGradient: () => ({ addColorStop() { } }), getImageData: () => ({ data: new Uint8Array(4) }), drawImage() { }, rect() { }, clip() { }, arc() { }, ellipse() { } }) }) },
     Float32Array,
     Uint32Array,
@@ -47,7 +50,10 @@ function runTracksTestSuite() {
   vm.runInContext(atlasFactoryCode, ctx);
   vm.runInContext(landmarkFactoryCode, ctx);
   vm.runInContext(vegetationFactoryCode, ctx);
-  vm.runInContext(manifest, ctx);
+  for (const item of trackManifestData) {
+    if (ctx.window.TrackFactory) ctx.window.TrackFactory.register(item);
+    else if (ctx.window.TRACKS) ctx.window.TRACKS.register(item);
+  }
 
   const trackManifest = ctx.window.TRACK_MANIFEST || [];
   assert(trackManifest.length >= 1, `Se espera al menos 1 circuito en TRACK_MANIFEST, se encontraron ${trackManifest.length}`);
@@ -148,9 +154,8 @@ function runTracksTestSuite() {
 
   // 8. Validación de selección y carga modular en index.html
   const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('__activeTrackEntry'), 'index.html selecciona de forma modular y asíncrona el circuito desde TRACK_MANIFEST');
-  assert(indexHtml.includes('hasVegetation = !(trackEntry && trackEntry.noVegetation)') && indexHtml.includes('shaders/vegetation.js'), 'index.html carga vegetación de forma estrictamente condicional (desactivada en Las Vegas)');
-  assert(indexHtml.includes('world/props-vegas.js') && indexHtml.includes('isVegas'), 'index.html carga la noria High Roller y MSG Sphere únicamente cuando se corre en Las Vegas');
+  assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('tracks/manifest.json'), 'index.html carga el catálogo de circuitos desde tracks/manifest.json');
+  assert(indexHtml.includes('CAR_MANIFEST') && indexHtml.includes('cars/manifest.json'), 'index.html carga el catálogo de vehículos desde cars/manifest.json');
   assert(indexHtml.includes('engine/track-factory.js'), 'index.html incluye el módulo unificado TrackFactory');
 
   // 9. Validación de TrackFactory (engine/track-factory.js)

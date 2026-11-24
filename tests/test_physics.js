@@ -25,10 +25,13 @@ function runPhysicsTestSuite() {
   const tbCode = fs.readFileSync(path.join(root, 'world/track-builder.js'), 'utf8');
   const trackGpSpec = JSON.parse(fs.readFileSync(path.join(root, 'tracks/nurburgring-gp.json'), 'utf8'));
   const physCode = fs.readFileSync(path.join(root, 'game/physics.js'), 'utf8');
-  const carManifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
+  const carManifestList = JSON.parse(fs.readFileSync(path.join(root, 'cars/manifest.json'), 'utf8'));
 
   const ctx = {
-    window: {},
+    window: {
+      CAR_MANIFEST: carManifestList,
+      CAR_LIST: carManifestList.map(c => c.json)
+    },
     document: { createElement: () => ({ getContext: () => ({}) }) },
     Float32Array,
     Uint32Array,
@@ -49,7 +52,9 @@ function runPhysicsTestSuite() {
   vm.runInContext(regCode, ctx);
   vm.runInContext(tbCode, ctx);
   ctx.TrackFactory.createFromSpec(trackGpSpec);
-  vm.runInContext(carManifest, ctx);
+  if (ctx.window.CARS) {
+    for (const item of carManifestList) ctx.window.CARS.register(item);
+  }
 
   // Inicializar circuito en el contexto
   const tracksObj = ctx.window.TRACKS || ctx.TRACKS;
@@ -57,8 +62,6 @@ function runPhysicsTestSuite() {
   ctx.trackBuild(trackGp);
 
   const carsObj = ctx.window.CARS || ctx.CARS;
-  const carManifestList = ctx.window.CAR_MANIFEST || [];
-
   for (const m of carManifestList) {
     const spec = JSON.parse(fs.readFileSync(path.join(root, m.json), 'utf8'));
     ctx.CarFactory.createFromSpec(spec);
