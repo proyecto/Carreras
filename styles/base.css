@@ -1,0 +1,53 @@
+/* ==========================================================================
+   BASE — Reset mínimo, layout del canvas y utilidades globales
+   ========================================================================== */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--clr-bg);
+  overflow: hidden;
+  font: var(--font-size-base) / var(--line-height-base) var(--font-system);
+  color: var(--clr-text);
+}
+
+/* Canvas principal */
+#stage {
+  position: absolute;
+  inset: 0;
+}
+
+#c {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  object-fit: contain;
+}
+
+/* Hint de teclado (esquina inferior izquierda) */
+#hint {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  opacity: 0.75;
+  text-shadow: 0 1px 2px #000;
+  transition: opacity var(--ease-slow);
+  pointer-events: none;
+}
+
+/* Ocultar visualmente pero mantener accesible */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}

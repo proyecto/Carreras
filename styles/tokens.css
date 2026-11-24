@@ -1,0 +1,78 @@
+/* ==========================================================================
+   DESIGN TOKENS
+   Colores, tipografía, radios y sombras centralizados.
+   ========================================================================== */
+
+:root {
+  /* Colores de marca */
+  --clr-accent:        #d8351c;
+  --clr-accent-light:  #ff6f4c;
+  --clr-accent-glow:   rgba(216, 53, 28, 0.4);
+  --clr-accent-muted:  rgba(216, 53, 28, 0.22);
+
+  /* Superficie y fondo */
+  --clr-bg:            #000;
+  --clr-surface-0:     #090b0e;
+  --clr-surface-1:     rgba(12, 15, 20, 0.62);
+  --clr-surface-2:     rgba(18, 22, 28, 0.75);
+  --clr-surface-3:     rgba(30, 41, 59, 0.5);
+
+  /* Bordes */
+  --clr-border:        rgba(255, 255, 255, 0.14);
+  --clr-border-strong: rgba(255, 255, 255, 0.32);
+  --clr-border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Texto */
+  --clr-text:          #ddd;
+  --clr-text-bright:   #fff;
+  --clr-text-muted:    rgba(220, 225, 235, 0.75);
+  --clr-text-dim:      #8f9aa8;
+
+  /* Semáforos / estados */
+  --clr-green:         #22c55e;
+  --clr-green-muted:   rgba(34, 197, 94, 0.25);
+  --clr-green-glow:    rgba(34, 197, 94, 0.2);
+  --clr-red-muted:     rgba(239, 68, 68, 0.15);
+  --clr-yellow:        #facc15;
+  --clr-blue:          #38bdf8;
+  --clr-blue-muted:    rgba(56, 189, 248, 0.4);
+
+  /* Tipografía */
+  --font-system:       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:         ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace;
+  --font-size-base:    14px;
+  --line-height-base:  1.4;
+
+  /* Escala tipográfica (relativa a la fuente del UI: clamp 11-16px) */
+  --text-xs:   0.78em;
+  --text-sm:   0.84em;
+  --text-md:   0.92em;
+  --text-base: 1em;
+  --text-lg:   1.08em;
+  --text-xl:   1.6rem;
+  --text-2xl:  2em;
+  --text-3xl:  2.7em;
+
+  /* Radios */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* Espaciado base */
+  --sp-1: 0.25em;
+  --sp-2: 0.5em;
+  --sp-3: 0.75em;
+  --sp-4: 1em;
+  --sp-5: 1.2em;
+  --sp-6: 1.5em;
+
+  /* Transiciones */
+  --ease-fast:   0.12s ease;
+  --ease-normal: 0.18s ease;
+  --ease-slow:   0.35s ease;
+
+  /* Mínimo de área táctil accesible */
+  --touch-target: 44px;
+}

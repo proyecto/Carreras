@@ -1,0 +1,223 @@
+/* ==========================================================================
+   MENU — Modal de menú principal, selección de coche/circuito y resultados
+   ========================================================================== */
+
+/* ── Overlay ── */
+#ui {
+  inset: 0;
+  pointer-events: auto;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 10, 0.68);
+  backdrop-filter: blur(6px);
+  font-size: clamp(11px, 1.68vh, 16px);
+}
+
+#ui.ini {
+  background: linear-gradient(rgba(6, 8, 10, 0.55), rgba(6, 8, 10, 0.88));
+}
+
+/* ── Panel contenedor ── */
+#ui > .panel {
+  width: min(920px, 94vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: var(--sp-6) 2.1em;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* ── Tipografía del menú ── */
+#ui h1 {
+  margin: 0;
+  font-size: var(--text-3xl);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: var(--clr-text-bright);
+}
+
+#ui .sub {
+  margin: 0.3em 0 1.2em;
+  opacity: 0.82;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: var(--text-sm);
+}
+
+#ui h2 {
+  margin: 0 0 0.5em;
+  font-size: var(--text-base);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-accent-light);
+}
+
+/* ── Selector de idioma ── */
+.lang-selector {
+  display: inline-flex;
+  gap: 0.35em;
+  padding: 0.25em;
+  margin: 0 auto 1.1em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-pill);
+}
+
+.lang-btn {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.32em 0.95em;
+  min-block-size: 32px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--ease-fast);
+}
+
+.lang-btn:hover {
+  color: var(--clr-text-bright);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.lang-btn.active {
+  background: var(--clr-accent);
+  color: var(--clr-text-bright);
+  box-shadow: 0 2px 8px var(--clr-accent-glow);
+}
+
+/* ── Botones del menú ── */
+#ui .bt {
+  margin-top: 0.6em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65em;
+}
+
+/* Botón base */
+.btn {
+  font: inherit;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--clr-text-bright);
+  background: var(--clr-accent);
+  border: 0;
+  border-radius: 0.5em;
+  min-block-size: var(--touch-target);
+  padding: 0.58em 1.85em;
+  cursor: pointer;
+  transition: filter var(--ease-fast);
+}
+
+.btn:hover         { filter: brightness(1.1); }
+.btn:focus-visible { outline: 2px solid var(--clr-text-bright); outline-offset: 2px; }
+
+/* Variante secundaria */
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Para compatibilidad: #ui button usa la clase .btn implícita */
+#ui button {
+  font: inherit;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--clr-text-bright);
+  background: var(--clr-accent);
+  border: 0;
+  border-radius: 0.5em;
+  min-block-size: var(--touch-target);
+  padding: 0.58em 1.85em;
+  cursor: pointer;
+  transition: filter var(--ease-fast);
+}
+
+#ui button:hover         { filter: brightness(1.1); }
+#ui button:focus-visible { outline: 2px solid var(--clr-text-bright); outline-offset: 2px; }
+
+/* Segundo botón en fila → tono ghost */
+#ui button + button { background: rgba(255, 255, 255, 0.16); }
+
+/* ── Tabla de controles desplegable ── */
+.controls-box {
+  margin: 0 0 var(--sp-5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.7em;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+}
+
+.controls-box summary {
+  padding: 0.65em var(--sp-4);
+  min-block-size: var(--touch-target);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: var(--text-sm);
+  color: #f0f2f5;
+  user-select: none;
+}
+
+.controls-box summary:focus-visible {
+  outline: 2px solid var(--clr-text-bright);
+  outline-offset: 2px;
+  border-radius: 0.6em;
+}
+
+.controls-box .cols {
+  display: flex;
+  gap: 2.4em;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0.2em 1.2em var(--sp-4);
+  text-align: left;
+}
+
+#ui table { border-collapse: collapse; }
+
+#ui td,
+#ui th {
+  padding: 0.13em 0.7em 0.13em 0;
+  font-weight: 400;
+  text-align: left;
+}
+
+#ui td:first-child {
+  color: var(--clr-text-bright);
+  font-weight: 600;
+  white-space: nowrap;
+  padding-right: 1.2em;
+}
+
+/* ── Bloque de resultados de carrera ── */
+#res {
+  display: none;
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-4) 1.4em;
+  border-radius: 0.8em;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+#res table { margin: 0 auto; }
+
+#res th,
+#res td {
+  padding: 0.2em 1.1em;
+  text-align: right;
+}
+
+#res td {
+  color: var(--clr-text-bright);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#res p { margin: 0.7em 0 0; }

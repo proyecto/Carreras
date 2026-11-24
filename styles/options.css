@@ -1,0 +1,301 @@
+/* ==========================================================================
+   OPTIONS — Panel de opciones y configuración de controles
+   ========================================================================== */
+
+/* ── Paneles ── */
+#panel-options { text-align: left; width: 100%; }
+#panel-main    { width: 100%; }
+
+/* ── Topbar con botón Atrás ── */
+.options-topbar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-height: var(--touch-target);
+  margin-bottom: var(--sp-5);
+}
+
+#ui .options-topbar h1 {
+  margin: 0 auto;
+  font-size: var(--text-2xl);
+  text-align: center;
+}
+
+/* Botón Atrás — variante posicionada absolutamente */
+.btn-back {
+  position: absolute;
+  left: 0;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: var(--text-sm);
+  padding: 0.4em 0.95em;
+  border-radius: 0.4em;
+  min-block-size: 36px;
+  /* Hereda color y cursor de #ui button */
+}
+
+.btn-back:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* ── Grupos de opciones ── */
+.options-group {
+  margin-bottom: var(--sp-5);
+  text-align: left;
+}
+
+.options-group .lang-selector {
+  margin: 0.4em 0 0.6em;
+  display: inline-flex;
+}
+
+.options-hint {
+  font-size: var(--text-sm);
+  color: var(--clr-text-muted);
+  margin: 0.2em 0 0.8em;
+}
+
+/* ── Grid de configuración de controles ── */
+.controls-config-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: 0.4em;
+}
+
+.ctrl-config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45em 0.6em;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.45em;
+  border: 1px solid var(--clr-border-subtle);
+}
+
+.ctrl-config-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+.ctrl-config-label {
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--clr-text-bright);
+}
+
+.ctrl-config-keys {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+/* ── Botones de tecla asignable ── */
+.key-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 34px;
+  min-block-size: 34px;
+  padding: 0 0.7em;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #1e2229;
+  color: var(--clr-text-bright);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ease-fast);
+}
+
+.key-btn:hover {
+  background: #2a303a;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.key-btn.empty {
+  color: rgba(255, 255, 255, 0.3);
+  border-style: dashed;
+  font-weight: 400;
+}
+
+.key-btn.listening {
+  background: var(--clr-accent);
+  border-color: var(--clr-accent-light);
+  box-shadow: 0 0 10px rgba(216, 53, 28, 0.8);
+  animation: pulse-listening 0.8s infinite alternate;
+}
+
+@keyframes pulse-listening {
+  from { transform: scale(0.97); opacity: 0.85; }
+  to   { transform: scale(1.03); opacity: 1; }
+}
+
+/* ── Acciones del panel ── */
+.controls-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85em;
+}
+
+.btn-subtle {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+  padding: 0.45em 1.1em;
+  border-radius: 0.4em;
+  min-block-size: 36px;
+  transition: all var(--ease-normal);
+}
+
+.btn-subtle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--clr-text-bright);
+}
+
+/* ── Panel de rival IA ── */
+.rival-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  padding: 0.7em var(--sp-4);
+  margin: 0.8em 0 var(--sp-4);
+}
+
+.rival-panel-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 0.2em;
+}
+
+.rival-panel-title {
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--clr-text-bright);
+  letter-spacing: 0.02em;
+}
+
+.rival-panel-sub {
+  font-size: var(--text-sm);
+  color: var(--clr-text-muted);
+}
+
+.rival-panel-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+/* Contador de rivales / vueltas */
+.rival-count-wrapper,
+.lap-count-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.32em 0.6em;
+  font-size: 0.88em;
+  color: var(--clr-text-bright);
+  transition: all var(--ease-normal);
+}
+
+.rival-count-wrapper.is-hidden,
+.lap-count-wrapper.is-hidden {
+  display: none;
+}
+
+.rival-count-label,
+.lap-count-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: rgba(220, 225, 235, 0.8);
+  white-space: nowrap;
+}
+
+.rival-count-select,
+.lap-count-select {
+  background: #11151c;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--clr-yellow);
+  font-weight: 700;
+  font-size: 0.95em;
+  padding: 0.2em 0.45em;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--ease-normal), box-shadow var(--ease-normal);
+}
+
+.rival-count-select:is(:hover, :focus) {
+  border-color: var(--clr-blue);
+  box-shadow: 0 0 8px var(--clr-blue-muted);
+}
+
+.rival-count-select option {
+  background: #161a22;
+  color: var(--clr-text-bright);
+  font-weight: 600;
+}
+
+/* Botón toggle Rivalidad ON/OFF */
+.btn-rival-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--clr-text-bright);
+  padding: 0.5em 0.95em;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: all var(--ease-normal);
+  white-space: nowrap;
+}
+
+.btn-rival-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-rival-toggle.is-active {
+  background: var(--clr-green-muted);
+  border-color: rgba(74, 222, 128, 0.6);
+  color: #86efac;
+  box-shadow: 0 0 12px var(--clr-green-glow);
+}
+
+.btn-rival-toggle:not(.is-active) {
+  background: var(--clr-red-muted);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+/* Fila rival en opciones */
+.options-rival-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8em;
+  margin-top: 0.6em;
+}
+
+.opt-rival-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 180px;
+  text-align: left;
+}
+
+.opt-rival-car-name  { font-weight: 700; font-size: var(--text-md); color: var(--clr-text-bright); }
+.opt-rival-car-specs { font-size: 0.8em; color: rgba(230, 235, 245, 0.7); }

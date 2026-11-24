@@ -1,0 +1,147 @@
+/* ==========================================================================
+   PICKER — Selectores de coche y circuito
+   ========================================================================== */
+
+/* Rejilla de dos columnas */
+.selectors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1em;
+  margin: 0 0 var(--sp-5);
+  text-align: left;
+}
+
+/* Fieldset de cada selector */
+.pick-group {
+  margin: 0;
+  padding: 0.9em var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.75em;
+  background: var(--clr-surface-1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pick-group legend {
+  padding: 0 0.45em;
+  font-size: 0.9em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-accent-light);
+}
+
+/* Lista scrollable */
+.pick-grid {
+  display: grid;
+  gap: 0.55em;
+  margin-top: 0.35em;
+  max-height: min(50vh, 440px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.45em;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 111, 76, 0.65) rgba(255, 255, 255, 0.08);
+}
+
+.pick-grid::-webkit-scrollbar       { width: 6px; }
+.pick-grid::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-sm); }
+.pick-grid::-webkit-scrollbar-thumb { background: rgba(255, 111, 76, 0.55); border-radius: var(--radius-sm); }
+.pick-grid::-webkit-scrollbar-thumb:hover { background: rgba(255, 111, 76, 0.85); }
+
+/* Tarjeta de ítem */
+.pick-card {
+  --card-bg:     rgba(255, 255, 255, 0.045);
+  --card-border: rgba(255, 255, 255, 0.15);
+  --card-title:  #f0f2f5;
+
+  position: relative;
+  display: block;
+  border-radius: 0.55em;
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  transition: background-color var(--ease-fast), border-color var(--ease-fast), transform 0.12s;
+}
+
+.pick-card:hover {
+  --card-bg:     rgba(255, 255, 255, 0.09);
+  --card-border: var(--clr-border-strong);
+}
+
+.pick-card:has(input:checked) {
+  --card-bg:     var(--clr-accent-muted);
+  --card-border: var(--clr-accent-light);
+  --card-title:  var(--clr-text-bright);
+}
+
+.pick-card:has(input:focus-visible) {
+  outline: 2px solid var(--clr-text-bright);
+  outline-offset: 2px;
+}
+
+/* Fallback para navegadores sin :has() */
+@supports not selector(:has(*)) {
+  .pick-card.is-selected {
+    --card-bg:     var(--clr-accent-muted);
+    --card-border: var(--clr-accent-light);
+    --card-title:  var(--clr-text-bright);
+  }
+}
+
+/* Layout interno de la tarjeta */
+.pick-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  min-block-size: var(--touch-target);
+  padding: 0.62em 0.8em;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.pick-swatch {
+  flex: none;
+  width: 0.85em;
+  height: 2.4em;
+  border-radius: 0.3em;
+  background: var(--accent, var(--clr-accent-light));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.pick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12em;
+  min-width: 0;
+  flex: 1;
+}
+
+.pick-name {
+  font-weight: 700;
+  font-size: 1.02em;
+  color: var(--card-title);
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  flex-wrap: wrap;
+}
+
+.pick-sub {
+  font-size: var(--text-sm);
+  color: rgba(235, 238, 242, 0.78);
+}
+
+.pick-badge {
+  font-size: 0.72em;
+  font-weight: 600;
+  padding: 0.12em 0.5em;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--clr-text-bright);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pick-badge.active { background: var(--clr-accent); }
