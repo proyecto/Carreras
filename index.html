@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Carreras</title>
-  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v9">
+  <link rel="stylesheet" href="styles/main.css?v=racing_mirror_f1_v11">
   <script>
     window.addEventListener('error', function (e) {
       var st = document.getElementById('loading-status');
@@ -37,7 +37,8 @@
           <span class="loading-badge">WebGPU</span>
         </div>
         <div class="loading-info" id="loading-car-track">Cargando simulador…</div>
-        <div class="loading-progress-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loading-progressbar">
+        <div class="loading-progress-container" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+          aria-valuenow="0" id="loading-progressbar">
           <div class="loading-progress-bar" id="loading-bar"></div>
         </div>
         <div class="loading-footer">
@@ -50,7 +51,8 @@
       track</div>
     <canvas id="hmirror"></canvas>
     <canvas id="hlights"></canvas>
-    <canvas id="hm"></canvas><canvas id="hp"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas>
+    <canvas id="hm"></canvas><canvas id="hp"></canvas><canvas id="hg"></canvas><canvas id="ht"></canvas><canvas
+      id="hs"></canvas>
     <div id="tag"></div>
   </div>
 
@@ -86,12 +88,14 @@
             </button>
             <div id="rival-count-wrapper" class="rival-count-wrapper">
               <label for="rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
-              <select id="rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              <select id="rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)"
+                aria-label="Número de rivales">
               </select>
             </div>
             <div id="lap-count-wrapper" class="lap-count-wrapper">
               <label for="lap-count-select" class="lap-count-label" data-i18n="lap_count_label">Vueltas:</label>
-              <select id="lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)" aria-label="Número de vueltas">
+              <select id="lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)"
+                aria-label="Número de vueltas">
               </select>
             </div>
           </div>
@@ -99,7 +103,8 @@
 
         <div class="bt">
           <button id="b0" type="button" data-i18n="btn_start">Start</button>
-          <button id="b-multiplayer" type="button" class="btn-multiplayer" onclick="uiOpenMultiplayer()" data-i18n="btn_multiplayer">🌐 Multijugador</button>
+          <button id="b-multiplayer" type="button" class="btn-multiplayer" onclick="uiOpenMultiplayer()"
+            data-i18n="btn_multiplayer">🌐 Multijugador</button>
           <button id="b1" type="button" data-i18n="btn_bench">Benchmark</button>
           <button id="b-opt" type="button" onclick="uiShowOptions(true)" data-i18n="btn_options">⚙️ Opciones</button>
         </div>
@@ -134,13 +139,16 @@
               <span id="opt-rival-text" data-i18n="rival_btn_enabled">Rival: Activado</span>
             </button>
             <div id="opt-rival-count-wrapper" class="rival-count-wrapper">
-              <label for="opt-rival-count-select" class="rival-count-label" data-i18n="rival_count_label">Rivales:</label>
-              <select id="opt-rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)" aria-label="Número de rivales">
+              <label for="opt-rival-count-select" class="rival-count-label"
+                data-i18n="rival_count_label">Rivales:</label>
+              <select id="opt-rival-count-select" class="rival-count-select" onchange="uiChangeRivalCount(this.value)"
+                aria-label="Número de rivales">
               </select>
             </div>
             <div id="opt-lap-count-wrapper" class="lap-count-wrapper">
               <label for="opt-lap-count-select" class="lap-count-label" data-i18n="lap_count_label">Vueltas:</label>
-              <select id="opt-lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)" aria-label="Número de vueltas">
+              <select id="opt-lap-count-select" class="lap-count-select" onchange="uiChangeTotalLaps(this.value)"
+                aria-label="Número de vueltas">
               </select>
             </div>
             <div id="opt-rival-info" class="opt-rival-info">
@@ -155,12 +163,14 @@
         <!-- 3. Multijugador P2P en Tiempo Real (2 Jugadores) -->
         <fieldset class="pick-group options-group" id="opt-group-multiplayer">
           <legend data-i18n="options_multiplayer_title">🌐 Multijugador P2P en Tiempo Real</legend>
-          <p class="options-hint" data-i18n="options_multiplayer_hint">Compite rueda contra rueda con otro jugador mediante WebRTC directo (latencia 15-35 ms, peer-to-peer sin paso por servidor).</p>
+          <p class="options-hint" data-i18n="options_multiplayer_hint">Compite rueda contra rueda con otro jugador
+            mediante WebRTC directo (latencia 15-35 ms, peer-to-peer sin paso por servidor).</p>
 
           <div class="net-status-box" id="net-status-box">
             <div class="net-status-header">
               <span class="net-status-dot is-idle" id="net-status-dot"></span>
-              <span class="net-status-text" id="net-status-text" data-i18n="net_status_idle">Desconectado (Modo Un Jugador)</span>
+              <span class="net-status-text" id="net-status-text" data-i18n="net_status_idle">Desconectado (Modo Un
+                Jugador)</span>
               <span class="net-ping-badge" id="net-ping-badge" style="display:none">0 ms</span>
             </div>
             <div class="net-rival-badge" id="net-rival-badge" style="display:none">
@@ -171,16 +181,20 @@
           <div class="net-actions-grid">
             <div class="net-action-card">
               <h3 data-i18n="net_host_title">Crear Sala (Host)</h3>
-              <p class="net-action-desc" data-i18n="net_host_desc">Genera una sala y comparte el enlace directo con un amigo.</p>
-              <button type="button" id="b-net-create" class="btn-action" onclick="uiNetCreateRoom()" data-i18n="btn_net_create">Crear Sala</button>
+              <p class="net-action-desc" data-i18n="net_host_desc">Genera una sala y comparte el enlace directo con un
+                amigo.</p>
+              <button type="button" id="b-net-create" class="btn-action" onclick="uiNetCreateRoom()"
+                data-i18n="btn_net_create">Crear Sala</button>
             </div>
 
             <div class="net-action-card">
               <h3 data-i18n="net_join_title">Unirse a Sala</h3>
-              <p class="net-action-desc" data-i18n="net_join_desc">Introduce el código de sala compartido por el Host.</p>
+              <p class="net-action-desc" data-i18n="net_join_desc">Introduce el código de sala compartido por el Host.
+              </p>
               <div class="net-input-row">
                 <input type="text" id="net-room-input" placeholder="Ej: RACE-742" class="net-input" maxlength="12">
-                <button type="button" id="b-net-join" class="btn-action" onclick="uiNetJoinRoom()" data-i18n="btn_net_join">Unirse</button>
+                <button type="button" id="b-net-join" class="btn-action" onclick="uiNetJoinRoom()"
+                  data-i18n="btn_net_join">Unirse</button>
               </div>
             </div>
           </div>
@@ -189,7 +203,8 @@
             <span class="net-share-label" data-i18n="net_share_link">Enlace para compartir con tu amigo:</span>
             <div class="net-share-row">
               <input type="text" id="net-share-url" class="net-share-input" readonly>
-              <button type="button" id="b-copy-link" class="btn-subtle" onclick="uiNetCopyLink()" data-i18n="btn_copy_link">📋 Copiar Enlace</button>
+              <button type="button" id="b-copy-link" class="btn-subtle" onclick="uiNetCopyLink()"
+                data-i18n="btn_copy_link">📋 Copiar Enlace</button>
             </div>
           </div>
         </fieldset>
@@ -294,39 +309,39 @@
   </div>
 
   <!-- 1. Shaders WGSL del núcleo y mundo -->
-  <script src="shaders/core.js?v=racing_mirror_f1_v9"></script>
-  <script src="shaders/lighting.js?v=racing_mirror_f1_v9"></script>
-  <script src="shaders/post.js?v=racing_mirror_f1_v9"></script>
-  <script src="shaders/world.js?v=racing_mirror_f1_v9"></script>
-  <script src="shaders/glass.js?v=racing_mirror_f1_v9"></script>
+  <script src="shaders/core.js?v=racing_mirror_f1_v11"></script>
+  <script src="shaders/lighting.js?v=racing_mirror_f1_v11"></script>
+  <script src="shaders/post.js?v=racing_mirror_f1_v11"></script>
+  <script src="shaders/world.js?v=racing_mirror_f1_v11"></script>
+  <script src="shaders/glass.js?v=racing_mirror_f1_v11"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/gpu.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/mesh.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/registry.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/renderer.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/post.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/sky.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/forward.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/perf.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/patterns.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/car-factory.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/track-factory.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/prop-factory.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v9"></script>
-  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v9"></script>
+  <script src="engine/math.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/gpu.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/mesh.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/registry.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/renderer.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/post.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/sky.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/forward.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/perf.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/patterns.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/car-factory.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/track-factory.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/prop-factory.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v11"></script>
+  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v11"></script>
 
   <!-- 3. Constructores base del mundo (pista, terreno, objetos base) -->
-  <script src="world/track-builder.js?v=racing_mirror_f1_v9"></script>
-  <script src="world/track-mesh.js?v=racing_mirror_f1_v9"></script>
-  <script src="world/props.js?v=racing_mirror_f1_v9"></script>
-  <script src="world/track-glb.js?v=racing_mirror_f1_v9"></script>
+  <script src="world/track-builder.js?v=racing_mirror_f1_v11"></script>
+  <script src="world/track-mesh.js?v=racing_mirror_f1_v11"></script>
+  <script src="world/props.js?v=racing_mirror_f1_v11"></script>
+  <script src="world/track-glb.js?v=racing_mirror_f1_v11"></script>
 
   <!-- 4. Catálogos y carga bajo demanda condicionada por el circuito y vehículo seleccionados -->
-  <script src="tracks/manifest.js?v=racing_mirror_f1_v9"></script>
-  <script src="cars/manifest.js?v=racing_mirror_f1_v9"></script>
+  <script src="tracks/manifest.js?v=racing_mirror_f1_v11"></script>
+  <script src="cars/manifest.js?v=racing_mirror_f1_v11"></script>
   <script>
     (() => {
       let carId = null;
@@ -351,25 +366,22 @@
         if (!trackId && saved.track) trackId = saved.track;
       }
 
-      // --- A. Cargar circuito activo bajo demanda ---
+      // --- A. Selección de circuito activo (carga asíncrona JSON en main.js) ---
       const trackManifest = window.TRACK_MANIFEST || [];
       const trackEntry = (trackId && trackManifest.find(t => t.id === trackId)) || trackManifest[0];
       window.__activeTrackEntry = trackEntry;
-      if (trackEntry && trackEntry.file) {
-        document.write('<script src="tracks/' + trackEntry.file + '?v=racing_mirror_f1_v9"><\/script>');
-      }
 
       // --- B. Vegetación condicional: solo se carga en circuitos naturales (Nürburgring, Spa), no en Las Vegas ---
       const hasVegetation = !(trackEntry && trackEntry.noVegetation);
       if (hasVegetation) {
-        document.write('<script src="shaders/vegetation.js?v=racing_mirror_f1_v9"><\/script>');
-        document.write('<script src="world/vegetation.js?v=racing_mirror_f1_v9"><\/script>');
+        document.write('<script src="shaders/vegetation.js?v=racing_mirror_f1_v11"><\/script>');
+        document.write('<script src="world/vegetation.js?v=racing_mirror_f1_v11"><\/script>');
       }
 
       // --- C. Props exclusivos de Las Vegas (Noria High Roller, MSG Sphere, Rascacielos): solo en Las Vegas ---
       const isVegas = Boolean(trackEntry && (trackEntry.id === 'las-vegas-strip' || trackEntry.urban));
       if (isVegas) {
-        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v9"><\/script>');
+        document.write('<script src="world/props-vegas.js?v=racing_mirror_f1_v11"><\/script>');
       }
 
       // --- D. Selección de coche activo y rivales IA (carga asíncrona JSON en main.js) ---
@@ -419,20 +431,20 @@
   </script>
 
   <!-- 5. Física, IA, red, directores y componentes del juego -->
-  <script src="game/i18n.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/physics.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/ai.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/network.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/fx.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/race-director.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/camera-system.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/grid-manager.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/game.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/audio.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/hud-components.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/hud.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/ui.js?v=racing_mirror_f1_v9"></script>
-  <script src="game/main.js?v=racing_mirror_f1_v9"></script>
+  <script src="game/i18n.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/physics.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/ai.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/network.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/fx.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/race-director.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/camera-system.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/grid-manager.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/game.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/audio.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/hud-components.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/hud.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/ui.js?v=racing_mirror_f1_v11"></script>
+  <script src="game/main.js?v=racing_mirror_f1_v11"></script>
 </body>
 
 </html>

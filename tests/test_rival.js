@@ -20,9 +20,10 @@ function runRivalTestSuite() {
   const root = path.resolve(__dirname, '..');
   const mathCode = fs.readFileSync(path.join(root, 'engine/math.js'), 'utf8');
   const carFactoryCode = fs.readFileSync(path.join(root, 'engine/car-factory.js'), 'utf8');
+  const trackFactoryCode = fs.readFileSync(path.join(root, 'engine/track-factory.js'), 'utf8');
   const regCode = fs.readFileSync(path.join(root, 'game/registry.js'), 'utf8');
   const tbCode = fs.readFileSync(path.join(root, 'world/track-builder.js'), 'utf8');
-  const trackGpCode = fs.readFileSync(path.join(root, 'tracks/nurburgring-gp.js'), 'utf8');
+  const trackGpSpec = JSON.parse(fs.readFileSync(path.join(root, 'tracks/nurburgring-gp.json'), 'utf8'));
   const physCode = fs.readFileSync(path.join(root, 'game/physics.js'), 'utf8');
   const aiCode = fs.readFileSync(path.join(root, 'game/ai.js'), 'utf8');
   const carManifest = fs.readFileSync(path.join(root, 'cars/manifest.js'), 'utf8');
@@ -45,10 +46,11 @@ function runRivalTestSuite() {
   vm.createContext(ctx);
   vm.runInContext(mathCode, ctx);
   vm.runInContext(carFactoryCode, ctx);
+  vm.runInContext(trackFactoryCode, ctx);
   vm.runInContext(regCode, ctx);
   vm.runInContext(tbCode, ctx);
   vm.runInContext("this.TRK = TRK; this.trackBuild = trackBuild;", ctx);
-  vm.runInContext(trackGpCode, ctx);
+  ctx.TrackFactory.createFromSpec(trackGpSpec);
   vm.runInContext(carManifest, ctx);
 
   // Inicializar circuito y calcular trazada de IA

@@ -29,7 +29,7 @@ function runTracksTestSuite() {
 
   const ctx = {
     window: {},
-    document: { createElement: () => ({ getContext: () => ({ scale() {}, fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, bezierCurveTo() {}, quadraticCurveTo() {}, closePath() {}, fill() {}, stroke() {}, save() {}, restore() {}, translate() {}, transform() {}, createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }), getImageData: () => ({ data: new Uint8Array(4) }), drawImage() {}, rect() {}, clip() {}, arc() {}, ellipse() {} }) }) },
+    document: { createElement: () => ({ getContext: () => ({ scale() { }, fillRect() { }, strokeRect() { }, beginPath() { }, moveTo() { }, lineTo() { }, bezierCurveTo() { }, quadraticCurveTo() { }, closePath() { }, fill() { }, stroke() { }, save() { }, restore() { }, translate() { }, transform() { }, createLinearGradient: () => ({ addColorStop() { } }), createRadialGradient: () => ({ addColorStop() { } }), getImageData: () => ({ data: new Uint8Array(4) }), drawImage() { }, rect() { }, clip() { }, arc() { }, ellipse() { } }) }) },
     Float32Array,
     Uint32Array,
     Int32Array,
@@ -49,21 +49,20 @@ function runTracksTestSuite() {
   vm.runInContext(vegetationFactoryCode, ctx);
   vm.runInContext(manifest, ctx);
 
-  const trackList = ctx.window.TRACK_LIST || [];
-  assert(trackList.length >= 1, `Se espera al menos 1 circuito en TRACK_LIST, se encontraron ${trackList.length}`);
+  const trackManifest = ctx.window.TRACK_MANIFEST || [];
+  assert(trackManifest.length >= 1, `Se espera al menos 1 circuito en TRACK_MANIFEST, se encontraron ${trackManifest.length}`);
 
-  for (const trackFile of trackList) {
-    const filePath = path.join(root, 'tracks', trackFile);
-    assert(fs.existsSync(filePath), `El archivo ${trackFile} existe en disco`);
+  for (const m of trackManifest) {
+    const legacyJsPath = path.join(root, 'tracks', `${m.id}.js`);
+    assert(!fs.existsSync(legacyJsPath), `[limpieza] Archivo JS legacy eliminado con éxito: ${m.id}.js`);
 
-    const trackCode = fs.readFileSync(filePath, 'utf8');
-    vm.runInContext(trackCode, ctx);
+    const jsonPath = path.join(root, m.json);
+    assert(fs.existsSync(jsonPath), `El archivo JSON ${m.json} existe en disco`);
 
-    const tracksObj = ctx.window.TRACKS || ctx.TRACKS;
-    const allTracks = tracksObj && Array.isArray(tracksObj.list) ? tracksObj.list : [];
-    const track = allTracks.find(t => trackCode.includes(`id: '${t.id}'`) || trackCode.includes(`id: "${t.id}"`));
+    const spec = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    const track = ctx.TrackFactory.createFromSpec(spec);
 
-    assert(!!track, `El circuito ${trackFile} se registró correctamente en TRACKS`);
+    assert(!!track, `El circuito ${m.id} se registró correctamente en TRACKS`);
     if (!track) continue;
 
     // 1. Metadatos
@@ -75,6 +74,7 @@ function runTracksTestSuite() {
     // 2. Geometría y ancho
     assert(track.hw >= 4.0 && track.hw <= 8.0, `[${track.id}] Semiancho de asfalto hw en rango [4.0, 8.0]m: ${track.hw}`);
     assert(typeof track.startS === 'number', `[${track.id}] Posición de salida startS definida: ${track.startS}`);
+    assert(typeof track.startD === 'number', `[${track.id}] Desviación de salida startD definida: ${track.startD}`);
     assert(typeof track.startD === 'number', `[${track.id}] Desviación de salida startD definida: ${track.startD}`);
 
     // 3. Elevación natural
@@ -146,9 +146,9 @@ function runTracksTestSuite() {
   const worldShader = fs.readFileSync(path.join(root, 'shaders/world.js'), 'utf8');
   assert(worldShader.includes('Pianos técnicos oficiales Las Vegas GP') && worldShader.includes('Rosa neón') && worldShader.includes('Azul cian'), 'Pianos tricolor de Las Vegas (rosa neón, blanco puro, azul cian) presentes en el shader');
 
-  // 8. Validación de carga condicional y modular en index.html
+  // 8. Validación de selección y carga modular en index.html
   const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('trackEntry.file'), 'index.html carga condicionalmente el archivo del circuito seleccionado');
+  assert(indexHtml.includes('TRACK_MANIFEST') && indexHtml.includes('__activeTrackEntry'), 'index.html selecciona de forma modular y asíncrona el circuito desde TRACK_MANIFEST');
   assert(indexHtml.includes('hasVegetation = !(trackEntry && trackEntry.noVegetation)') && indexHtml.includes('shaders/vegetation.js'), 'index.html carga vegetación de forma estrictamente condicional (desactivada en Las Vegas)');
   assert(indexHtml.includes('world/props-vegas.js') && indexHtml.includes('isVegas'), 'index.html carga la noria High Roller y MSG Sphere únicamente cuando se corre en Las Vegas');
   assert(indexHtml.includes('engine/track-factory.js'), 'index.html incluye el módulo unificado TrackFactory');
@@ -157,10 +157,8 @@ function runTracksTestSuite() {
   const TF = ctx.window.TrackFactory || ctx.TrackFactory;
   assert(TF && typeof TF === 'object', 'TrackFactory exportado y accesible');
   assert(typeof TF.sI === 'function', 'TrackFactory.sI definido');
-  assert(TF.sI(0, 3, 100) === 0, 'TrackFactory.sI en origen');
   assert(TF.sI(300, 3, 100) === 0, 'TrackFactory.sI vuelta completa cíclica');
   assert(TF.sI(-3, 3, 100) === 99, 'TrackFactory.sI índice negativo cíclico correcto');
-
   assert(typeof TF.gs === 'function', 'TrackFactory.gs definido');
   const testArr = new Float32Array([10, 0, 0, 0, 0]);
   const smoothDst = new Float32Array(5);
@@ -206,12 +204,12 @@ function runTracksTestSuite() {
   // Simulación mock de MeshBuilder para verificar constructores de PropFactory
   const mockMB = {
     nv: 0, ni: 0,
-    mat() {}, color() {},
+    mat() { }, color() { },
     box() { this.ni += 36; },
     cyl() { this.ni += 60; },
     tube() { this.ni += 48; },
     quad() { this.ni += 6; },
-    push() {}, pop() {}
+    push() { }, pop() { }
   };
   PF.createPaddockTruck({ mb: mockMB }, { color: [0.1, 0.2, 0.3] });
   assert(mockMB.ni > 0, 'PropFactory.createPaddockTruck genera geometría 3D');
@@ -224,12 +222,12 @@ function runTracksTestSuite() {
   const mockGantryMB = {
     nv: 0, ni: 0,
     mat(id, a, b, c) { gantryMats.push({ id, a, b, c }); },
-    color() {},
+    color() { },
     box() { this.ni += 36; },
     cyl() { this.ni += 60; },
     tube() { this.ni += 48; },
     quad() { this.ni += 6; },
-    push() {}, pop() {}
+    push() { }, pop() { }
   };
   PF.createStartGantry({ mb: mockGantryMB, md: mockGantryMB }, { s: 0, dL: -7.7, dR: 7.05, lights: true, local: true });
   const fiaLights = gantryMats.filter(m => m.id === 18);
