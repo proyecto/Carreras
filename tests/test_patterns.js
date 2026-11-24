@@ -8,6 +8,8 @@
  */
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const Patterns = require('../engine/patterns.js');
 
 let totalAsserts = 0;
@@ -247,6 +249,24 @@ console.log('--- [TEST SUITE] Patrones de Diseño (engine/patterns.js) ---');
   testAssert(resRL.speedMultiplier === 1.0, 'Estrategia RacingLine aplica velocidad estándar');
   testAssert(resOV.speedMultiplier > 1.0, 'Estrategia Overtake aplica sobrevelocidad para adelantamiento');
   testAssert(Patterns.CameraStrategies.Chase.id === 0, 'Estrategia de Cámara Chase configurada');
+}
+
+// 12. Validación de Modularización SOLID (engine/patterns/)
+{
+  const patternsDir = path.join(__dirname, '../engine/patterns');
+  const modules = [
+    'event-bus.js',
+    'catalogs.js',
+    'adapters.js',
+    'proxies.js',
+    'iterators.js',
+    'state-machine.js',
+    'templates.js',
+    'strategies.js'
+  ];
+  for (const mod of modules) {
+    testAssert(fs.existsSync(path.join(patternsDir, mod)), `Submódulo modular SOLID engine/patterns/${mod} presente`);
+  }
 }
 
 console.log(`Resultado Patrones de Diseño: ${totalAsserts} aserciones correctas, 0 fallos.`);
