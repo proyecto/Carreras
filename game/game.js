@@ -202,149 +202,28 @@ function onKeyDown(e) {
 function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; e.preventDefault(); } }
 function onBlur() { GS.held = 0; }
 
-// Vehículo provisional para pruebas
-const CARP = {
-  wheelR: VP.R, hubs: [[VP.L / 2, VP.R, -0.67], [VP.L / 2, VP.R, 0.67], [-VP.L / 2, VP.R, -0.65], [-VP.L / 2, VP.R, 0.65]], slotBody: 0, slotWheel: [0, 0, 0, 0], _t: m4(), _u: m4(),
-  build() {
-    const fam = R.families.test || mkFamily('test', { src: 'mat_test' }), set = new MeshSet(fam); R.drawables.push(set);
-    this.slotBody = objSlot(); for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
-    let mb = new MeshBuilder(); mb.mat(2).color(0.42, 0.6, 0.78); mb.rbox(0.1, 0.62, 0, 3.64, 0.62, 1.55, 0.12, 4); mb.rbox(-0.35, 1.15, 0, 2.1, 0.58, 1.4, 0.15, 4);
-    mb.mat(1).color(0.8, 0.8, 0.82); mb.box(0, 1.56, 0, 3.2, 0.06, 0.42);
-    set.add(mb.upload(), this.slotBody, 3);
-    mb = new MeshBuilder(); mb.mat(0).color(0.03, 0.03, 0.03); mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, -0.08, 0, VP.R, 0.08, VP.R, 24, true, true); mb.pop();
-    mb.mat(0).color(0.7, 0.7, 0.7); mb.box(0.12, 0, 0.085, 0.1, 0.3, 0.01);
-    const wm = mb.upload(); for (let i = 0; i < 4; i++) set.add(wm, this.slotWheel[i], 3);
-  },
-  inp: new Float64Array(2),
-  place(body, spin, susp) {
-    const steer = this.inp[0];
-    objPrev(this.slotBody).set(objModel(this.slotBody)); objModel(this.slotBody).set(body);
-    for (let i = 0; i < 4; i++) {
-      const h = this.hubs[i], m = objModel(this.slotWheel[i]); objPrev(this.slotWheel[i]).set(m);
-      m4translate(this._t, h[0], h[1] + susp[i], h[2]); m4mul(this._t, body, this._t);
-      if (i < 2) { m4rotY(this._u, -steer); m4mul(this._t, this._t, this._u); }
-      m4rotZ(this._u, -spin[i]); m4mul(m, this._t, this._u);
-    }
-  },
+// Obtención del coche activo y rival utilizando exclusivamente modelos reales del catálogo cars/
+const carObj = () => (CAR || (typeof CARS !== 'undefined' ? (CARS.active || CARS.list[0]) : null));
+const rivalObj = () => {
+  if (typeof CARS === 'undefined') return null;
+  if (CARS.rival) return CARS.rival;
+  if (CARS.list && CARS.list.length > 0) {
+    const activeId = (CARS.active && CARS.active.id) || (CAR && CAR.id);
+    const other = CARS.list.find(c => c && c.id !== activeId && typeof c.build === 'function');
+    if (other) return other;
+    return CARS.list[0];
+  }
+  return CAR || null;
 };
-const carObj = () => (CAR || CARP);
-const rivalObj = () => ((typeof CARS !== 'undefined' && CARS.rival) ? CARS.rival : CAR_RIVAL);
-
-// Coches rivales de competición GT3 controlados por la IA (#7 Amarillo, #12 Azul, #99 Rojo)
-function createRivalCar(number, bodyR, bodyG, bodyB, plateR, plateG, plateB) {
-  return {
-    wheelR: VP.R,
-    hubs: [[VP.L / 2, VP.R, -0.72], [VP.L / 2, VP.R, 0.72], [-VP.L / 2, VP.R, -0.72], [-VP.L / 2, VP.R, 0.72]],
-    slotBody: 0,
-    slotWheel: [0, 0, 0, 0],
-    _t: m4(),
-    _u: m4(),
-    inp: new Float64Array(2),
-    built: false,
-
-    build() {
-      if (this.built) return;
-      if (typeof R === 'undefined' || !R.drawables || typeof MeshBuilder === 'undefined') return;
-      const fam = (R.families && R.families.test) || (typeof mkFamily === 'function' ? mkFamily('test', { src: 'mat_test' }) : null);
-      if (!fam) return;
-      const set = new MeshSet(fam);
-      R.drawables.push(set);
-
-      this.slotBody = objSlot();
-      for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
-
-      let mb = new MeshBuilder();
-      // Chasis principal (mat=2 para laca de competición)
-      mb.mat(2).color(bodyR, bodyG, bodyB);
-      mb.rbox(0.08, 0.54, 0, 3.90, 0.50, 1.68, 0.10, 4);
-      mb.rbox(-0.32, 1.05, 0, 2.05, 0.52, 1.36, 0.12, 4);
-      mb.rbox(1.25, 0.58, 0, 1.10, 0.22, 1.58, 0.08, 4);
-
-      // Parabrisas y ventanas tintadas oscuras (mat=1)
-      mb.mat(1).color(0.10, 0.12, 0.14);
-      mb.box(-0.15, 1.08, 0, 1.85, 0.44, 1.38);
-
-      // Splitter frontal, difusor y faldones aerodinámicos (Negro carbono mat=0)
-      mb.mat(0).color(0.08, 0.08, 0.09);
-      mb.box(2.02, 0.22, 0, 0.42, 0.05, 1.84);
-      mb.box(-1.95, 0.28, 0, 0.40, 0.14, 1.76);
-      mb.box(0, 0.24, -0.84, 2.70, 0.06, 0.12);
-      mb.box(0, 0.24, 0.84, 2.70, 0.06, 0.12);
-
-      // Alerón trasero GT3 biplano de competición
-      mb.mat(0).color(0.12, 0.12, 0.13);
-      mb.box(-1.75, 1.18, -0.58, 0.08, 0.38, 0.05);
-      mb.box(-1.75, 1.18, 0.58, 0.08, 0.38, 0.05);
-      mb.box(-1.78, 1.38, 0, 0.46, 0.05, 1.82);
-      mb.mat(2).color(plateR, plateG, plateB); // Placas terminales de color
-      mb.box(-1.78, 1.38, -0.92, 0.50, 0.24, 0.03);
-      mb.box(-1.78, 1.38, 0.92, 0.50, 0.24, 0.03);
-
-      // Faros delanteros LED (mat=3)
-      mb.mat(3).color(1.0, 0.95, 0.75);
-      mb.box(1.92, 0.62, -0.62, 0.12, 0.10, 0.28);
-      mb.box(1.92, 0.62, 0.62, 0.12, 0.10, 0.28);
-
-      // Luces traseras LED rojas (mat=3)
-      mb.mat(3).color(1.0, 0.05, 0.05);
-      mb.box(-1.96, 0.68, -0.58, 0.08, 0.08, 0.36);
-      mb.box(-1.96, 0.68, 0.58, 0.08, 0.08, 0.36);
-
-      // Dorsal en el techo (mat=1)
-      mb.mat(1).color(1.0, 1.0, 1.0);
-      mb.box(-0.35, 1.34, 0, 0.60, 0.02, 0.60);
-
-      // Flags = 7 (GBUF | SHADOW | CUBE/MIRROR) -> visible en retrovisor digital
-      set.add(mb.upload(), this.slotBody, 7);
-
-      // Ruedas de aleación ligera GT
-      mb = new MeshBuilder();
-      mb.mat(0).color(0.04, 0.04, 0.04);
-      mb.push(m4rotX(m4(), PI / 2));
-      mb.cyl(0, -0.14, 0, VP.R, 0.28, VP.R, 24, true, true);
-      mb.pop();
-      mb.mat(1).color(0.18, 0.18, 0.20);
-      mb.push(m4rotX(m4(), PI / 2));
-      mb.cyl(0, -0.145, 0, VP.R * 0.72, 0.29, VP.R * 0.72, 16, true, true);
-      mb.pop();
-      mb.mat(1).color(0.55, 0.55, 0.58);
-      mb.push(m4rotX(m4(), PI / 2));
-      mb.cyl(0, 0, 0, VP.R * 0.58, 0.04, VP.R * 0.58, 16, true, true);
-      mb.pop();
-
-      const wm = mb.upload();
-      for (let i = 0; i < 4; i++) set.add(wm, this.slotWheel[i], 7);
-
-      this.built = true;
-    },
-
-    place(body, spin, susp) {
-      const steer = this.inp[0];
-      objPrev(this.slotBody).set(objModel(this.slotBody));
-      objModel(this.slotBody).set(body);
-      for (let i = 0; i < 4; i++) {
-        const h = this.hubs[i], m = objModel(this.slotWheel[i]);
-        objPrev(this.slotWheel[i]).set(m);
-        m4translate(this._t, h[0], h[1] + (susp ? susp[i] : 0), h[2]);
-        m4mul(this._t, body, this._t);
-        if (i < 2) {
-          m4rotY(this._u, -steer);
-          m4mul(this._t, this._t, this._u);
-        }
-        m4rotZ(this._u, -spin[i]);
-        m4mul(m, this._t, this._u);
-      }
-    }
-  };
-}
-
-const CAR_RIVAL = createRivalCar(7, 0.96, 0.78, 0.08, 0.85, 0.12, 0.12);
-const CAR_RIVAL2 = createRivalCar(12, 0.10, 0.40, 0.95, 0.95, 0.95, 0.95);
-const CAR_RIVAL3 = createRivalCar(99, 0.92, 0.12, 0.14, 0.96, 0.78, 0.08);
 
 function poseRival(CR, VR, gsR, kr, al) {
-  if (!CR || !CR.built || !VR) return;
-  const PR = VP;
+  if (!CR || !VR || !gsR) return;
+  if (!CR.built && typeof CR.build === 'function') {
+    CR.build();
+    CR.built = true;
+  }
+  if (!CR.slotBody && CR.slotBody !== 0) return;
+  const PR = (CR.physics && CR.physics.VP) || VP;
   const xr = VR.px + (VR.x - VR.px) * al, zr = VR.pz + (VR.z - VR.pz) * al, yr = VR.py + (VR.y - VR.py) * al;
   let dyr = VR.yaw - VR.pyaw; if (dyr > PI) dyr -= TAU; else if (dyr < -PI) dyr += TAU; const yawr = VR.pyaw + dyr * al;
   const gpr = VR.pgPitch + (VR.gPitch - VR.pgPitch) * al, grr = VR.pgRoll + (VR.gRoll - VR.pgRoll) * al, rollr = VR.proll + (VR.roll - VR.proll) * al, pitchr = VR.ppitch + (VR.pitch - VR.ppitch) * al, heaver = VR.pheave + (VR.heave - VR.pheave) * al;
@@ -357,16 +236,32 @@ function poseRival(CR, VR, gsR, kr, al) {
   m4ident(TR); TR[13] = 0.18 + heaver; m4mul(BR, GR0, TR);
   ROTQ[0] = -pitchr; rotZQ(TR); m4mul(BR, BR, TR); ROTQ[0] = -rollr; rotXQ(TR); m4mul(BR, BR, TR);
   m4ident(TR); TR[13] = -0.18; m4mul(BR, BR, TR);
-  for (let i = 0; i < 4; i++) {
-    const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
-    let su = VR.wy[i] + CR.wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
-    gsR.susp[i] = su; gsR.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
+  if (CR.hubs) {
+    const wheelR = CR.wheelR || PR.R;
+    for (let i = 0; i < 4; i++) {
+      const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
+      let su = VR.wy[i] + wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
+      gsR.susp[i] = su; gsR.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
+    }
   }
   if (!CR.inp) CR.inp = new Float64Array(2);
-  CR.inp[0] = gsR.steer; CR.inp[1] = gsR.steer * 14; CR.place(BR, gsR.spin, gsR.susp);
-  const bpR = objParams(CR.slotBody);
-  bpR[0] = ((kr & K_S) && VR.gear !== 0) || ((kr & K_W) && VR.gear === 0) ? 1 : 0; bpR[1] = VR.gear === 0 ? 1 : 0; bpR[2] = 1;
-  for (let i = 0; i < 4; i++) { const w = VR.omega[i]; objParams(CR.slotWheel[i])[0] = w < 0 ? -w : w; }
+  CR.inp[0] = gsR.steer; CR.inp[1] = gsR.steer * 14;
+  if (typeof CR.place === 'function') {
+    CR.place(BR, gsR.spin, gsR.susp);
+  }
+  if (CR.slotBody !== undefined && typeof objParams === 'function') {
+    const bpR = objParams(CR.slotBody);
+    if (bpR) {
+      bpR[0] = ((kr & K_S) && VR.gear !== 0) || ((kr & K_W) && VR.gear === 0) ? 1 : 0; bpR[1] = VR.gear === 0 ? 1 : 0; bpR[2] = 1;
+    }
+  }
+  if (CR.slotWheel && typeof objParams === 'function') {
+    for (let i = 0; i < 4; i++) {
+      const w = VR.omega[i];
+      const wp = objParams(CR.slotWheel[i]);
+      if (wp) wp[0] = w < 0 ? -w : w;
+    }
+  }
 }
 
 function gameInit() {
@@ -442,10 +337,11 @@ function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0, VEH, VIN);
   if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+    const rModel = rivalObj();
+    const rName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : 'RIVAL';
+    const rCol = (rModel && rModel.accent) ? rModel.accent : '#facc15';
     const rivals = [
-      { veh: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2, model: rivalObj(), gs: GS_RIVAL, name: 'RIVAL #7', col: '#facc15' },
-      { veh: (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null), vin: (typeof VIN_RIVAL2 !== 'undefined' ? VIN_RIVAL2 : null), ds: -16.0, dd: -0.2, model: (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), gs: GS_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' },
-      { veh: (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null), vin: (typeof VIN_RIVAL3 !== 'undefined' ? VIN_RIVAL3 : null), ds: -24.0, dd: 3.0, model: (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null), gs: GS_RIVAL3, name: 'RIVAL #99', col: '#ef4444' }
+      { veh: VEH_RIVAL, vin: VIN_RIVAL, ds: -8.0, dd: 3.2, model: rModel, gs: GS_RIVAL, name: rName, col: rCol }
     ];
     if (typeof gridManagerInstance !== 'undefined') {
       gridManagerInstance.init(rivals);
@@ -456,6 +352,10 @@ function gameRestart() {
         const VR = r.veh; VR.lapS = 0; VR.offCount = 0; VR.hits = 0; VR.laps = 0; VR.time = 0; VR.steps = 0; VR.spin.fill(0); VR.susp.fill(0);
         vehicleReset(TRK.L + TRK.startS + r.ds, TRK.startD + r.dd, 0, r.veh, r.vin);
       }
+    }
+  } else {
+    if (typeof gridManagerInstance !== 'undefined') {
+      gridManagerInstance.init([]);
     }
   }
   GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = GS.rivalKeys2 = GS.rivalKeys3 = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
@@ -487,16 +387,8 @@ function gameStep() {
         if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
           gridManagerInstance.stepAi(t, RACE_START.active);
           GS.rivalKeys = gridManagerInstance.rivals[0] ? gridManagerInstance.rivals[0].keys : 0;
-          GS.rivalKeys2 = gridManagerInstance.rivals[1] ? gridManagerInstance.rivals[1].keys : 0;
-          GS.rivalKeys3 = gridManagerInstance.rivals[2] ? gridManagerInstance.rivals[2].keys : 0;
         } else {
           GS.rivalKeys = (t < 0.5 || RACE_START.active) ? 0 : aiKeys(t, VEH_RIVAL);
-          if (typeof VEH_RIVAL2 !== 'undefined') {
-            GS.rivalKeys2 = (VEH_RIVAL2.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL2.time, VEH_RIVAL2);
-          }
-          if (typeof VEH_RIVAL3 !== 'undefined') {
-            GS.rivalKeys3 = (VEH_RIVAL3.time < 0.5 || RACE_START.active) ? 0 : aiKeys(VEH_RIVAL3.time, VEH_RIVAL3);
-          }
         }
       }
     }
@@ -505,19 +397,17 @@ function gameStep() {
 
   // Control de salida en parrilla con semáforo FIA (delegado en RaceDirector si está disponible)
   if (typeof raceDirectorInstance !== 'undefined') {
-    raceDirectorInstance.step(1 / 120, [
-      VEH,
-      (typeof VEH_RIVAL !== 'undefined' ? VEH_RIVAL : null),
-      (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null),
-      (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null)
-    ]);
+    const raceVehs = [VEH];
+    if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+      raceVehs.push(VEH_RIVAL);
+    }
+    raceDirectorInstance.step(1 / 120, raceVehs);
   } else if (RACE_START.active) {
-    RACE_START.step(1 / 120, [
-      VEH,
-      (typeof VEH_RIVAL !== 'undefined' ? VEH_RIVAL : null),
-      (typeof VEH_RIVAL2 !== 'undefined' ? VEH_RIVAL2 : null),
-      (typeof VEH_RIVAL3 !== 'undefined' ? VEH_RIVAL3 : null)
-    ]);
+    const raceVehs = [VEH];
+    if (GAME.rivalEnabled !== false && typeof VEH_RIVAL !== 'undefined') {
+      raceVehs.push(VEH_RIVAL);
+    }
+    RACE_START.step(1 / 120, raceVehs);
   }
 
   vehicleStep(GS.keys, VEH, VIN);
@@ -529,23 +419,8 @@ function gameStep() {
         NET.updateRemoteVehicle(VEH_RIVAL, PHYS_DT);
       } else {
         vehicleStep(GS.rivalKeys, VEH_RIVAL, VIN_RIVAL);
-        if (typeof VEH_RIVAL2 !== 'undefined' && typeof VIN_RIVAL2 !== 'undefined') {
-          vehicleStep(GS.rivalKeys2 || 0, VEH_RIVAL2, VIN_RIVAL2);
-        }
-        if (typeof VEH_RIVAL3 !== 'undefined' && typeof VIN_RIVAL3 !== 'undefined') {
-          vehicleStep(GS.rivalKeys3 || 0, VEH_RIVAL3, VIN_RIVAL3);
-        }
       }
       vehicleCarCollide(VEH, VEH_RIVAL);
-      if (typeof VEH_RIVAL2 !== 'undefined') {
-        vehicleCarCollide(VEH, VEH_RIVAL2);
-        vehicleCarCollide(VEH_RIVAL, VEH_RIVAL2);
-      }
-      if (typeof VEH_RIVAL3 !== 'undefined') {
-        vehicleCarCollide(VEH, VEH_RIVAL3);
-        vehicleCarCollide(VEH_RIVAL, VEH_RIVAL3);
-        if (typeof VEH_RIVAL2 !== 'undefined') vehicleCarCollide(VEH_RIVAL2, VEH_RIVAL3);
-      }
     }
   }
   if (VEH.laps !== GS.lapSeen) lapCross();
@@ -614,14 +489,13 @@ function gamePose() {
   const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
 
-  // Pose e interpolación de los rivales IA
+  // Pose e interpolación del rival IA utilizando exclusivamente el modelo real
   if (GAME.rivalEnabled !== false) {
     if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
       gridManagerInstance.poseAll(al);
     } else {
-      if (typeof VEH_RIVAL !== 'undefined') poseRival(rivalObj(), VEH_RIVAL, GS_RIVAL, GS.rivalKeys, al);
-      if (typeof CAR_RIVAL2 !== 'undefined' && typeof VEH_RIVAL2 !== 'undefined') poseRival(CAR_RIVAL2, VEH_RIVAL2, GS_RIVAL2, GS.rivalKeys2 || 0, al);
-      if (typeof CAR_RIVAL3 !== 'undefined' && typeof VEH_RIVAL3 !== 'undefined') poseRival(CAR_RIVAL3, VEH_RIVAL3, GS_RIVAL3, GS.rivalKeys3 || 0, al);
+      const rM = rivalObj();
+      if (typeof VEH_RIVAL !== 'undefined' && rM) poseRival(rM, VEH_RIVAL, GS_RIVAL, GS.rivalKeys, al);
     }
   }
 
@@ -692,17 +566,15 @@ function gameCamera() {
 }
 BUILD.push(async () => {
   if (GAME.mode === 'test' || GAME.mode === 'car') return;
-  if (!CAR) CARP.build();
+  if (!CAR && typeof CARS !== 'undefined') CAR = CARS.active || CARS.list[0];
   if (GAME.rivalEnabled !== false) {
     if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
       gridManagerInstance.buildAll();
     } else {
-      const rivals = [rivalObj(), (typeof CAR_RIVAL2 !== 'undefined' ? CAR_RIVAL2 : null), (typeof CAR_RIVAL3 !== 'undefined' ? CAR_RIVAL3 : null)];
-      for (const rCar of rivals) {
-        if (rCar && typeof rCar.build === 'function') {
-          rCar.build();
-          rCar.built = true;
-        }
+      const rM = rivalObj();
+      if (rM && typeof rM.build === 'function' && !rM.built) {
+        rM.build();
+        rM.built = true;
       }
     }
   }

@@ -242,16 +242,16 @@ function hudDrawMinimap() {
   const bestLapSec = (typeof LAP !== 'undefined' && LAP[2] > 0) ? LAP[2] : -1;
   const lapCount = (typeof VEH !== 'undefined' && VEH.laps !== undefined) ? VEH.laps : 0;
 
-  // Lista de rivales para torre de posiciones y minimapa
+  // Lista de rivales para torre de posiciones y minimapa (exclusivamente modelos reales)
   const rivals = [];
-  if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
+  if (typeof GAME !== 'undefined' && GAME.rivalEnabled === false) {
+    // Modo práctica en solitario: sin rivales
+  } else if (typeof gridManagerInstance !== 'undefined' && gridManagerInstance.rivals && gridManagerInstance.rivals.length) {
     for (const rCar of gridManagerInstance.rivals) {
       if (rCar.veh) rivals.push(rCar);
     }
-  } else {
-    if (typeof VEH_RIVAL !== 'undefined') rivals.push({ veh: VEH_RIVAL, name: 'RIVAL #7', col: '#facc15' });
-    if (typeof VEH_RIVAL2 !== 'undefined') rivals.push({ veh: VEH_RIVAL2, name: 'RIVAL #12', col: '#38bdf8' });
-    if (typeof VEH_RIVAL3 !== 'undefined') rivals.push({ veh: VEH_RIVAL3, name: 'RIVAL #99', col: '#ef4444' });
+  } else if (typeof VEH_RIVAL !== 'undefined' && typeof CARS !== 'undefined' && CARS.rival) {
+    rivals.push({ veh: VEH_RIVAL, name: CARS.rival.name || 'RIVAL', col: CARS.rival.accent || '#38bdf8' });
   }
 
   // Delegación modular con HudComponents (Patrón Composite/Component)
@@ -428,7 +428,7 @@ function hudDrawMinimap() {
   const allCars = [{ name: `TÚ (${carName})`, prog: curProg, isPlayer: true, col: '#ff5a36' }];
   for (let i = 0; i < rivals.length; i++) {
     if (rivals[i] && rivals[i].veh) {
-      allCars.push({ name: rivals[i].name || `RIVAL #${i + 1}`, prog: rivals[i].veh.laps * trk.L + rivals[i].veh.lapS, isPlayer: false, col: rivals[i].col || '#facc15' });
+      allCars.push({ name: rivals[i].name || `RIVAL`, prog: rivals[i].veh.laps * trk.L + rivals[i].veh.lapS, isPlayer: false, col: rivals[i].col || '#facc15' });
     }
   }
   allCars.sort((a, b) => b.prog - a.prog);

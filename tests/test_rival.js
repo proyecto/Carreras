@@ -38,7 +38,7 @@ function runRivalTestSuite() {
     Uint8Array,
     ArrayBuffer,
     Math,
-    console: { log: () => {} },
+    console: { log: () => { } },
     WGSL: {},
     atob: (b64) => Buffer.from(b64, 'base64').toString('binary')
   };

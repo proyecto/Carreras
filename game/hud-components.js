@@ -222,7 +222,7 @@ const HudComponents = {
         const rCar = rivals[i];
         if (rCar && rCar.veh) {
           const prog = rCar.veh.laps * trk.L + rCar.veh.lapS;
-          allCars.push({ name: rCar.name || `RIVAL #${i + 1}`, prog, isPlayer: false, col: rCar.col || '#facc15' });
+          allCars.push({ name: rCar.name || `RIVAL`, prog, isPlayer: false, col: rCar.col || '#facc15' });
         }
       }
 

@@ -27,6 +27,7 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 
 ---
 
+
 ## 🚗 Catálogo de Vehículos (15 Modelos)
 
 1. **Mercedes-AMG GT3 Evo (2020)**: 550 CV · V8 6.2L · Chasis de competición GT3 balanceado.
@@ -73,6 +74,7 @@ El simulador cuenta con físicas realistas de neumáticos (Pacejka Magic Formula
 | **Pausa / Menú** | `Escape` | `P` |
 
 ### Mando / Gamepad
+
 - **Dirección**: Stick Analógico Izquierdo
 - **Acelerador**: Gatillo Derecho (RT / R2)
 - **Freno**: Gatillo Izquierdo (LT / L2)
@@ -98,6 +100,7 @@ npx serve .
 ```
 
 A continuación, abra en su navegador compatible con WebGPU (Google Chrome, Microsoft Edge):
+
 ```
 http://localhost:8000
 ```
@@ -116,7 +119,8 @@ El simulador cuenta con juego en red de baja latencia (**15–35 ms**) mediante 
   4. Pásale el enlace a tu amigo $\to$ al abrirlo se conectan automáticamente en menos de 1 segundo.
   5. ¡Ambos bólidos compiten en pista con colisiones reales, rebufo y medidor de ping en el HUD!
 
-### Parámetros de URL Disponibles:
+### Parámetros de URL Disponibles
+
 - `?room=<codigo-sala>`: Se une automáticamente a la sala multijugador P2P indicada (ej: `?room=RACE-742`).
 - `?car=<id-coche>`: Carga directamente el coche indicado (ej: `?car=ford-mustang-gt3`).
 - `?track=<id-circuito>`: Carga el circuito indicado (ej: `?track=nurburgring-gp`).
