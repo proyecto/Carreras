@@ -195,6 +195,56 @@ const I18N = {
           subtitle: '2011 FIA GT3 Spec · 4.4L Atmospheric V8 P65B44 · 515 HP · RWD',
           specs: '1190 kg · 515 HP · Xtrac 6-speed seq · RWD · Crowne Plaza Livery',
         },
+        'bmw-m4-gt3-evo-2026': {
+          name: 'BMW M4 GT3 EVO (2026)',
+          subtitle: '2026 FIA GT3 EVO Spec · 3.0L TwinPower Turbo P58 · 590 HP · RWD',
+          specs: '1265 kg · 590 HP · Xtrac 6-speed seq · RWD · BMW M Motorsport',
+        },
+        'toyota-gr-gt3-2024': {
+          name: 'Toyota GR GT3 (2024)',
+          subtitle: 'FIA GT3 Concept · 4.0L V8 Twin-Turbo · 650 HP · RWD',
+          specs: '1280 kg · 650 HP · Hewland 6-speed seq · RWD · Gazoo Racing',
+        },
+        'bentley-continental-gt3-pikes-peak': {
+          name: 'Bentley Continental GT3 Pikes Peak',
+          subtitle: 'Pikes Peak Time Attack 1 · 4.0L V8 Twin-Turbo Biofuel · 750 HP · RWD',
+          specs: '1300 kg · 750 HP · 6-speed seq · RWD · Pikes Peak Aero & Biofuel',
+        },
+        'maserati-mc20-gt3-2024': {
+          name: 'Maserati MC20 GT3 (2024)',
+          subtitle: 'FIA GT3 Spec · 3.0L V6 Nettuno Twin-Turbo · 620 HP · RWD',
+          specs: '1270 kg · 620 HP · 6-speed seq · RWD · Maserati Corse',
+        },
+        'lamborghini-huracan-gt3-2023': {
+          name: 'Lamborghini Huracán GT3 (2023)',
+          subtitle: 'EVO2 Spec · 5.2L V10 Atmospheric · 640 HP · RWD',
+          specs: '1230 kg · 640 HP · Hör 6-speed seq · RWD · Squadra Corse',
+        },
+        'audi-r8-lms-gt3-2019': {
+          name: 'Audi R8 LMS GT3 (2019)',
+          subtitle: 'FIA GT3 Spec · 5.2L V10 FSI Atmospheric · 585 HP · RWD',
+          specs: '1225 kg · 585 HP · 6-speed seq · RWD · Audi Sport Customer Racing',
+        },
+        'ferrari-daytona-sp3-2023': {
+          name: 'Ferrari Daytona SP3 (2023)',
+          subtitle: 'Icona Series · 6.5L Atmospheric V12 F140HC · 840 HP · RWD',
+          specs: '1485 kg · 840 HP · F1 7-speed Dual-Clutch · RWD · Rosso Magma',
+        },
+        'toyota-gr-supra-gt300-2023': {
+          name: 'Toyota GR Supra GT300 (2023)',
+          subtitle: 'Super GT GT300 · 5.2L V8 Atmospheric 2UR-GSE · 500 HP · RWD',
+          specs: '1200 kg · 500 HP · Hewland 6-speed seq · RWD · Green Brave Livery',
+        },
+        'ferrari-296-gt3-2024': {
+          name: 'Ferrari 296 GT3 (2024)',
+          subtitle: 'FIA GT3 Spec · 3.0L V6 Twin-Turbo 120° · 600 HP · RWD',
+          specs: '1250 kg · 600 HP · Xtrac 6-speed seq · RWD · AF Corse Livery',
+        },
+        'porsche-911-gt3-r-rennsport-2024': {
+          name: 'Porsche 911 GT3 R Rennsport',
+          subtitle: 'Limited Rennsport Edition · 4.2L Boxer 6 Atmospheric · 620 HP · RWD',
+          specs: '1240 kg · 620 HP · 6-speed seq · RWD · Laguna Seca Rennsport Reunion',
+        },
       },
 
       // Circuitos
@@ -406,6 +456,56 @@ const I18N = {
           name: 'BMW Z4 GT3 (2011)',
           subtitle: '2011 Homologación FIA GT3 · 4.4L V8 Atmosférico P65B44 · 515 CV · RWD',
           specs: '1190 kg · 515 CV · Xtrac 6-vel seq · RWD · Decoración Crowne Plaza',
+        },
+        'bmw-m4-gt3-evo-2026': {
+          name: 'BMW M4 GT3 EVO (2026)',
+          subtitle: '2026 Homologación FIA GT3 EVO · 3.0L TwinPower Turbo P58 · 590 CV · RWD',
+          specs: '1265 kg · 590 CV · Xtrac 6-vel seq · RWD · BMW M Motorsport',
+        },
+        'toyota-gr-gt3-2024': {
+          name: 'Toyota GR GT3 (2024)',
+          subtitle: 'Prototipo FIA GT3 · 4.0L V8 Twin-Turbo · 650 CV · RWD',
+          specs: '1280 kg · 650 CV · Hewland 6-vel seq · RWD · Gazoo Racing',
+        },
+        'bentley-continental-gt3-pikes-peak': {
+          name: 'Bentley Continental GT3 Pikes Peak',
+          subtitle: 'Pikes Peak Time Attack 1 · 4.0L V8 Twin-Turbo Biocombustible · 750 CV · RWD',
+          specs: '1300 kg · 750 CV · 6-vel seq · RWD · Carga aerodinámica Pikes Peak',
+        },
+        'maserati-mc20-gt3-2024': {
+          name: 'Maserati MC20 GT3 (2024)',
+          subtitle: 'Homologación FIA GT3 · 3.0L V6 Nettuno Twin-Turbo · 620 CV · RWD',
+          specs: '1270 kg · 620 CV · 6-vel seq · RWD · Maserati Corse',
+        },
+        'lamborghini-huracan-gt3-2023': {
+          name: 'Lamborghini Huracán GT3 (2023)',
+          subtitle: 'Spec EVO2 · 5.2L V10 Atmosférico · 640 CV · RWD',
+          specs: '1230 kg · 640 CV · Hör 6-vel seq · RWD · Squadra Corse',
+        },
+        'audi-r8-lms-gt3-2019': {
+          name: 'Audi R8 LMS GT3 (2019)',
+          subtitle: 'Homologación FIA GT3 · 5.2L V10 FSI Atmosférico · 585 CV · RWD',
+          specs: '1225 kg · 585 CV · 6-vel seq · RWD · Audi Sport Customer Racing',
+        },
+        'ferrari-daytona-sp3-2023': {
+          name: 'Ferrari Daytona SP3 (2023)',
+          subtitle: 'Serie Icona · 6.5L V12 Atmosférico F140HC · 840 CV · RWD',
+          specs: '1485 kg · 840 CV · F1 doble embrague 7-vel · RWD · Rosso Magma',
+        },
+        'toyota-gr-supra-gt300-2023': {
+          name: 'Toyota GR Supra GT300 (2023)',
+          subtitle: 'Super GT GT300 · 5.2L V8 Atmosférico 2UR-GSE · 500 CV · RWD',
+          specs: '1200 kg · 500 CV · Hewland 6-vel seq · RWD · Decoración Green Brave',
+        },
+        'ferrari-296-gt3-2024': {
+          name: 'Ferrari 296 GT3 (2024)',
+          subtitle: 'Homologación FIA GT3 · 3.0L V6 120° Twin-Turbo · 600 CV · RWD',
+          specs: '1250 kg · 600 CV · Xtrac 6-vel seq · RWD · Decoración AF Corse',
+        },
+        'porsche-911-gt3-r-rennsport-2024': {
+          name: 'Porsche 911 GT3 R Rennsport',
+          subtitle: 'Edición limitada Rennsport · 4.2L Bóxer 6 Atmosférico · 620 CV · RWD',
+          specs: '1240 kg · 620 CV · 6-vel seq · RWD · Laguna Seca Rennsport Reunion',
         },
       },
 
