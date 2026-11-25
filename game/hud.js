@@ -60,32 +60,37 @@ function hudBuildMap(W, Hh, r) {
   fc.width = W; fc.height = Hh;
   const g = fc.getContext('2d');
 
-  // Panel estético lateral de cristal oscuro translúcido
+  // Panel estético de cristal oscuro translúcido
   g.beginPath();
-  g.roundRect(0, 0, W, Hh, Math.round(r * 0.14));
-  g.fillStyle = 'rgba(9, 11, 14, 0.76)';
+  g.roundRect(0, 0, W, Hh, Math.round(Math.min(W, Hh) * 0.09));
+  g.fillStyle = 'rgba(9, 11, 14, 0.78)';
   g.fill();
   g.lineWidth = Math.max(1, Math.round(r * 0.016));
   g.strokeStyle = 'rgba(255, 255, 255, 0.16)';
   g.stroke();
 
-  // Divisores horizontales entre las secciones modulares del HUD izquierdo
-  const yS1 = Math.round(r * 0.90); // Fin aviso de curva y radar dinámico
-  const yS2 = Math.round(r * 1.42); // Fin telemetría de vuelta (a continuación inicia el minimapa)
+  const isHoriz = W > Hh * 2;
+  const yS1 = Math.round(r * 0.90);
+  const yS2 = Math.round(r * 1.42);
 
   g.beginPath();
-  g.moveTo(Math.round(r * 0.10), yS1);
-  g.lineTo(W - Math.round(r * 0.10), yS1);
-  g.moveTo(Math.round(r * 0.10), yS2);
-  g.lineTo(W - Math.round(r * 0.10), yS2);
+  if (isHoriz) {
+    const xS1 = Math.round(W * 0.36);
+    const xS2 = Math.round(W * 0.68);
+    const padY = Math.round(Hh * 0.12);
+    g.moveTo(xS1, padY); g.lineTo(xS1, Hh - padY);
+    g.moveTo(xS2, padY); g.lineTo(xS2, Hh - padY);
+  } else {
+    g.moveTo(Math.round(r * 0.10), yS1);
+    g.lineTo(W - Math.round(r * 0.10), yS1);
+    g.moveTo(Math.round(r * 0.10), yS2);
+    g.lineTo(W - Math.round(r * 0.10), yS2);
+  }
   g.strokeStyle = 'rgba(255, 255, 255, 0.12)';
   g.lineWidth = Math.max(1, Math.round(r * 0.012));
   g.stroke();
 
-  // (Nota de arquitectura: Los textos y títulos se delegan a HudComponents para garantizar
-  // tipografía dinámica de alta legibilidad sin solapamientos entre capas de canvas)
-
-  // Trazado del circuito en la Sección 3 (Minimapa inferior ampliado)
+  // Trazado del circuito (Sección 3: columna derecha en horizontal, o inferior en vertical)
   const trk = (typeof TRK !== 'undefined' ? TRK : null);
   if (trk && trk.N > 1 && trk.x && trk.z) {
     let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
@@ -94,14 +99,15 @@ function hudBuildMap(W, Hh, r) {
       if (x < minX) minX = x; if (x > maxX) maxX = x;
       if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
     }
-    const mapMargin = Math.round(r * 0.16);
-    const boxW = W - mapMargin * 2;
-    const yMapTop = yS2 + Math.round(r * 0.18);
+    const mapMargin = isHoriz ? Math.round(Hh * 0.10) : Math.round(r * 0.16);
+    const xMapLeft = isHoriz ? Math.round(W * 0.68) + mapMargin : mapMargin;
+    const boxW = isHoriz ? (W - Math.round(W * 0.68) - mapMargin * 2) : (W - mapMargin * 2);
+    const yMapTop = isHoriz ? mapMargin : (yS2 + Math.round(r * 0.18));
     const boxH = Hh - yMapTop - mapMargin;
     const spanX = Math.max(10, maxX - minX);
     const spanZ = Math.max(10, maxZ - minZ);
     const scale = Math.min(boxW / spanX, boxH / spanZ);
-    const cX = mapMargin + boxW * 0.5;
+    const cX = xMapLeft + boxW * 0.5;
     const cZ = yMapTop + boxH * 0.5;
     const midTrackX = (minX + maxX) * 0.5;
     const midTrackZ = (minZ + maxZ) * 0.5;
@@ -179,16 +185,18 @@ function hudLayout() {
   H.bgS = hudStrip(H.cs, sLabels, [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   H.K.fill(-9);
 
-  // Columna lateral izquierda (Siguiente curva, Telemetría de vuelta, Minimapa)
+  // HUD de curva y telemetría pegado justo debajo del retrovisor (mismo ancho y alto: 630x100)
   if (H.cm) {
-    const mW = Math.round(r * 2.70), mH = Math.round(r * 5.20);
+    const mirrorW = 630;
+    const mirrorH = 100;
+    const mW = Math.round(mirrorW * dpr), mH = Math.round(mirrorH * dpr);
     H.cm.width = mW; H.cm.height = mH;
-    H.cm.style.width = mW / dpr + 'px'; H.cm.style.height = mH / dpr + 'px';
-    H.cm.style.top = '1.6vh';
-    H.cm.style.left = '1.6vh';
+    H.cm.style.width = mirrorW + 'px'; H.cm.style.height = mirrorH + 'px';
+    H.cm.style.top = `calc(1.6vh + ${mirrorH + 4}px)`;
+    H.cm.style.left = '50%';
     H.cm.style.right = 'auto';
     H.cm.style.bottom = 'auto';
-    H.cm.style.transform = 'none';
+    H.cm.style.transform = 'translateX(-50%)';
     hudBuildMap(mW, mH, r);
   }
 
@@ -253,6 +261,151 @@ function hudDrawMinimap() {
     }
   } else if (typeof VEH_RIVAL !== 'undefined' && typeof CARS !== 'undefined' && CARS.rival) {
     rivals.push({ veh: VEH_RIVAL, name: CARS.rival.name || 'RIVAL', col: CARS.rival.accent || '#38bdf8' });
+  }
+
+  // Modo horizontal compacto (pegado debajo del retrovisor: 3 columnas)
+  if (W > Hh * 2) {
+    const xS1 = Math.round(W * 0.36);
+    const xS2 = Math.round(W * 0.68);
+    const padX = Math.round(Hh * 0.14);
+    const fSm = Math.max(9, Math.round(Hh * 0.14));
+    const fMd = Math.max(11, Math.round(Hh * 0.18));
+    const fLg = Math.max(13, Math.round(Hh * 0.22));
+    const fmtT = (sec) => {
+      if (sec < 0) return '-:--.--';
+      const cs = Math.min(59999, Math.round(sec * 100));
+      const mn = (cs / 6000) | 0, sc = ((cs / 100) | 0) % 60, cc = cs % 100;
+      return `${mn}:${sc < 10 ? '0' : ''}${sc}.${cc < 10 ? '0' : ''}${cc}`;
+    };
+
+    // Columna 1: Siguiente curva y nombre
+    const corners = (trk.corners && trk.corners.length) ? trk.corners : ((trk.spec && trk.spec.corners) || []);
+    let cInfo = null, cDist = 0, inC = false;
+    for (let ci = 0; ci < corners.length; ci++) {
+      const c = corners[ci], s0 = c.s0 !== undefined ? c.s0 : c.s, s1 = c.s1 !== undefined ? c.s1 : (s0 + 30);
+      if (s0 !== undefined && (s0 <= s1 ? (curTrackS >= s0 - 6 && curTrackS <= s1 + 6) : (curTrackS >= s0 - 6 || curTrackS <= s1 + 6))) {
+        cInfo = c; inC = true; break;
+      }
+    }
+    if (!cInfo) {
+      let minD = 1e9;
+      for (let ci = 0; ci < corners.length; ci++) {
+        const c = corners[ci], s0 = c.s0 !== undefined ? c.s0 : c.s;
+        if (s0 === undefined) continue;
+        const d = (s0 - curTrackS + trk.L) % trk.L;
+        if (d < minD) { minD = d; cInfo = c; cDist = d; }
+      }
+    }
+    m.textBaseline = 'top';
+    m.font = `700 ${fSm}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
+    m.fillStyle = inC ? '#ff5a36' : 'rgba(255,255,255,0.6)';
+    m.fillText(inC ? 'EN CURVA' : 'PRÓXIMA CURVA', padX, Math.round(Hh * 0.10));
+
+    const cName = cInfo ? (cInfo.name || cInfo.id || 'Curva') : 'Recta';
+    let cDir = cInfo && cInfo.dir ? cInfo.dir : 0;
+    if (!cDir && cInfo && trk.k) {
+      const sMid = Math.floor(((cInfo.s0 !== undefined ? cInfo.s0 : cInfo.s) || 0) % trk.N);
+      const kVal = trk.k[sMid < 0 ? sMid + trk.N : sMid] || 0;
+      if (Math.abs(kVal) > 0.001) cDir = kVal > 0 ? 1 : -1;
+    }
+    const dirTxt = cDir ? (cDir < 0 ? '↰ IZQ' : '↱ DER') : '';
+    m.font = `700 ${fLg}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
+    m.fillStyle = '#ffffff';
+    m.fillText(cName, padX, Math.round(Hh * 0.30), xS1 - padX * 2);
+
+    m.font = `600 ${fMd}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
+    m.fillStyle = '#facc15';
+    const subC = inC ? (dirTxt || 'EN CURVA') : `${dirTxt ? dirTxt + ' · ' : ''}a ${Math.round(cDist)} m`;
+    m.fillText(subC.trim(), padX, Math.round(Hh * 0.62), xS1 - padX * 2);
+
+    // Columna 2: Gráfica radar de la próxima curva (heading-up)
+    const radPad = Math.round(Hh * 0.10);
+    const radarX = xS1 + radPad;
+    const radarY = radPad;
+    const radarW = (xS2 - xS1) - radPad * 2;
+    const radarH = Hh - radPad * 2;
+    m.save();
+    m.beginPath();
+    m.roundRect(radarX, radarY, radarW, radarH, Math.round(Hh * 0.08));
+    m.fillStyle = 'rgba(7, 11, 17, 0.88)';
+    m.fill();
+    m.lineWidth = 1;
+    m.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+    m.stroke();
+    m.clip();
+
+    const rcx = radarX + radarW * 0.5;
+    const rcy = radarY + radarH * 0.82;
+    const rScale = (radarH * 0.72) / 160;
+
+    // Arcos guía de distancia
+    m.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    m.lineWidth = 1;
+    for (const distM of [50, 100, 150]) {
+      m.beginPath();
+      m.arc(rcx, rcy, distM * rScale, Math.PI, 0, false);
+      m.stroke();
+    }
+
+    // Proyección de la carretera delante del coche
+    if (trk.N > 2 && trk.x && trk.z) {
+      const i0 = ((Math.floor(curM) % trk.N) + trk.N) % trk.N;
+      const i1 = (i0 + 4) % trk.N;
+      const fx = trk.x[i1] - trk.x[i0], fz = trk.z[i1] - trk.z[i0];
+      const fLen = Math.hypot(fx, fz) || 1;
+      const ux = fx / fLen, uz = fz / fLen;
+      const rx = -uz, rz = ux;
+      const x0 = trk.x[i0], z0 = trk.z[i0];
+
+      m.beginPath();
+      for (let ds = 0; ds <= 180; ds += 4) {
+        const idx = (i0 + ds) % trk.N;
+        const dx = trk.x[idx] - x0, dz = trk.z[idx] - z0;
+        const px = rcx + (dx * rx + dz * rz) * rScale;
+        const py = rcy - (dx * ux + dz * uz) * rScale;
+        if (ds === 0) m.moveTo(px, py); else m.lineTo(px, py);
+      }
+      m.lineCap = 'round';
+      m.lineJoin = 'round';
+      m.lineWidth = Math.max(4, Math.round(Hh * 0.07));
+      m.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      m.stroke();
+      m.lineWidth = Math.max(1.5, Math.round(Hh * 0.025));
+      m.strokeStyle = '#facc15';
+      m.stroke();
+    }
+
+    // Triángulo del coche
+    m.beginPath();
+    m.moveTo(rcx, rcy - 4);
+    m.lineTo(rcx - 3.5, rcy + 3);
+    m.lineTo(rcx + 3.5, rcy + 3);
+    m.closePath();
+    m.fillStyle = '#ff5a36';
+    m.fill();
+    m.restore();
+
+    // Columna 3: Posición en el minimapa (jugador + rivales)
+    const [cX, cZ, midX, midZ, sc] = H.mapTrans;
+    if (sc > 0) {
+      for (const rv of rivals) {
+        if (!rv.veh) continue;
+        m.beginPath();
+        m.arc(cX + (rv.veh.x - midX) * sc, cZ + (rv.veh.z - midZ) * sc, Math.max(2.5, Hh * 0.035), 0, TAU);
+        m.fillStyle = rv.col || '#38bdf8';
+        m.fill();
+      }
+      if (typeof GS !== 'undefined') {
+        m.beginPath();
+        m.arc(cX + (GS.cx - midX) * sc, cZ + (GS.cz - midZ) * sc, Math.max(3.5, Hh * 0.048), 0, TAU);
+        m.fillStyle = '#ff5a36';
+        m.fill();
+        m.lineWidth = 1.5;
+        m.strokeStyle = '#ffffff';
+        m.stroke();
+      }
+    }
+    return;
   }
 
   // Delegación modular con HudComponents (Patrón Composite/Component)
@@ -464,6 +617,7 @@ function hudDrawLeaderboard() {
       driverName: pDriverName,
       carName: pCarName,
       prog: curProg,
+      curLap: (typeof LAP !== 'undefined' && LAP[3] === 1 && typeof VEH !== 'undefined') ? Math.max(0, VEH.time - LAP[0]) : 0,
       bestLap: pBestLap,
       lastLap: pLastLap,
       col: '#ff5a36'

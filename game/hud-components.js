@@ -522,15 +522,15 @@ const HudComponents = {
 
       const padX = Math.round(r * 0.12);
       const headerH = Math.round(r * 0.32);
-      const rowsStartY = headerH + Math.round(r * 0.05);
-      const rowStepY = Math.round(r * 0.34);
-      const cardH = Math.round(r * 0.30);
+      const rowsStartY = Math.round(r * 0.20);
+      const rowStepY = Math.round(r * 0.46);
+      const cardH = Math.round(r * 0.42);
       const cardW = W - padX * 2;
       const cardX = padX;
 
-      const maxPossibleRows = Math.max(1, Math.floor((Hh - rowsStartY - Math.round(r * 0.06)) / rowStepY));
+      const maxPossibleRows = Math.max(1, Math.floor((Hh - rowsStartY - Math.round(r * 0.04)) / rowStepY));
       const numRows = Math.min(maxPossibleRows, allCars.length);
-      const boxH = Math.min(Hh, rowsStartY + numRows * rowStepY + Math.round(r * 0.06));
+      const boxH = Math.min(Hh, rowsStartY + numRows * rowStepY + Math.round(r * 0.04));
 
       p.clearRect(0, 0, W, Hh);
 
@@ -561,29 +561,33 @@ const HudComponents = {
       p.fillText(carsCountText, W - padX, Math.round(r * 0.085));
 
       // Línea divisoria superior
+      const divY = Math.round(r * 0.175);
       p.beginPath();
-      p.moveTo(Math.round(r * 0.10), headerH);
-      p.lineTo(W - Math.round(r * 0.10), headerH);
+      p.moveTo(Math.round(r * 0.10), divY);
+      p.lineTo(W - Math.round(r * 0.10), divY);
       p.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       p.lineWidth = Math.max(1, Math.round(r * 0.010));
       p.stroke();
 
-      // 2. Tarjetas de clasificación (2 líneas por participante)
-      const fL1 = Math.round(r * 0.080);
-      const fCar = Math.round(r * 0.074);
-      const fLbl = Math.round(r * 0.065);
-      const fTime = Math.round(r * 0.074);
+      // 2. Tarjetas de clasificación (3 líneas por participante, letra más grande)
+      const fL1 = Math.round(r * 0.112);
+      const fCar = Math.round(r * 0.098);
+      const fLbl = Math.round(r * 0.084);
+      const fTime = Math.round(r * 0.098);
+      const cardH3 = cardH;
+      const rowStep3 = rowStepY;
 
       for (let i = 0; i < numRows; i++) {
         const c = allCars[i];
-        const ry = rowsStartY + i * rowStepY;
+        const ry = rowsStartY + i * rowStep3;
+        if (ry + cardH3 > Hh) break;
 
         // Fondo y borde de tarjeta individual
         p.beginPath();
         if (typeof p.roundRect === 'function') {
-          p.roundRect(cardX, ry, cardW, cardH, Math.round(r * 0.04));
+          p.roundRect(cardX, ry, cardW, cardH3, Math.round(r * 0.04));
         } else {
-          p.rect(cardX, ry, cardW, cardH);
+          p.rect(cardX, ry, cardW, cardH3);
         }
 
         if (c.isPlayer) {
@@ -596,10 +600,10 @@ const HudComponents = {
           // Barra de acento lateral del jugador
           p.fillStyle = '#ff5a36';
           if (typeof p.fillRect === 'function') {
-            p.fillRect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH - Math.round(r * 0.08));
+            p.fillRect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH3 - Math.round(r * 0.08));
           } else {
             p.beginPath();
-            p.rect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH - Math.round(r * 0.08));
+            p.rect(cardX, ry + Math.round(r * 0.04), Math.max(2, Math.round(r * 0.024)), cardH3 - Math.round(r * 0.08));
             p.fill();
           }
         } else {
@@ -610,79 +614,77 @@ const HudComponents = {
           p.stroke();
         }
 
-        // --- LÍNEA 1: Posición · Piloto · Coche ---
-        const line1Y = ry + Math.round(r * 0.038);
+        const xLeftStart = cardX + Math.round(r * (c.isPlayer ? 0.065 : 0.045));
+        const xRightEnd = cardX + cardW - Math.round(r * 0.045);
+
+        // --- FILA 1: Posición + Piloto ---
+        const line1Y = ry + Math.round(r * 0.035);
         p.textAlign = 'left';
         p.textBaseline = 'top';
 
-        // Posición con color de podio
         const posStr = 'P' + (i + 1);
         const posCol = (i === 0) ? '#facc15' : (i === 1) ? '#cbd5e1' : (i === 2) ? '#f59e0b' : 'rgba(255, 255, 255, 0.60)';
         p.font = '800 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         p.fillStyle = posCol;
-        let curX = cardX + Math.round(r * (c.isPlayer ? 0.060 : 0.040));
-        p.fillText(posStr, curX, line1Y);
-        curX += getTextWidth(p, posStr, fL1 * 0.6) + Math.round(r * 0.025);
+        p.fillText(posStr, xLeftStart, line1Y);
+        const posW = getTextWidth(p, posStr + ' ', fL1 * 0.65);
 
-        // Separador 1
-        p.font = '400 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = 'rgba(255, 255, 255, 0.30)';
-        p.fillText('·', curX, line1Y);
-        curX += getTextWidth(p, '·', fL1 * 0.3) + Math.round(r * 0.025);
-
-        // Piloto
         const driverName = c.driverName || (c.isPlayer ? 'TÚ' : `Rival #${i + 1}`);
         p.font = (c.isPlayer ? '800 ' : '700 ') + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
         p.fillStyle = c.isPlayer ? '#ff5a36' : '#ffffff';
-        p.fillText(driverName, curX, line1Y);
-        curX += getTextWidth(p, driverName, fL1 * 0.6) + Math.round(r * 0.025);
+        p.fillText(driverName, xLeftStart + posW, line1Y);
 
-        // Separador 2
-        p.font = '400 ' + fL1 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = 'rgba(255, 255, 255, 0.30)';
-        p.fillText('·', curX, line1Y);
-        curX += getTextWidth(p, '·', fL1 * 0.3) + Math.round(r * 0.025);
-
-        // Coche (con truncado inteligente si excede el ancho disponible)
+        // --- FILA 2: Coche ---
+        const line2Y = ry + Math.round(r * 0.170);
         let carStr = c.carName || 'GT3';
-        p.font = '500 ' + fCar + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = c.isPlayer ? 'rgba(255, 255, 255, 0.90)' : 'rgba(255, 255, 255, 0.65)';
-        const maxCarW = Math.max(Math.round(r * 0.25), (cardX + cardW - Math.round(r * 0.04)) - curX);
+        p.font = '600 ' + fCar + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = c.isPlayer ? 'rgba(255, 255, 255, 0.90)' : 'rgba(255, 255, 255, 0.68)';
+        const maxCarW = Math.max(Math.round(r * 0.30), xRightEnd - xLeftStart);
         if (getTextWidth(p, carStr, fCar * 0.6) > maxCarW) {
           while (carStr.length > 3 && getTextWidth(p, carStr + '…', fCar * 0.6) > maxCarW) {
             carStr = carStr.slice(0, -1);
           }
           carStr += '…';
         }
-        p.fillText(carStr, curX, line1Y);
+        p.fillText(carStr, xLeftStart, line2Y);
 
-        // --- LÍNEA 2: Tiempos (MEJOR a la izquierda, ÚLTIMA a la derecha) ---
-        const line2Y = ry + Math.round(r * 0.170);
+        // --- FILA 3: ACTUAL, MEJOR y ÚLTIMA ---
+        const line3Y = ry + Math.round(r * 0.290);
+        const fLbl3 = Math.round(r * 0.084);
+        const fTime3 = Math.round(r * 0.098);
 
-        // MEJOR vuelta
+        // ACTUAL (izquierda)
         p.textAlign = 'left';
-        p.font = '700 ' + fLbl + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = 'rgba(255, 255, 255, 0.38)';
-        const xLeftStart = cardX + Math.round(r * (c.isPlayer ? 0.060 : 0.040));
-        p.fillText('MEJOR', xLeftStart, line2Y);
-        const mejorLblW = getTextWidth(p, 'MEJOR ', fLbl * 0.6);
+        p.font = '700 ' + fLbl3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        p.fillText('ACT ', xLeftStart, line3Y);
+        const actLblW = getTextWidth(p, 'ACT ', fLbl3 * 0.6);
+        p.font = '700 ' + fTime3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = (c.curLap >= 0) ? '#ffffff' : 'rgba(255, 255, 255, 0.40)';
+        p.fillText(HudComponents.formatLapTime(c.curLap !== undefined ? c.curLap : -1), xLeftStart + actLblW, line3Y);
 
-        p.font = '700 ' + fTime + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = (c.bestLap > 0) ? '#c084fc' : 'rgba(255, 255, 255, 0.35)';
-        p.fillText(HudComponents.formatLapTime(c.bestLap), xLeftStart + mejorLblW, line2Y);
+        // MEJOR (centro)
+        const midX = xLeftStart + Math.round((xRightEnd - xLeftStart) * 0.44);
+        p.textAlign = 'left';
+        p.font = '700 ' + fLbl3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        p.fillText('MEJOR', midX, line3Y);
+        const mejorLblW = getTextWidth(p, 'MEJOR ', fLbl3 * 0.6);
+        p.font = '700 ' + fTime3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = (c.bestLap > 0) ? '#c084fc' : 'rgba(255, 255, 255, 0.40)';
+        p.fillText(HudComponents.formatLapTime(c.bestLap), midX + mejorLblW, line3Y);
 
-        // ÚLTIMA vuelta
+        // ÚLTIMA (derecha)
         p.textAlign = 'right';
-        p.font = '700 ' + fTime + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = (c.lastLap > 0) ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.35)';
+        p.font = '700 ' + fTime3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = (c.lastLap > 0) ? 'rgba(255, 255, 255, 0.90)' : 'rgba(255, 255, 255, 0.40)';
         const lastTimeStr = HudComponents.formatLapTime(c.lastLap);
-        const xRightEnd = cardX + cardW - Math.round(r * 0.040);
-        p.fillText(lastTimeStr, xRightEnd, line2Y);
-        const lastTimeW = getTextWidth(p, ' ' + lastTimeStr, fTime * 0.6);
+        p.fillText(lastTimeStr, xRightEnd, line3Y);
+        const lastTimeW = getTextWidth(p, ' ' + lastTimeStr, fTime3 * 0.6);
 
-        p.font = '700 ' + fLbl + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
-        p.fillStyle = 'rgba(255, 255, 255, 0.38)';
-        p.fillText('ÚLTIMA', xRightEnd - lastTimeW, line2Y);
+        p.font = '700 ' + fLbl3 + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        p.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        p.fillText('ÚLTIMA', xRightEnd - lastTimeW, line3Y);
       }
     }
   },

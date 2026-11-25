@@ -282,6 +282,7 @@ async function bootSimulation(autoDrive) {
 
     setLoadingProgress(30, 'loading_build_track', 'Generando trazado y relieve…');
     trackBuild(activeTrack); heightFieldBuild(); worldMapBuild(); aiBuild();   // aiBuild define TRK.line (trazada ideal) antes de los constructores de escena
+    if (typeof hudLayout === 'function' && typeof HUD !== 'undefined' && HUD.cm) hudLayout();
     rendererInit();
     await skyInit();
     await new Promise(r => setTimeout(r, 16));

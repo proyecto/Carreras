@@ -182,10 +182,10 @@ function rendererInit() {
   T.sky = mkTex(SKY_W, SKY_H, 'rgba16float');
   T.noise = mkTex(512, 512, 'rgba8unorm', TU.RT | TU.TB, { mipLevelCount: 10 });
   T.noise3 = dev.createTexture({ size: [64, 64, 64], dimension: '3d', format: 'rgba8unorm', usage: TU.RT | TU.TB });
-  // Espejo retrovisor digital
+  // Espejo retrovisor digital (+75% más ancho: 360 → 630)
   const cvsM = (typeof document !== 'undefined') ? document.getElementById('hmirror') : null;
   if (cvsM && cvsM.getContext) {
-    cvsM.width = 360; cvsM.height = 100;
+    cvsM.width = 630; cvsM.height = 100;
     try {
       R.mirrorCtx = cvsM.getContext('webgpu');
       if (R.mirrorCtx) R.mirrorCtx.configure({ device: dev, format: G.fmt, alphaMode: 'opaque' });
@@ -193,8 +193,8 @@ function rendererInit() {
       R.mirrorCtx = null;
     }
   }
-  T.mirrorHdr = mkTex(360, 100, 'rgba16float');
-  T.mirrorDepth = mkTex(360, 100, 'depth32float');
+  T.mirrorHdr = mkTex(630, 100, 'rgba16float');
+  T.mirrorDepth = mkTex(630, 100, 'depth32float');
   const V = R.view = {};
   for (const k of ['gA', 'gB', 'gC', 'gV', 'depth', 'hdr', 'vel', 'mb', 'shadowS', 'sky', 'noise', 'envDepth', 'mirrorHdr', 'mirrorDepth']) V[k] = T[k].createView();
   V.hist = T.hist.map(t => t.createView()); V.half = T.half.map(t => t.createView());

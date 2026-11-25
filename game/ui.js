@@ -75,7 +75,7 @@ function uiNetJoinRoom() {
     try {
       const u = new URL(code, window.location.href);
       code = u.searchParams.get('room') || code;
-    } catch (e) { }
+    } catch (e) {}
   }
   NET.joinRoom(code);
 }
