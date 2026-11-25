@@ -26,6 +26,11 @@ function setLoadingProgress(percent, statusKey, fallbackText) {
   }
 }
 
+async function setLoadingProgressAsync(percent, statusKey, fallbackText) {
+  setLoadingProgress(percent, statusKey, fallbackText);
+  await new Promise(r => setTimeout(r, 16));
+}
+
 function updateLoadingHeader(carName, trackName) {
   if (!loadingCarTrackEl) return;
   if (carName && trackName) {
@@ -47,6 +52,8 @@ const setMsg = t => {
     }, 350);
   } else {
     msgEl.style.display = 'flex';
+    msgEl.style.opacity = '1';
+    msgEl.style.visibility = 'visible';
     msgEl.classList.remove('hidden');
     if (typeof t === 'string' && t.startsWith('Error:')) {
       if (loadingStatusEl) loadingStatusEl.textContent = t;
@@ -238,10 +245,10 @@ async function bootSimulation(autoDrive) {
     if (tasks.length > 0) {
       let done = 0;
       const total = tasks.length;
-      setLoadingProgress(4, 'loading_init_gpu', `Descargando modelos y circuito (0/${total})…`);
+      await setLoadingProgressAsync(5, 'loading_init_gpu', `Descargando modelos y circuito (0/${total})…`);
       await Promise.all(tasks.map(p => p.then(() => {
         done++;
-        const pct = 4 + Math.round((done / total) * 6);
+        const pct = 5 + Math.round((done / total) * 15);
         setLoadingProgress(pct, 'loading_init_gpu', `Descargando modelos y circuito (${done}/${total})…`);
       })));
     }
@@ -303,11 +310,13 @@ async function bootSimulation(autoDrive) {
     }
     // Construye todos los coches rivales registrados en CARS.list
     if (rivalEnabled && CARS.list && CARS.list.length > 0) {
-      for (const c of CARS.list) {
-        if (c && typeof c.build === 'function' && !c.built) {
-          await c.build();
-          c.built = true;
-        }
+      const pendingRivals = CARS.list.filter(c => c && typeof c.build === 'function' && !c.built);
+      for (let ri = 0; ri < pendingRivals.length; ri++) {
+        const c = pendingRivals[ri];
+        const pct = 45 + Math.round(((ri + 1) / Math.max(1, pendingRivals.length)) * 10);
+        await setLoadingProgressAsync(pct, 'loading_build_car', `Construyendo rival ${ri + 1}/${pendingRivals.length} (${c.name || c.id})…`);
+        await c.build();
+        c.built = true;
       }
     }
     await new Promise(r => setTimeout(r, 16));
