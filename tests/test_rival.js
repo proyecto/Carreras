@@ -246,7 +246,7 @@ function runRivalTestSuite() {
   assert(drawnSlots.includes(701), 'Retrovisor digital: El circuito de fondo se renderiza correctamente');
 
   // C) Clonación de modelo en grid con aislamiento de slots cuando el rival usa el mismo modelo que el jugador
-  const gameSrc = fs.readFileSync(path.join(root, 'game/game.js'), 'utf8');
+  const gameSrc = fs.readFileSync(path.join(root, 'game/controls.js'), 'utf8') + '\n' + fs.readFileSync(path.join(root, 'game/game.js'), 'utf8');
   let cloneCarFn;
   const gameModuleCtx = vm.createContext({
     Float64Array,

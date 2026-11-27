@@ -1,0 +1,30 @@
+{
+  "defaultControls": {
+    "accel": ["KeyW", "ArrowUp"],
+    "brake": ["KeyS", "ArrowDown"],
+    "left": ["KeyA", "ArrowLeft"],
+    "right": ["KeyD", "ArrowRight"],
+    "handbrake": ["Space", ""],
+    "camera": ["F1", "KeyC"],
+    "lookBack": ["KeyV", "KeyB"],
+    "reset": ["KeyR", ""],
+    "gearUp": ["KeyE", ""],
+    "gearDown": ["KeyQ", ""],
+    "tc": ["KeyT", ""],
+    "mute": ["KeyM", ""],
+    "stats": ["KeyH", ""]
+  },
+  "actionBitmasks": {
+    "accel": 1,
+    "brake": 2,
+    "left": 4,
+    "right": 8,
+    "handbrake": 16,
+    "camera": 32,
+    "reset": 64,
+    "lookBack": 128,
+    "gearUp": 1024,
+    "gearDown": 2048,
+    "tc": 4096
+  }
+}

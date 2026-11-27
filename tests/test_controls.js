@@ -19,7 +19,7 @@ function runControlsTestSuite() {
 
   const root = path.resolve(__dirname, '..');
   const physicsCode = fs.readFileSync(path.join(root, 'game', 'physics.js'), 'utf-8');
-  const gameCode = fs.readFileSync(path.join(root, 'game', 'game.js'), 'utf-8');
+  const gameCode = fs.readFileSync(path.join(root, 'game', 'controls.js'), 'utf-8');
 
   // Crear contexto VM
   const mockStorage = {};
