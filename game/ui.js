@@ -513,6 +513,20 @@ function uiBuildSelectors() {
     setTimeout(() => activeTrk.closest('.pick-card').scrollIntoView({ block: 'nearest' }), 0);
   }
 }
+function uiChangePreferredCam(val) {
+  const camIdx = Math.max(0, Math.min(3, parseInt(val, 10) || 0));
+  if (typeof saveSelection === 'function') {
+    const cur = (typeof loadSelection === 'function') ? loadSelection() : {};
+    saveSelection(cur.car, cur.track, Object.assign({}, cur, { cam: camIdx }));
+  }
+  if (typeof GS !== 'undefined') {
+    GS.cam = camIdx;
+    GS.cut = true;
+    GS.chaseInit = false;
+    GS.tvCur = -1;
+  }
+}
+
 function uiInit() {
   UI.el = $('ui'); UI.stage = $('stage'); UI.tag = $('tag'); UI.res = $('res'); UI.b0 = $('b0'); UI.b1 = $('b1');
   UI.pMain = $('panel-main'); UI.pOpt = $('panel-options');
@@ -547,6 +561,8 @@ function uiInit() {
     document.title = carNm + ' — ' + trkNm;
   }
   const saved = (typeof loadSelection === 'function') ? loadSelection() : {};
+  const camSel = document.getElementById('opt-camera-select');
+  if (camSel) camSel.value = String(saved.cam !== undefined ? saved.cam : 0);
   UI.selRival = (typeof GAME !== 'undefined' && typeof GAME.rivalEnabled !== 'undefined')
     ? (GAME.rivalEnabled !== false)
     : ((typeof window !== 'undefined' && typeof window.__rivalEnabled !== 'undefined')

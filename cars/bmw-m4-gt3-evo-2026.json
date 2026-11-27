@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/bmw-m4-gt3-evo-2026.glb",
-  "texture": "cars/textures/bmw-m4-gt3-evo-2026.png"
+  "texture": "cars/textures/bmw-m4-gt3-evo-2026.png",
+  "active": "no"
 }

@@ -82,5 +82,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/ferrari-daytona-sp3-2023.glb",
-  "texture": "cars/textures/ferrari-daytona-sp3-2023.png"
+  "texture": "cars/textures/ferrari-daytona-sp3-2023.png",
+  "active": "no"
 }

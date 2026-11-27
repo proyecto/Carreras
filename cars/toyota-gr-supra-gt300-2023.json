@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/toyota-gr-supra-gt300-2023.glb",
-  "texture": "cars/textures/toyota-gr-supra-gt300-2023.png"
+  "texture": "cars/textures/toyota-gr-supra-gt300-2023.png",
+  "active": "no"
 }

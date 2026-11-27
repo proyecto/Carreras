@@ -225,7 +225,7 @@ const rivalObj = () => {
 function cloneCarModelForGrid(baseModel, instanceIndex) {
   if (!baseModel) return null;
   const isPlayerCar = (typeof CAR !== 'undefined' && baseModel === CAR) ||
-                      (typeof CARS !== 'undefined' && (baseModel === CARS.active || (CARS.active && baseModel.id === CARS.active.id)));
+    (typeof CARS !== 'undefined' && (baseModel === CARS.active || (CARS.active && baseModel.id === CARS.active.id)));
   if (!isPlayerCar && (!instanceIndex || instanceIndex === 0)) return baseModel;
 
   const inst = Object.create(baseModel);
@@ -279,7 +279,7 @@ function cloneCarModelForGrid(baseModel, instanceIndex) {
     }
   }
 
-  inst.place = function(body, spin, susp) {
+  inst.place = function (body, spin, susp) {
     const steer = inst.inp[0];
     const t = inst._t2;
     if (typeof objPrev === 'function' && typeof objModel === 'function') {
@@ -450,17 +450,17 @@ function gameRestart() {
       const rModel = cloneCarModelForGrid(baseModel, useCount);
 
       const veh = (k === 0 && typeof VEH_RIVAL !== 'undefined') ? VEH_RIVAL
-                : (k === 1 && typeof VEH_RIVAL2 !== 'undefined') ? VEH_RIVAL2
-                : (k === 2 && typeof VEH_RIVAL3 !== 'undefined') ? VEH_RIVAL3
-                : (typeof createVehicleState === 'function' ? createVehicleState() : {});
+        : (k === 1 && typeof VEH_RIVAL2 !== 'undefined') ? VEH_RIVAL2
+          : (k === 2 && typeof VEH_RIVAL3 !== 'undefined') ? VEH_RIVAL3
+            : (typeof createVehicleState === 'function' ? createVehicleState() : {});
       const vin = (k === 0 && typeof VIN_RIVAL !== 'undefined') ? VIN_RIVAL
-                : (k === 1 && typeof VIN_RIVAL2 !== 'undefined') ? VIN_RIVAL2
-                : (k === 2 && typeof VIN_RIVAL3 !== 'undefined') ? VIN_RIVAL3
-                : new Float64Array(3);
+        : (k === 1 && typeof VIN_RIVAL2 !== 'undefined') ? VIN_RIVAL2
+          : (k === 2 && typeof VIN_RIVAL3 !== 'undefined') ? VIN_RIVAL3
+            : new Float64Array(3);
       const gs = (k === 0 && typeof GS_RIVAL !== 'undefined') ? GS_RIVAL
-               : (k === 1 && typeof GS_RIVAL2 !== 'undefined') ? GS_RIVAL2
-               : (k === 2 && typeof GS_RIVAL3 !== 'undefined') ? GS_RIVAL3
-               : createGsRival();
+        : (k === 1 && typeof GS_RIVAL2 !== 'undefined') ? GS_RIVAL2
+          : (k === 2 && typeof GS_RIVAL3 !== 'undefined') ? GS_RIVAL3
+            : createGsRival();
 
       const rDriverName = `Rival #${k + 1}`;
       const rCarName = (rModel && (rModel.name || rModel.id)) ? (rModel.name || rModel.id) : `RIVAL #${k + 1}`;
@@ -491,7 +491,8 @@ function gameRestart() {
       gridManagerInstance.init([]);
     }
   }
-  GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = GS.rivalKeys2 = GS.rivalKeys3 = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  const savedCam = (typeof loadSelection === 'function') ? (loadSelection().cam || 0) : 0;
+  GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = GS.rivalKeys = GS.rivalKeys2 = GS.rivalKeys3 = 0; GS.cam = Q.get('cam') !== null ? +Q.get('cam') : savedCam; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   raceStartTrigger();
@@ -508,7 +509,7 @@ function gameStep() {
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // Mirar hacia atrás ejecuta corte instantáneo de cámara
-    if (edge & K_C) { GS.cam = (GS.cam + 1) % 3; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_C) { GS.cam = (GS.cam + 1) % 4; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // Restablece el coche al centro de la pista
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0, VEH, VIN); GS.cut = true; GS.chaseInit = false;
     }
@@ -702,6 +703,18 @@ function gameCamera() {
       q[0] = B[0] * -2.0 + B[4] * 1.05 + B[12]; q[1] = B[1] * -2.0 + B[5] * 1.05 + B[13]; q[2] = B[2] * -2.0 + B[6] * 1.05 + B[14];
       q[3] = B[0] * -9 + B[4] * 0.6 + B[12]; q[4] = B[1] * -9 + B[5] * 0.6 + B[13]; q[5] = B[2] * -9 + B[6] * 0.6 + B[14]; q[7] = -q[7];
     }
+  } else if (GS.cam === 3) {
+    // Cámara Cockpit: interior del habitáculo (asiento del piloto, lado izquierdo)
+    const B = GS.body;
+    const ex = -0.15, ey = 0.96, ez = -0.34;
+    const tx = 8.0 * lb, ty = 0.85, tz = -0.34;
+    q[0] = B[0] * ex + B[4] * ey + B[8] * ez + B[12];
+    q[1] = B[1] * ex + B[5] * ey + B[9] * ez + B[13];
+    q[2] = B[2] * ex + B[6] * ey + B[10] * ez + B[14];
+    q[3] = B[0] * tx + B[4] * ty + B[8] * tz + B[12];
+    q[4] = B[1] * tx + B[5] * ty + B[9] * tz + B[13];
+    q[5] = B[2] * tx + B[6] * ty + B[10] * tz + B[14];
+    q[6] = 1.05; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
   } else {
     // Cámara de TV: cámaras fijas en borde de pista con teleobjetivo y seguimiento dinámico
     let best = GS.tvCur, bd = 1e9; const n = GS.tvN, TV = GS.tvData;

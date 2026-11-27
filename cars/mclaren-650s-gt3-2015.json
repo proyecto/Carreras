@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/mclaren-650s-gt3-2015.glb",
-  "texture": "cars/textures/mclaren-650s-gt3-2015.png"
+  "texture": "cars/textures/mclaren-650s-gt3-2015.png",
+  "active": "no"
 }

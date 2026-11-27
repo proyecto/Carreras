@@ -59,6 +59,11 @@
   "trackF": 1.723,
   "trackR": 1.72,
   "wheelR": 0.35,
+  "cockpitCam": [
+    -0.15,
+    1.12,
+    -0.36
+  ],
   "hubs": [
     [
       1.586,
@@ -83,5 +88,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/bmw-m3-touring-2026.glb",
-  "texture": "cars/textures/bmw-m3-touring-2026.png"
+  "texture": "cars/textures/bmw-m3-touring-2026.png",
+  "active": "no"
 }

@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/bmw-z4-gt3-2011.glb",
-  "texture": "cars/textures/bmw-z4-gt3-2011.png"
+  "texture": "cars/textures/bmw-z4-gt3-2011.png",
+  "active": "no"
 }

@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/porsche-992-gt3-r-2024.glb",
-  "texture": "cars/textures/porsche-992-gt3-r-2024.png"
+  "texture": "cars/textures/porsche-992-gt3-r-2024.png",
+  "active": "yes"
 }

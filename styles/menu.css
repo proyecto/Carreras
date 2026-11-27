@@ -5,6 +5,7 @@
 /* ── Overlay ── */
 #ui {
   inset: 0;
+  z-index: 20;
   pointer-events: auto;
   align-items: center;
   justify-content: center;

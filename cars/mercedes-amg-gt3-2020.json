@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/mercedes-amg-gt3-2020.glb",
-  "texture": "cars/textures/mercedes-amg-gt3-2020.png"
+  "texture": "cars/textures/mercedes-amg-gt3-2020.png",
+  "active": "no"
 }

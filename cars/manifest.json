@@ -7,7 +7,8 @@
     "accent": "#0d47a1",
     "json": "cars/ford-mustang-gt3-2024.json",
     "model": "cars/models/ford-mustang-gt3-2024.glb",
-    "texture": "cars/textures/ford-mustang-gt3-2024.png"
+    "texture": "cars/textures/ford-mustang-gt3-2024.png",
+    "active": "no"
   },
   {
     "id": "ford-mustang-gt3",
@@ -17,7 +18,8 @@
     "accent": "#002244",
     "json": "cars/ford-mustang-gt3.json",
     "model": "cars/models/ford-mustang-gt3.glb",
-    "texture": "cars/textures/ford-mustang-gt3.png"
+    "texture": "cars/textures/ford-mustang-gt3.png",
+    "active": "no"
   },
   {
     "id": "porsche-911-1979",
@@ -27,7 +29,8 @@
     "accent": "#e8251e",
     "json": "cars/porsche-911-1979.json",
     "model": "cars/models/porsche-911-1979.glb",
-    "texture": "cars/textures/porsche-911-1979.png"
+    "texture": "cars/textures/porsche-911-1979.png",
+    "active": "no"
   },
   {
     "id": "mclaren-x2-2018",
@@ -37,7 +40,8 @@
     "accent": "#ff6600",
     "json": "cars/mclaren-x2-2018.json",
     "model": "cars/models/mclaren-x2-2018.glb",
-    "texture": "cars/textures/mclaren-x2-2018.png"
+    "texture": "cars/textures/mclaren-x2-2018.png",
+    "active": "no"
   },
   {
     "id": "bmw-m8-gte-2018",
@@ -47,7 +51,8 @@
     "accent": "#1c69d4",
     "json": "cars/bmw-m8-gte-2018.json",
     "model": "cars/models/bmw-m8-gte-2018.glb",
-    "texture": "cars/textures/bmw-m8-gte-2018.png"
+    "texture": "cars/textures/bmw-m8-gte-2018.png",
+    "active": "no"
   },
   {
     "id": "mercedes-amg-gt3-2020",
@@ -57,7 +62,8 @@
     "accent": "#c0c0c0",
     "json": "cars/mercedes-amg-gt3-2020.json",
     "model": "cars/models/mercedes-amg-gt3-2020.glb",
-    "texture": "cars/textures/mercedes-amg-gt3-2020.png"
+    "texture": "cars/textures/mercedes-amg-gt3-2020.png",
+    "active": "no"
   },
   {
     "id": "porsche-992-gt3-r-2024",
@@ -67,7 +73,8 @@
     "accent": "#f5c500",
     "json": "cars/porsche-992-gt3-r-2024.json",
     "model": "cars/models/porsche-992-gt3-r-2024.glb",
-    "texture": "cars/textures/porsche-992-gt3-r-2024.png"
+    "texture": "cars/textures/porsche-992-gt3-r-2024.png",
+    "active": "yes"
   },
   {
     "id": "nissan-gtr-gt3-2018",
@@ -77,7 +84,8 @@
     "accent": "#e60012",
     "json": "cars/nissan-gtr-gt3-2018.json",
     "model": "cars/models/nissan-gtr-gt3-2018.glb",
-    "texture": "cars/textures/nissan-gtr-gt3-2018.png"
+    "texture": "cars/textures/nissan-gtr-gt3-2018.png",
+    "active": "no"
   },
   {
     "id": "mclaren-720s-gt3-2020",
@@ -87,7 +95,8 @@
     "accent": "#ff8000",
     "json": "cars/mclaren-720s-gt3-2020.json",
     "model": "cars/models/mclaren-720s-gt3-2020.glb",
-    "texture": "cars/textures/mclaren-720s-gt3-2020.png"
+    "texture": "cars/textures/mclaren-720s-gt3-2020.png",
+    "active": "no"
   },
   {
     "id": "audi-r8-lms-evo-2020",
@@ -97,7 +106,8 @@
     "accent": "#e60000",
     "json": "cars/audi-r8-lms-evo-2020.json",
     "model": "cars/models/audi-r8-lms-evo-2020.glb",
-    "texture": "cars/textures/audi-r8-lms-evo-2020.png"
+    "texture": "cars/textures/audi-r8-lms-evo-2020.png",
+    "active": "no"
   },
   {
     "id": "bmw-m3-touring-2026",
@@ -107,7 +117,8 @@
     "accent": "#ffcc00",
     "json": "cars/bmw-m3-touring-2026.json",
     "model": "cars/models/bmw-m3-touring-2026.glb",
-    "texture": "cars/textures/bmw-m3-touring-2026.png"
+    "texture": "cars/textures/bmw-m3-touring-2026.png",
+    "active": "no"
   },
   {
     "id": "mclaren-650s-gt3-2015",
@@ -117,7 +128,8 @@
     "accent": "#ff5500",
     "json": "cars/mclaren-650s-gt3-2015.json",
     "model": "cars/models/mclaren-650s-gt3-2015.glb",
-    "texture": "cars/textures/mclaren-650s-gt3-2015.png"
+    "texture": "cars/textures/mclaren-650s-gt3-2015.png",
+    "active": "no"
   },
   {
     "id": "mercedes-amg-gt4-2020",
@@ -127,7 +139,8 @@
     "accent": "#00a3e0",
     "json": "cars/mercedes-amg-gt4-2020.json",
     "model": "cars/models/mercedes-amg-gt4-2020.glb",
-    "texture": "cars/textures/mercedes-amg-gt4-2020.png"
+    "texture": "cars/textures/mercedes-amg-gt4-2020.png",
+    "active": "no"
   },
   {
     "id": "ferrari-296-challenge-2024",
@@ -137,7 +150,8 @@
     "accent": "#d40000",
     "json": "cars/ferrari-296-challenge-2024.json",
     "model": "cars/models/ferrari-296-challenge-2024.glb",
-    "texture": "cars/textures/ferrari-296-challenge-2024.jpg"
+    "texture": "cars/textures/ferrari-296-challenge-2024.jpg",
+    "active": "no"
   },
   {
     "id": "bmw-z4-gt3-2011",
@@ -147,7 +161,8 @@
     "accent": "#1c69d4",
     "json": "cars/bmw-z4-gt3-2011.json",
     "model": "cars/models/bmw-z4-gt3-2011.glb",
-    "texture": "cars/textures/bmw-z4-gt3-2011.png"
+    "texture": "cars/textures/bmw-z4-gt3-2011.png",
+    "active": "no"
   },
   {
     "id": "bmw-m4-gt3-evo-2026",
@@ -157,7 +172,8 @@
     "accent": "#0066b2",
     "json": "cars/bmw-m4-gt3-evo-2026.json",
     "model": "cars/models/bmw-m4-gt3-evo-2026.glb",
-    "texture": "cars/textures/bmw-m4-gt3-evo-2026.png"
+    "texture": "cars/textures/bmw-m4-gt3-evo-2026.png",
+    "active": "no"
   },
   {
     "id": "toyota-gr-gt3-2024",
@@ -167,7 +183,8 @@
     "accent": "#e60012",
     "json": "cars/toyota-gr-gt3-2024.json",
     "model": "cars/models/toyota-gr-gt3-2024.glb",
-    "texture": "cars/textures/toyota-gr-gt3-2024.png"
+    "texture": "cars/textures/toyota-gr-gt3-2024.png",
+    "active": "no"
   },
   {
     "id": "bentley-continental-gt3-pikes-peak",
@@ -177,7 +194,8 @@
     "accent": "#005a36",
     "json": "cars/bentley-continental-gt3-pikes-peak.json",
     "model": "cars/models/bentley-continental-gt3-pikes-peak.glb",
-    "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png"
+    "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png",
+    "active": "no"
   },
   {
     "id": "maserati-mc20-gt3-2024",
@@ -187,7 +205,8 @@
     "accent": "#0b2341",
     "json": "cars/maserati-mc20-gt3-2024.json",
     "model": "cars/models/maserati-mc20-gt3-2024.glb",
-    "texture": "cars/textures/maserati-mc20-gt3-2024.png"
+    "texture": "cars/textures/maserati-mc20-gt3-2024.png",
+    "active": "no"
   },
   {
     "id": "lamborghini-huracan-gt3-2023",
@@ -197,7 +216,8 @@
     "accent": "#739600",
     "json": "cars/lamborghini-huracan-gt3-2023.json",
     "model": "cars/models/lamborghini-huracan-gt3-2023.glb",
-    "texture": "cars/textures/lamborghini-huracan-gt3-2023.png"
+    "texture": "cars/textures/lamborghini-huracan-gt3-2023.png",
+    "active": "no"
   },
   {
     "id": "audi-r8-lms-gt3-2019",
@@ -207,7 +227,8 @@
     "accent": "#bb0a30",
     "json": "cars/audi-r8-lms-gt3-2019.json",
     "model": "cars/models/audi-r8-lms-gt3-2019.glb",
-    "texture": "cars/textures/audi-r8-lms-gt3-2019.png"
+    "texture": "cars/textures/audi-r8-lms-gt3-2019.png",
+    "active": "no"
   },
   {
     "id": "ferrari-daytona-sp3-2023",
@@ -217,7 +238,8 @@
     "accent": "#d40000",
     "json": "cars/ferrari-daytona-sp3-2023.json",
     "model": "cars/models/ferrari-daytona-sp3-2023.glb",
-    "texture": "cars/textures/ferrari-daytona-sp3-2023.png"
+    "texture": "cars/textures/ferrari-daytona-sp3-2023.png",
+    "active": "no"
   },
   {
     "id": "toyota-gr-supra-gt300-2023",
@@ -227,7 +249,8 @@
     "accent": "#00853f",
     "json": "cars/toyota-gr-supra-gt300-2023.json",
     "model": "cars/models/toyota-gr-supra-gt300-2023.glb",
-    "texture": "cars/textures/toyota-gr-supra-gt300-2023.png"
+    "texture": "cars/textures/toyota-gr-supra-gt300-2023.png",
+    "active": "no"
   },
   {
     "id": "ferrari-296-gt3-2024",
@@ -237,7 +260,8 @@
     "accent": "#cc0000",
     "json": "cars/ferrari-296-gt3-2024.json",
     "model": "cars/models/ferrari-296-gt3-2024.glb",
-    "texture": "cars/textures/ferrari-296-gt3-2024.png"
+    "texture": "cars/textures/ferrari-296-gt3-2024.png",
+    "active": "no"
   },
   {
     "id": "porsche-911-gt3-r-rennsport-2024",
@@ -247,6 +271,7 @@
     "accent": "#d5001c",
     "json": "cars/porsche-911-gt3-r-rennsport-2024.json",
     "model": "cars/models/porsche-911-gt3-r-rennsport-2024.glb",
-    "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png"
+    "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png",
+    "active": "no"
   }
 ]

@@ -82,5 +82,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/mclaren-x2-2018.glb",
-  "texture": "cars/textures/mclaren-x2-2018.png"
+  "texture": "cars/textures/mclaren-x2-2018.png",
+  "active": "no"
 }

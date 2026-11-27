@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/porsche-911-gt3-r-rennsport-2024.glb",
-  "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png"
+  "texture": "cars/textures/porsche-911-gt3-r-rennsport-2024.png",
+  "active": "no"
 }

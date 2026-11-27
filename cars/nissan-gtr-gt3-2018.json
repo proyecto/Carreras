@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/nissan-gtr-gt3-2018.glb",
-  "texture": "cars/textures/nissan-gtr-gt3-2018.png"
+  "texture": "cars/textures/nissan-gtr-gt3-2018.png",
+  "active": "no"
 }

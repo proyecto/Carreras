@@ -270,7 +270,7 @@ function sndInit() {
 }
 // Muestrea simulación y cámara para actualizar los 16 controles enteros (SND.sc).
 function sndControl() {
-  const V = VEH, c = SND.sc, cam = R.cam, cp = cam.pos, view = GS.cam, sp = GS.speed;
+  const V = VEH, c = SND.sc, cam = R.cam, cp = cam.pos, view = GS.cam === 3 ? 1 : GS.cam, sp = GS.speed;
   let sl = 0, sr = 0, loose = 0, kerb = 0;
   for (let i = 0; i < 4; i++) {
     const z = V.wzone[i], s = V.slip[i];

@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/ford-mustang-gt3.glb",
-  "texture": "cars/textures/ford-mustang-gt3.png"
+  "texture": "cars/textures/ford-mustang-gt3.png",
+  "active": "no"
 }

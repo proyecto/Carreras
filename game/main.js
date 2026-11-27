@@ -116,7 +116,8 @@ async function loadManifests() {
   if (typeof window !== 'undefined' && (!window.CAR_MANIFEST || window.CAR_MANIFEST.length === 0)) {
     try {
       const resC = await fetch('cars/manifest.json');
-      window.CAR_MANIFEST = await resC.json();
+      const rawManifest = await resC.json();
+      window.CAR_MANIFEST = (rawManifest || []).filter(c => c.active !== 'no' && c.active !== false);
     } catch (e) {
       console.warn('[main] Fallo al cargar cars/manifest.json:', e);
     }
@@ -128,7 +129,8 @@ async function loadManifests() {
   if (typeof window !== 'undefined' && (!window.TRACK_MANIFEST || window.TRACK_MANIFEST.length === 0)) {
     try {
       const resT = await fetch('tracks/manifest.json');
-      window.TRACK_MANIFEST = await resT.json();
+      const rawT = await resT.json();
+      window.TRACK_MANIFEST = (rawT || []).filter(t => t.active !== 'no' && t.active !== false);
     } catch (e) {
       console.warn('[main] Fallo al cargar tracks/manifest.json:', e);
     }

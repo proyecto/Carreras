@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/bmw-m8-gte-2018.glb",
-  "texture": "cars/textures/bmw-m8-gte-2018.png"
+  "texture": "cars/textures/bmw-m8-gte-2018.png",
+  "active": "no"
 }

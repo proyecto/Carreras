@@ -8,6 +8,7 @@
 #hg,
 #hs,
 #hmirror,
+#hdash,
 #tag,
 #ui {
   display: none;
@@ -40,6 +41,17 @@
   border: 2px solid #14171d;
   background: var(--clr-surface-0);
   z-index: 10;
+}
+
+#hdash {
+  left: calc(50% + 4vh);
+  bottom: 23.2vh;
+  transform: translateX(-50%) perspective(900px) rotateY(-2deg) rotateX(4deg);
+  width: 32vh;
+  height: 16.4vh;
+  border-radius: 4px;
+  background: transparent;
+  z-index: 9;
 }
 
 /* Etiqueta de nombre de piloto */

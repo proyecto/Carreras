@@ -81,5 +81,6 @@
   ],
   "model": "cars/models/mi-coche-gt3.glb",
   "texture": "cars/textures/mi-coche-atlas.png",
-  "shaderSrc": "mat_car_default"
+  "shaderSrc": "mat_car_default",
+  "active": "no"
 }

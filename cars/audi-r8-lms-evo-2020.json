@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/audi-r8-lms-evo-2020.glb",
-  "texture": "cars/textures/audi-r8-lms-evo-2020.png"
+  "texture": "cars/textures/audi-r8-lms-evo-2020.png",
+  "active": "no"
 }

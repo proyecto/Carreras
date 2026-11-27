@@ -21,7 +21,13 @@ fn surf(in: V2F, ff: bool) -> Surface {
 
   let tx = textureSample(tAtlas, sLin, uv);
 
-  if (id == 8u || id == 16u || id == 43u) {
+  if (id == 10u) {
+    // Espejo retrovisor físico (interior / laterales): inclinar ligeramente para apuntar al horizonte
+    s.normal = normalize(s.normal + vec3f(0.0, -0.13, 0.0));
+    s.albedo = vec3f(0.82, 0.85, 0.88);
+    s.rough = 0.04;
+    s.metal = 0.96;
+  } else if (id == 8u || id == 16u || id == 43u) {
     // Carrocería principal, paneles exteriores y vinilos/decoración
     s.albedo = tx.rgb;
     s.metal = 0.08;
@@ -195,6 +201,7 @@ const CarFactory = {
       trackF,
       trackR,
       wheelR = 0.34,
+      cockpitCam = null,
       hubs,
       shaderSrc = 'mat_car_default',
       atlasB64,
@@ -254,6 +261,7 @@ const CarFactory = {
       trackF: trackF !== undefined ? trackF : (hubs ? Math.abs(hubs[1][2] - hubs[0][2]) : 1.7),
       trackR: trackR !== undefined ? trackR : (hubs ? Math.abs(hubs[3][2] - hubs[2][2]) : 1.7),
       wheelR: wheelR !== undefined ? wheelR : (physics && physics.R ? physics.R : 0.34),
+      cockpitCam,
       hubs,
     });
 
@@ -457,6 +465,7 @@ const CarFactory = {
       trackF: spec.trackF !== undefined ? spec.trackF : inferredTrackF,
       trackR: spec.trackR !== undefined ? spec.trackR : inferredTrackR,
       wheelR: spec.wheelR !== undefined ? spec.wheelR : (spec.physics && spec.physics.R ? spec.physics.R : 0.34),
+      cockpitCam: spec.cockpitCam || null,
       hubs,
       shaderSrc: spec.shaderSrc || 'mat_car_default',
       atlasB64,
@@ -553,7 +562,9 @@ const CarFactory = {
           const matName = (mat && mat.name) || '';
           let matId = 8; // Carrocería / pintura por defecto
 
-          if (isGlassNode || /glass|cristal|window|windshield/i.test(matName)) {
+          if (/mirror|retrovisor|espejo/i.test(node.name || '') || /mirror|retrovisor|espejo/i.test(matName)) {
+            matId = 10;
+          } else if (isGlassNode || /glass|cristal|window|windshield/i.test(matName)) {
             matId = 0;
           } else if (isWheelNode || /wheel|rim|tire|llanta|neumatico/i.test(matName)) {
             matId = /tire|neumatico/i.test(matName) ? 4 : 2;

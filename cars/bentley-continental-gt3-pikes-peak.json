@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/bentley-continental-gt3-pikes-peak.glb",
-  "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png"
+  "texture": "cars/textures/bentley-continental-gt3-pikes-peak.png",
+  "active": "no"
 }

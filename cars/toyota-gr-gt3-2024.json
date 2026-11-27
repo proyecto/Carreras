@@ -57,6 +57,11 @@
   "trackF": 1.7,
   "trackR": 1.7,
   "wheelR": 0.34,
+  "cockpitCam": [
+    -0.55,
+    0.96,
+    -0.34
+  ],
   "hubs": [
     [
       1.361,
@@ -81,5 +86,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/toyota-gr-gt3-2024.glb",
-  "texture": "cars/textures/toyota-gr-gt3-2024.png"
+  "texture": "cars/textures/toyota-gr-gt3-2024.png",
+  "active": "no"
 }

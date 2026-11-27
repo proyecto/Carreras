@@ -137,12 +137,33 @@ class TvCameraStrategy {
   }
 }
 
+class CockpitCameraStrategy {
+  update(gs, veh, dt, q, lb) {
+    const B = gs.body;
+    const activeCar = (typeof CARS !== 'undefined' && CARS.active) ? CARS.active : null;
+    const cam = (activeCar && activeCar.cockpitCam) ? activeCar.cockpitCam : null;
+    const ex = cam ? cam[0] : -0.15;
+    const ey = cam ? cam[1] : 0.96;
+    const ez = cam ? cam[2] : -0.34;
+    const tx = 8.0 * lb, ty = ey - 0.11, tz = ez;
+    q[0] = B[0] * ex + B[4] * ey + B[8] * ez + B[12];
+    q[1] = B[1] * ex + B[5] * ey + B[9] * ez + B[13];
+    q[2] = B[2] * ex + B[6] * ey + B[10] * ez + B[14];
+    q[3] = B[0] * tx + B[4] * ty + B[8] * tz + B[12];
+    q[4] = B[1] * tx + B[5] * ty + B[9] * tz + B[13];
+    q[5] = B[2] * tx + B[6] * ty + B[10] * tz + B[14];
+    q[6] = 1.05;
+    q[7] = -(veh.gRoll + veh.roll);
+  }
+}
+
 class CameraSystem {
   constructor() {
     this.strategies = [
       new ChaseCameraStrategy(),
       new BonnetCameraStrategy(),
-      new TvCameraStrategy()
+      new TvCameraStrategy(),
+      new CockpitCameraStrategy()
     ];
   }
 

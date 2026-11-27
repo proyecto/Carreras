@@ -79,5 +79,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/porsche-911-1979.glb",
-  "texture": "cars/textures/porsche-911-1979.png"
+  "texture": "cars/textures/porsche-911-1979.png",
+  "active": "no"
 }

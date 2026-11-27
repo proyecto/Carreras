@@ -81,5 +81,6 @@
   ],
   "shaderSrc": "mat_car_default",
   "model": "cars/models/lamborghini-huracan-gt3-2023.glb",
-  "texture": "cars/textures/lamborghini-huracan-gt3-2023.png"
+  "texture": "cars/textures/lamborghini-huracan-gt3-2023.png",
+  "active": "no"
 }
