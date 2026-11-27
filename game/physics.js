@@ -4,7 +4,7 @@
 // tracción delantera/trasera/total, transmisión automática/secuencial, freno de mano, peralte y colisiones.
 // Paso fijo a 120 Hz (1/120 s). Cero asignaciones de memoria durante simulación.
 const PHYS_DT = 1 / 120;
-const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512;
+const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_GEAR_UP = 1024, K_GEAR_DN = 2048;
 // Entradas analógicas del mando: VIN[0] acelerador 0..1, VIN[1] freno 0..1, VIN[2] dirección -1..1.
 // Registro digital de entradas idéntico para teclado y vueltas guiadas.
 const VIN = new Float64Array(3);
@@ -161,8 +161,11 @@ function vehicleStep(keys, veh = VEH, vin = VIN) {
   let ratio = reverse ? -P.rev * P.final : P.gears[V.gear - 1] * P.final;
   let rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   if (!reverse) {
-    if (rpm > P.shiftUpRpm && V.gear < P.gears.length) { V.gear++; }
-    else if (V.gear > 1 && Math.abs(wheelSpd * P.gears[V.gear - 2] * P.final) * 9.5493 < P.shiftDownRpm) V.gear--;
+    const isManual = (typeof VEH !== 'undefined' && V === VEH && typeof GAME !== 'undefined' && GAME.manualGearbox);
+    if (!isManual) {
+      if (rpm > P.shiftUpRpm && V.gear < P.gears.length) { V.gear++; }
+      else if (V.gear > 1 && Math.abs(wheelSpd * P.gears[V.gear - 2] * P.final) * 9.5493 < P.shiftDownRpm) V.gear--;
+    }
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
   const rpmE = Math.min(P.maxRpm, Math.max(P.idleRpm, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // Deslizamiento de embrague en salida desde parado

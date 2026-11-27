@@ -527,6 +527,17 @@ function uiChangePreferredCam(val) {
   }
 }
 
+function uiChangeGearbox(val) {
+  const isManual = (val === 'manual');
+  if (typeof saveSelection === 'function') {
+    const cur = (typeof loadSelection === 'function') ? loadSelection() : {};
+    saveSelection(cur.car, cur.track, Object.assign({}, cur, { gearbox: isManual ? 'manual' : 'auto' }));
+  }
+  if (typeof GAME !== 'undefined') {
+    GAME.manualGearbox = isManual;
+  }
+}
+
 function uiInit() {
   UI.el = $('ui'); UI.stage = $('stage'); UI.tag = $('tag'); UI.res = $('res'); UI.b0 = $('b0'); UI.b1 = $('b1');
   UI.pMain = $('panel-main'); UI.pOpt = $('panel-options');
@@ -563,6 +574,10 @@ function uiInit() {
   const saved = (typeof loadSelection === 'function') ? loadSelection() : {};
   const camSel = document.getElementById('opt-camera-select');
   if (camSel) camSel.value = String(saved.cam !== undefined ? saved.cam : 0);
+  const gbSel = document.getElementById('opt-gearbox-select');
+  const gbVal = (saved.gearbox === 'manual') ? 'manual' : 'auto';
+  if (gbSel) gbSel.value = gbVal;
+  if (typeof GAME !== 'undefined') GAME.manualGearbox = (gbVal === 'manual');
   UI.selRival = (typeof GAME !== 'undefined' && typeof GAME.rivalEnabled !== 'undefined')
     ? (GAME.rivalEnabled !== false)
     : ((typeof window !== 'undefined' && typeof window.__rivalEnabled !== 'undefined')

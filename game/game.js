@@ -82,6 +82,8 @@ const DEFAULT_CONTROLS = {
   camera: ['KeyC', ''],
   lookBack: ['KeyV', ''],
   reset: ['KeyR', ''],
+  gearUp: ['KeyE', ''],
+  gearDown: ['KeyQ', ''],
   mute: ['KeyM', ''],
   stats: ['KeyH', ''],
 };
@@ -95,6 +97,8 @@ const ACTION_BITMASKS = {
   camera: K_C,
   lookBack: K_V,
   reset: K_R,
+  gearUp: K_GEAR_UP,
+  gearDown: K_GEAR_DN,
 };
 
 const KEYMAP = {};
@@ -510,6 +514,8 @@ function gameStep() {
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // Mirar hacia atrás ejecuta corte instantáneo de cámara
     if (edge & K_C) { GS.cam = (GS.cam + 1) % 4; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_GEAR_UP) { if (VEH.gear < CAR_P.gears.length) VEH.gear++; }
+    if (edge & K_GEAR_DN) { if (VEH.gear > 0) VEH.gear--; }
     if (edge & K_R) { // Restablece el coche al centro de la pista
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0, VEH, VIN); GS.cut = true; GS.chaseInit = false;
     }
