@@ -736,7 +736,7 @@ function hudDrawDash() {
   // Columna izquierda: MAP / AC / THR / FC1
   const leftItems = [
     ['MAP', '4', '#22c55e'],
-    ['AC',  '0', '#38bdf8'],
+    ['AC', '0', '#38bdf8'],
     ['THR', '2', '#eab308'],
     ['FC1', '1', '#38bdf8']
   ];
@@ -749,10 +749,10 @@ function hudDrawDash() {
 
   // Temperaturas y presiones
   const temps = [
-    ['Oil temp',   '25.0'],
-    ['Oil press',  '0.00'],
+    ['Oil temp', '25.0'],
+    ['Oil press', '0.00'],
     ['Water temp', '23.00'],
-    ['Water press','0.4']
+    ['Water press', '0.4']
   ];
   box(58, 28, 74, 86, '#38bdf8', '#0c192c');
   temps.forEach(([lbl, val], idx) => {
@@ -785,8 +785,9 @@ function hudDrawDash() {
   txt('0.50', 306, 124, '700 11px monospace', '#ffffff', 'right');
 
   // Inferior izquierda: TC-LA, TC-LO, ABS
+  const tcLvl = (typeof VEH !== 'undefined' && VEH.tcLevel !== undefined) ? VEH.tcLevel : 3;
   box(58, 117, 46, 17, '#ef4444', '#08101c');
-  txt('TC-LA 0', 81, 125.5, '700 8.5px monospace', '#ffffff', 'center');
+  txt(`TC-LA ${tcLvl}`, 81, 125.5, '700 8.5px monospace', '#ffffff', 'center');
   box(106, 117, 46, 17, '#22c55e', '#08101c');
   txt('TC-LO 0', 129, 125.5, '700 8.5px monospace', '#ffffff', 'center');
   box(82, 136, 46, 15, '#3b82f6', '#08101c');

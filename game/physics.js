@@ -4,7 +4,7 @@
 // tracción delantera/trasera/total, transmisión automática/secuencial, freno de mano, peralte y colisiones.
 // Paso fijo a 120 Hz (1/120 s). Cero asignaciones de memoria durante simulación.
 const PHYS_DT = 1 / 120;
-const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_GEAR_UP = 1024, K_GEAR_DN = 2048;
+const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_GEAR_UP = 1024, K_GEAR_DN = 2048, K_TC = 4096;
 // Entradas analógicas del mando: VIN[0] acelerador 0..1, VIN[1] freno 0..1, VIN[2] dirección -1..1.
 // Registro digital de entradas idéntico para teclado y vueltas guiadas.
 const VIN = new Float64Array(3);
@@ -174,14 +174,16 @@ function vehicleStep(keys, veh = VEH, vin = VIN) {
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // Par total transmitido a los ejes
   if (rpm > P.revLimitRpm) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
-  // Sistema de control de tracción (TCS) modulado según la adherencia física real de las ruedas motrices
+  // Sistema de control de tracción (TCS) modulado según la adherencia física real y nivel (0=OFF, 1..5)
+  const tcLvl = (V.tcLevel !== undefined) ? V.tcLevel : 3;
+  const tcMult = tcLvl === 0 ? 99 : (1.22 - tcLvl * 0.04);
   const driveMuF = P.mu * (ZMU[V.wzone[0]] + ZMU[V.wzone[1]]) * 0.5;
   const driveMuR = P.mu * (ZMU[V.wzone[2]] + ZMU[V.wzone[3]]) * 0.5;
   const maxDriveGrip = (P.driveF === 1.0
     ? (V.fz[0] + V.fz[1]) * driveMuF
     : P.driveF === 0.0
       ? (V.fz[2] + V.fz[3]) * driveMuR
-      : ((V.fz[0] + V.fz[1]) * driveMuF + (V.fz[2] + V.fz[3]) * driveMuR) * 0.5) * 1.08;
+      : ((V.fz[0] + V.fz[1]) * driveMuF + (V.fz[2] + V.fz[3]) * driveMuR) * 0.5) * tcMult;
   const maxTdrive = maxDriveGrip * P.R;
   if (Tdrive > maxTdrive) Tdrive = maxTdrive;
   Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // Freno motor
