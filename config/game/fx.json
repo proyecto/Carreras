@@ -1,0 +1,8 @@
+{
+  "fx": {
+    "_comment": "Constantes de marcas de neumático y partículas de humo/polvo",
+    "maxSkidSegments": { "value": 4096, "desc": "Número máximo de segmentos de marca de neumático" },
+    "maxParticles": { "value": 900, "desc": "Número máximo simultáneo de partículas de humo/polvo" },
+    "rngSeed": { "value": 7, "desc": "Semilla pseudoaleatoria inicial para partículas" }
+  }
+}

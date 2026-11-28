@@ -7,6 +7,12 @@
  * - createMercedesArenaGrandstand: Gran graderío radial monumental Mercedes-Benz Arena con palcos VIP.
  */
 
+let GRANDSTANDS_CFG = null;
+if (typeof fetch === 'function') {
+  fetch('config/grandstands.json' + (typeof window !== 'undefined' && window.CACHE_VERSION ? '?v=' + window.CACHE_VERSION : ''))
+    .then(r => r.json()).then(d => { GRANDSTANDS_CFG = d; }).catch(() => {});
+}
+
 const GrandstandProps = {
   setColor(m, r, g, b, a = 1.0) {
     if (typeof PropUtils !== 'undefined' && typeof PropUtils.setColor === 'function') {
@@ -32,12 +38,32 @@ const GrandstandProps = {
     const { mb, md, mp, S1, S2, SP, toStraight, sign, CROWD, sitter, stander } = ctx;
     if (!mb || !md) return;
 
-    const u0 = config.s0 ?? -90, u1 = config.s1 ?? 135, vF = config.d0 ?? -15.5;
-    const nRow = config.nRows ?? 22, run = config.run ?? 0.85, rise = config.rise ?? 0.42, yF = config.yF ?? 1.25;
+    const def = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.standard) || {};
+    const u0 = config.s0 ?? (def.s0 ? def.s0.value : -90), u1 = config.s1 ?? (def.s1 ? def.s1.value : 135), vF = config.d0 ?? (def.d0 ? def.d0.value : -15.5);
+    const nRow = config.nRows ?? (def.nRows ? def.nRows.value : 22), run = config.run ?? (def.run ? def.run.value : 0.85), rise = config.rise ?? (def.rise ? def.rise.value : 0.42), yF = config.yF ?? (def.yF ? def.yF.value : 1.25);
     const vB = vF - 1.0 - nRow * run, yB = yF + nRow * rise;
-    const nSec = config.nSec ?? 6, aisle = config.aisle ?? 2.4;
+    const nSec = config.nSec ?? (def.nSec ? def.nSec.value : 6), aisle = config.aisle ?? (def.aisle ? def.aisle.value : 2.4);
     const secW = (u1 - u0 - (nSec + 1) * aisle) / nSec;
-    const seatCols = config.seatColors || [[0.78, 0.12, 0.12], [0.94, 0.94, 0.95]];
+    const seatCols = config.seatColors || (def.seatColors ? def.seatColors.value : [[0.78, 0.12, 0.12], [0.94, 0.94, 0.95]]);
+    const seatCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.seat) || {};
+    const sH = seatCfg.height ? seatCfg.height.value : 0.38;
+    const sF = seatCfg.frontOffset ? seatCfg.frontOffset.value : 0.22;
+    const sB = seatCfg.backOffset ? seatCfg.backOffset.value : 0.72;
+    const sBY = seatCfg.backTopY ? seatCfg.backTopY.value : 0.82;
+    const sBZ = seatCfg.backTopZ ? seatCfg.backTopZ.value : 0.74;
+    const matCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.materials) || {};
+    const crdCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.crowd) || {};
+    const cConc = matCfg.concrete ? matCfg.concrete.value : [0.52, 0.53, 0.54];
+    const cStair = matCfg.stairs ? matCfg.stairs.value : [0.65, 0.65, 0.66, 0.9];
+    const cRail = matCfg.handrail ? matCfg.handrail.value : [0.8, 0.8, 0.82];
+    const cWall = matCfg.frontWall ? matCfg.frontWall.value : [0.60, 0.60, 0.62];
+    const crBase = crdCfg.baseOcc ? crdCfg.baseOcc.value : 0.75;
+    const crWave = crdCfg.waveOcc ? crdCfg.waveOcc.value : 0.2;
+    const crStep = crdCfg.spacing ? crdCfg.spacing.value : 0.55;
+    const crStand = crdCfg.standProb ? crdCfg.standProb.value : 0.12;
+    const crDist = crdCfg.maxDist ? crdCfg.maxDist.value : 950;
+    const crDefCol = crdCfg.defaultColor ? crdCfg.defaultColor.value : [0.85, 0.2, 0.1];
+    const sponsors = crdCfg.sponsors ? crdCfg.sponsors.value : ['name', 'b0', 'b5', 'b2', 'b7', 'name'];
     const rnd = typeof config.rng === 'function' ? config.rng : Math.random;
 
     for (let sec = 0; sec < nSec; sec++) {
@@ -48,84 +74,110 @@ const GrandstandProps = {
       for (let r = 0; r < nRow; r++) {
         const v = vF - 1.0 - r * run, y = yF + r * rise, ao = 1.0 - 0.35 * (r / nRow);
         mb.mat(3);
-        this.setColor(mb, 0.52, 0.53, 0.54, ao);
+        this.setColor(mb, cConc[0], cConc[1], cConc[2], ao);
         mb.quad(a, y, v, c, y, v, c, y + rise, v, a, y + rise, v);
         mb.quad(a, y + rise, v, c, y + rise, v, c, y + rise, v - run, a, y + rise, v - run);
 
         const sTone = seatCols[(sec + r) % seatCols.length];
         md.mat(8);
         this.setColor(md, sTone[0], sTone[1], sTone[2], ao);
-        md.quad(a, y + rise + 0.38, v - 0.22, c, y + rise + 0.38, v - 0.22, c, y + rise + 0.38, v - 0.72, a, y + rise + 0.38, v - 0.72, 0, 0, c - a, 0.5);
-        md.quad(a, y + rise + 0.38, v - 0.72, c, y + rise + 0.38, v - 0.72, c, y + rise + 0.82, v - 0.74, a, y + rise + 0.82, v - 0.74, 0, 0, c - a, 0.44);
+        md.quad(a, y + rise + sH, v - sF, c, y + rise + sH, v - sF, c, y + rise + sH, v - sB, a, y + rise + sH, v - sB, 0, 0, c - a, sB - sF);
+        md.quad(a, y + rise + sH, v - sB, c, y + rise + sH, v - sB, c, y + rise + sBY, v - sBZ, a, y + rise + sBY, v - sBZ, 0, 0, c - a, sBY - sH);
       }
 
       // Público en las gradas
       if (mp && SP && typeof sitter === 'function' && config.withCrowd !== false) {
         const pv0 = mp.nv, pi0 = mp.ni;
+        const crMargin = crdCfg.marginX ? crdCfg.marginX.value : 0.4;
+        const crJitter = crdCfg.standJitter ? crdCfg.standJitter.value : 0.2;
+        const crStY = crdCfg.standYOffset ? crdCfg.standYOffset.value : 0.05;
+        const crStZ = crdCfg.standZOffset ? crdCfg.standZOffset.value : 0.45;
+        const crScale = crdCfg.scale ? crdCfg.scale.value : 0.95;
         for (let r = 0; r < nRow; r++) {
           const v = vF - 1.0 - r * run, y = yF + r * rise;
-          const occ = 0.75 + 0.2 * Math.sin((r + 1) / (nRow + 1) * Math.PI);
-          for (let x = a + 0.4; x < c - 0.4; x += 0.55) {
+          const occ = crBase + crWave * Math.sin((r + 1) / (nRow + 1) * Math.PI);
+          for (let x = a + crMargin; x < c - crMargin; x += crStep) {
             if (rnd() < occ) {
-              const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : [0.85, 0.2, 0.1];
-              if (rnd() < 0.12 && typeof stander === 'function') {
-                stander(x + (rnd() - 0.5) * 0.2, y + rise + 0.05, v - 0.45, crowdColor, 0.95);
+              const crowdColor = (CROWD && CROWD.length) ? CROWD[Math.floor(rnd() * CROWD.length)] : crDefCol;
+              if (rnd() < crStand && typeof stander === 'function') {
+                stander(x + (rnd() - 0.5) * crJitter, y + rise + crStY, v - crStZ, crowdColor, crScale);
               } else {
-                sitter(x, y + rise + 0.38, v - 0.72, 0.95);
+                sitter(x, y + rise + sH, v - sB, crScale);
               }
             }
           }
         }
         if (typeof toStraight === 'function') toStraight(mp, pv0);
-        SP.add(mp, pi0, 1, 950);
+        SP.add(mp, pi0, 1, crDist);
       }
 
       // Escaleras laterales de acceso
       for (const [x0, x1] of sec === 0 ? [[a - aisle, a], [c, c + aisle]] : [[c, c + aisle]]) {
         mb.mat(3);
-        this.setColor(mb, 0.65, 0.65, 0.66, 0.9);
+        this.setColor(mb, cStair[0], cStair[1], cStair[2], cStair[3]);
         for (let r = 0; r < nRow; r++) {
           const v = vF - 1.0 - r * run, y = yF + r * rise;
           mb.quad(x0, y, v, x1, y, v, x1, y + rise, v, x0, y + rise, v);
           mb.quad(x0, y + rise, v, x1, y + rise, v, x1, y + rise, v - run, x0, y + rise, v - run);
         }
         mb.mat(2, 102, 153);
-        this.setColor(mb, 0.8, 0.8, 0.82);
-        mb.tube([[(x0 + x1) / 2, yF + 0.95, vF - 1.0], [(x0 + x1) / 2, yB + 0.95, vB]], 0.035, 5);
+        this.setColor(mb, cRail[0], cRail[1], cRail[2]);
+        const railCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.handrail) || {};
+        const rH = railCfg.height ? railCfg.height.value : 0.95;
+        const rRad = railCfg.radius ? railCfg.radius.value : 0.035;
+        const rSeg = railCfg.segments ? railCfg.segments.value : 5;
+        mb.tube([[(x0 + x1) / 2, yF + rH, vF - 1.0], [(x0 + x1) / 2, yB + rH, vB]], rRad, rSeg);
       }
 
       // Murete frontal con rótulo de patrocinio
       const ea = sec === 0 ? u0 : a - aisle / 2, ec = sec === nSec - 1 ? u1 : c + aisle / 2;
       mb.mat(3);
-      this.setColor(mb, 0.60, 0.60, 0.62);
-      this.boxMinMax(mb, ea, ec, -0.5, yF + 0.9, vF - 1.0, vF - 0.75);
+      this.setColor(mb, cWall[0], cWall[1], cWall[2]);
+      const fwCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.frontWall) || {};
+      const fwBaseY = fwCfg.baseY ? fwCfg.baseY.value : -0.5;
+      const fwTop = fwCfg.topOffset ? fwCfg.topOffset.value : 0.9;
+      const fwBack = fwCfg.backOffset ? fwCfg.backOffset.value : 1.0;
+      const fwFront = fwCfg.frontOffset ? fwCfg.frontOffset.value : 0.75;
+      this.boxMinMax(mb, ea, ec, fwBaseY, yF + fwTop, vF - fwBack, vF - fwFront);
       if (typeof sign === 'function') {
-        const nm = ['name', 'b0', 'b5', 'b2', 'b7', 'name'][sec % 6];
+        const nm = sponsors[sec % sponsors.length];
         sign(md, ea + 2, 0.25, vF - 0.73, ec - ea - 4, 0, 0, 1.4, nm);
       }
 
       // Pared trasera
+      const bwCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.backWall) || {};
+      const bwCol = bwCfg.color ? bwCfg.color.value : [0.48, 0.48, 0.50];
+      const bwH = bwCfg.height ? bwCfg.height.value : 5.8;
+      const bwT = bwCfg.thickness ? bwCfg.thickness.value : 0.3;
       mb.mat(3);
-      this.setColor(mb, 0.48, 0.48, 0.50);
-      mb.quad(ec, -0.5, vB - 0.3, ea, -0.5, vB - 0.3, ea, yB + 5.8, vB - 0.3, ec, yB + 5.8, vB - 0.3);
-      mb.quad(ea, yB, vB, ec, yB, vB, ec, yB + 5.8, vB, ea, yB + 5.8, vB);
+      this.setColor(mb, bwCol[0], bwCol[1], bwCol[2]);
+      mb.quad(ec, fwBaseY, vB - bwT, ea, fwBaseY, vB - bwT, ea, yB + bwH, vB - bwT, ec, yB + bwH, vB - bwT);
+      mb.quad(ea, yB, vB, ec, yB, vB, ec, yB + bwH, vB, ea, yB + bwH, vB);
 
       // Marquesina superior en voladizo
+      const cpCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.canopy) || {};
+      const cpMaxD = cpCfg.maxDist ? cpCfg.maxDist.value : 2400;
       if (config.withRoof !== false) {
-        const yr0 = yB + 6.0, yr1 = yB + 3.8, vr1 = vF - 0.2;
+        const cpBackH = cpCfg.backHeight ? cpCfg.backHeight.value : 6.0;
+        const cpFrontH = cpCfg.frontHeight ? cpCfg.frontHeight.value : 3.8;
+        const cpInset = cpCfg.frontInset ? cpCfg.frontInset.value : 0.2;
+        const cpOver = cpCfg.backOverhang ? cpCfg.backOverhang.value : 0.8;
+        const cpRoofC = cpCfg.roofColor ? cpCfg.roofColor.value : [0.72, 0.74, 0.76];
+        const cpSteelC = cpCfg.steelColor ? cpCfg.steelColor.value : [0.22, 0.24, 0.26];
+        const yr0 = yB + cpBackH, yr1 = yB + cpFrontH, vr1 = vF - cpInset;
         md.mat(9);
-        this.setColor(md, 0.72, 0.74, 0.76);
-        md.quad(ec, yr0, vB - 0.8, ea, yr0, vB - 0.8, ea, yr1, vr1, ec, yr1, vr1, 0, 0, ec - ea, vr1 - vB + 0.8);
+        this.setColor(md, cpRoofC[0], cpRoofC[1], cpRoofC[2]);
+        md.quad(ec, yr0, vB - cpOver, ea, yr0, vB - cpOver, ea, yr1, vr1, ec, yr1, vr1, 0, 0, ec - ea, vr1 - vB + cpOver);
 
         mb.mat(2, 128, 128);
-        this.setColor(mb, 0.22, 0.24, 0.26);
+        this.setColor(mb, cpSteelC[0], cpSteelC[1], cpSteelC[2]);
         for (const x of [ea + 0.4, (ea + ec) / 2, ec - 0.4]) {
-          this.boxMinMax(mb, x - 0.22, x + 0.22, -0.5, yr0 - 0.1, vB - 0.3, vB + 0.15);
+          this.boxMinMax(mb, x - 0.22, x + 0.22, fwBaseY, yr0 - 0.1, vB - bwT, vB + 0.15);
           const bm = mb.nv;
-          this.boxMinMax(mb, x - 0.12, x + 0.12, -0.5, 0.0, 0, 1);
+          this.boxMinMax(mb, x - 0.12, x + 0.12, fwBaseY, 0.0, 0, 1);
           for (let q = bm; q < mb.nv; q++) {
             const t = mb.f32[q * 9 + 2], top = mb.f32[q * 9 + 1] > -0.25;
-            mb.f32[q * 9 + 2] = (vB - 0.3) + (vr1 - vB) * t;
+            mb.f32[q * 9 + 2] = (vB - bwT) + (vr1 - vB) * t;
             mb.f32[q * 9 + 1] = (yr0 + (yr1 - yr0) * t) - (top ? 0.06 : (0.95 - 0.65 * t));
           }
         }
@@ -135,8 +187,8 @@ const GrandstandProps = {
         toStraight(mb, v0);
         toStraight(md, w0);
       }
-      if (S1) S1.add(mb, i0, 7, 2400);
-      if (S2) S2.add(md, k0, 7, 2400);
+      if (S1) S1.add(mb, i0, 7, cpMaxD);
+      if (S2) S2.add(md, k0, 7, cpMaxD);
     }
   },
 
@@ -147,14 +199,15 @@ const GrandstandProps = {
     const { mb, md, mp, S1, S2, SP, P, CROWD, sitter, stander } = ctx;
     if (!mb || !md || typeof P !== 'function') return;
 
-    const arenaS0 = config.s0 ?? 865, arenaS1 = config.s1 ?? 1055;
-    const dS_arena = config.step ?? 5.5;
+    const maCfg = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.mercedesArena) || {};
+    const arenaS0 = config.s0 ?? (maCfg.s0 ? maCfg.s0.value : 865), arenaS1 = config.s1 ?? (maCfg.s1 ? maCfg.s1.value : 1055);
+    const dS_arena = config.step ?? (maCfg.step ? maCfg.step.value : 5.5);
     const nS_arena = Math.round((arenaS1 - arenaS0) / dS_arena);
-    const colSeatMercedesBlue = [0.06, 0.28, 0.76];
-    const colFasciaBlack = [0.08, 0.08, 0.10];
-    const colRoofWhite = [0.93, 0.94, 0.96];
-    const colSteelDark = [0.18, 0.20, 0.24];
-    const colChrome = [0.95, 0.96, 0.98];
+    const colSeatMercedesBlue = maCfg.seatBlue ? maCfg.seatBlue.value : [0.06, 0.28, 0.76];
+    const colFasciaBlack = maCfg.fasciaBlack ? maCfg.fasciaBlack.value : [0.08, 0.08, 0.10];
+    const colRoofWhite = maCfg.roofWhite ? maCfg.roofWhite.value : [0.93, 0.94, 0.96];
+    const colSteelDark = maCfg.steelDark ? maCfg.steelDark.value : [0.18, 0.20, 0.24];
+    const colChrome = maCfg.chrome ? maCfg.chrome.value : [0.95, 0.96, 0.98];
     const rnd = typeof config.rng === 'function' ? config.rng : Math.random;
 
     let mbI0 = mb.ni, mdI0 = md.ni, mpI0 = mp ? mp.ni : 0;
@@ -168,20 +221,27 @@ const GrandstandProps = {
 
       // Muro frontal blanco bajo con valla de seguridad FIA transparente
       {
-        const pA_w = P(sA, -24.8), pB_w = P(sB, -24.8);
+        const fiaD = maCfg.fiaWallD ? maCfg.fiaWallD.value : -24.8;
+        const fiaH = maCfg.fiaWallHeight ? maCfg.fiaWallHeight.value : 0.85;
+        const fiaWC = maCfg.fiaWallColor ? maCfg.fiaWallColor.value : [0.94, 0.95, 0.96];
+        const fiaSC = maCfg.fiaStripeColor ? maCfg.fiaStripeColor.value : [0.08, 0.25, 0.65];
+        const fiaFC = maCfg.fiaFenceColor ? maCfg.fiaFenceColor.value : [0.72, 0.74, 0.78];
+        const fiaTop = maCfg.fiaFenceTop ? maCfg.fiaFenceTop.value : 2.5;
+        const fiaCables = maCfg.fiaCableHeights ? maCfg.fiaCableHeights.value : [1.45, 1.95, 2.45];
+        const pA_w = P(sA, fiaD), pB_w = P(sB, fiaD);
         mb.mat(3);
-        this.setColor(mb, 0.94, 0.95, 0.96);
-        mb.quad(pA_w[0], yBaseA, pA_w[2], pB_w[0], yBaseB, pB_w[2], pB_w[0], yBaseB + 0.85, pB_w[2], pA_w[0], yBaseA + 0.85, pA_w[2]);
+        this.setColor(mb, fiaWC[0], fiaWC[1], fiaWC[2]);
+        mb.quad(pA_w[0], yBaseA, pA_w[2], pB_w[0], yBaseB, pB_w[2], pB_w[0], yBaseB + fiaH, pB_w[2], pA_w[0], yBaseA + fiaH, pA_w[2]);
         md.mat(2, 240, 240);
-        this.setColor(md, 0.08, 0.25, 0.65);
-        md.quad(pA_w[0], yBaseA + 0.12, pA_w[2], pB_w[0], yBaseB + 0.12, pB_w[2], pB_w[0], yBaseB + 0.72, pB_w[2], pA_w[0], yBaseA + 0.72, pA_w[2]);
+        this.setColor(md, fiaSC[0], fiaSC[1], fiaSC[2]);
+        md.quad(pA_w[0], yBaseA + 0.12, pA_w[2], pB_w[0], yBaseB + 0.12, pB_w[2], pB_w[0], yBaseB + fiaH - 0.13, pB_w[2], pA_w[0], yBaseA + fiaH - 0.13, pA_w[2]);
 
         mb.mat(1);
-        this.setColor(mb, 0.72, 0.74, 0.78);
-        mb.cyl(pA_w[0], yBaseA + 0.85, pA_w[2], 0.04, yBaseA + 2.5, 0.035, 5, true, true);
-        mb.tube([[pA_w[0], yBaseA + 1.45, pA_w[2]], [pB_w[0], yBaseB + 1.45, pB_w[2]]], 0.009, 3);
-        mb.tube([[pA_w[0], yBaseA + 1.95, pA_w[2]], [pB_w[0], yBaseB + 1.95, pB_w[2]]], 0.009, 3);
-        mb.tube([[pA_w[0], yBaseA + 2.45, pA_w[2]], [pB_w[0], yBaseB + 2.45, pB_w[2]]], 0.009, 3);
+        this.setColor(mb, fiaFC[0], fiaFC[1], fiaFC[2]);
+        mb.cyl(pA_w[0], yBaseA + fiaH, pA_w[2], 0.04, yBaseA + fiaTop, 0.035, 5, true, true);
+        for (const ch of fiaCables) {
+          mb.tube([[pA_w[0], yBaseA + ch, pA_w[2]], [pB_w[0], yBaseB + ch, pB_w[2]]], 0.009, 3);
+        }
       }
 
       // Graderío inferior (Lower Bowl): 10 filas
@@ -249,7 +309,8 @@ const GrandstandProps = {
         const pA_ub = P(sA, dBack), pB_ub = P(sB, dBack);
 
         mb.mat(3);
-        this.setColor(mb, 0.58, 0.59, 0.61);
+        const cConcLight = (GRANDSTANDS_CFG && GRANDSTANDS_CFG.materials && GRANDSTANDS_CFG.materials.concreteLight) ? GRANDSTANDS_CFG.materials.concreteLight.value : [0.58, 0.59, 0.61];
+        this.setColor(mb, cConcLight[0], cConcLight[1], cConcLight[2]);
         mb.quad(pA_uf[0], y0A, pA_uf[2], pB_uf[0], y0B, pB_uf[2], pB_uf[0], y1B, pB_uf[2], pA_uf[0], y1A, pA_uf[2]);
         mb.quad(pA_uf[0], y1A, pA_uf[2], pB_uf[0], y1B, pB_uf[2], pB_ub[0], y1B, pB_ub[2], pA_ub[0], y1A, pA_ub[2]);
 
@@ -264,12 +325,15 @@ const GrandstandProps = {
       }
 
       // Cubierta en voladizo (cantilever canopy)
-      const dRoofBack = dMidBack - nUpRows * upRun - 1.5;
-      const dRoofTip = -(25.0 - 1.5);
-      const yRoofBackA = yMidTopA + nUpRows * upRise + 6.8;
-      const yRoofBackB = yMidTopB + nUpRows * upRise + 6.8;
-      const yRoofTipA = yRoofBackA - 3.2;
-      const yRoofTipB = yRoofBackB - 3.2;
+      const maOver = maCfg.roofOverhang ? maCfg.roofOverhang.value : 1.5;
+      const maBackH = maCfg.roofBackHeight ? maCfg.roofBackHeight.value : 6.8;
+      const maDrop = maCfg.roofDrop ? maCfg.roofDrop.value : 3.2;
+      const dRoofBack = dMidBack - nUpRows * upRun - maOver;
+      const dRoofTip = -(25.0 - maOver);
+      const yRoofBackA = yMidTopA + nUpRows * upRise + maBackH;
+      const yRoofBackB = yMidTopB + nUpRows * upRise + maBackH;
+      const yRoofTipA = yRoofBackA - maDrop;
+      const yRoofTipB = yRoofBackB - maDrop;
 
       const pA_rb = P(sA, dRoofBack), pB_rb = P(sB, dRoofBack);
       const pA_rt = P(sA, dRoofTip), pB_rt = P(sB, dRoofTip);
@@ -281,38 +345,46 @@ const GrandstandProps = {
       // Vigas y columnas en V
       mb.mat(2, 120, 140);
       this.setColor(mb, colSteelDark[0], colSteelDark[1], colSteelDark[2]);
-      mb.tube([[pA_rb[0], yRoofBackA - 0.25, pA_rb[2]], [pA_rt[0], yRoofTipA - 0.25, pA_rt[2]]], 0.16, 6);
-      mb.cyl(pA_rb[0], yBaseA, pA_rb[2], 0.38, yRoofBackA, 0.32, 10, true, true);
+      const beamDrop = maCfg.beamDrop ? maCfg.beamDrop.value : 0.25;
+      const beamR = maCfg.beamRadius ? maCfg.beamRadius.value : 0.16;
+      const pilBaseR = maCfg.pillarBaseR ? maCfg.pillarBaseR.value : 0.38;
+      const pilTopR = maCfg.pillarTopR ? maCfg.pillarTopR.value : 0.32;
+      mb.tube([[pA_rb[0], yRoofBackA - beamDrop, pA_rb[2]], [pA_rt[0], yRoofTipA - beamDrop, pA_rt[2]]], beamR, 6);
+      mb.cyl(pA_rb[0], yBaseA, pA_rb[2], pilBaseR, yRoofBackA, pilTopR, 10, true, true);
     }
 
     // Estrella monumental de Mercedes-Benz 3D en la cima central
     {
       const sCenter = (arenaS0 + arenaS1) * 0.5;
-      const dRoofBackC = -48.0;
+      const dRoofBackC = maCfg.starD ? maCfg.starD.value : -48.0;
       const pCenter = P(sCenter, dRoofBackC);
-      const yStarCenter = pCenter[1] + 25.5;
+      const yStarCenter = pCenter[1] + (maCfg.starHeight ? maCfg.starHeight.value : 25.5);
 
       mb.mat(1);
       this.setColor(mb, colChrome[0], colChrome[1], colChrome[2]);
-      const rRing = 4.2;
-      const nRingPts = 24;
+      const rRing = maCfg.starRadius ? maCfg.starRadius.value : 4.2;
+      const nRingPts = maCfg.starSegments ? maCfg.starSegments.value : 24;
+      const ringTubeR = maCfg.starRingRadius ? maCfg.starRingRadius.value : 0.14;
+      const armTubeR = maCfg.starArmRadius ? maCfg.starArmRadius.value : 0.18;
       const ringPts = [];
       for (let i = 0; i <= nRingPts; i++) {
         const ang = (i / nRingPts) * Math.PI * 2;
         ringPts.push([pCenter[0], yStarCenter + Math.sin(ang) * rRing, pCenter[2] + Math.cos(ang) * rRing]);
       }
-      mb.tube(ringPts, 0.14, 8);
+      mb.tube(ringPts, ringTubeR, 8);
 
       for (let arm = 0; arm < 3; arm++) {
         const ang = arm * (Math.PI * 2 / 3) + Math.PI * 0.5;
         const tipX = pCenter[0], tipY = yStarCenter + Math.sin(ang) * (rRing - 0.15), tipZ = pCenter[2] + Math.cos(ang) * (rRing - 0.15);
-        mb.tube([[pCenter[0], yStarCenter, pCenter[2]], [tipX, tipY, tipZ]], 0.18, 6);
+        mb.tube([[pCenter[0], yStarCenter, pCenter[2]], [tipX, tipY, tipZ]], armTubeR, 6);
       }
     }
 
-    if (S1 && mb.ni > mbI0) S1.add(mb, mbI0, 7, 2600);
-    if (S2 && md.ni > mdI0) S2.add(md, mdI0, 7, 2600);
-    if (mp && SP && mp.ni > mpI0) SP.add(mp, mpI0, 1, 1400);
+    const maMaxD = maCfg.maxDist ? maCfg.maxDist.value : 2600;
+    const maCrowdD = maCfg.crowdMaxDist ? maCfg.crowdMaxDist.value : 1400;
+    if (S1 && mb.ni > mbI0) S1.add(mb, mbI0, 7, maMaxD);
+    if (S2 && md.ni > mdI0) S2.add(md, mdI0, 7, maMaxD);
+    if (mp && SP && mp.ni > mpI0) SP.add(mp, mpI0, 1, maCrowdD);
   }
 };
 

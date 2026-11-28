@@ -1,0 +1,12 @@
+{
+  "CarFactory": {
+    "_comment": "Valores por defecto de texturas y definición de vehículos",
+    "defaultAtlasW": { "value": 2048, "desc": "Ancho por defecto del atlas de texturas del coche (px)" },
+    "defaultAtlasH": { "value": 2048, "desc": "Alto por defecto del atlas de texturas del coche (px)" },
+    "defaultAtlasColor": { "value": 40, "desc": "Valor RGBA inicial de relleno del atlas antes de cargar imagen" },
+    "atlasMipLevels": { "value": 7, "desc": "Niveles de mipmap de la textura del coche" },
+    "defaultAccent": { "value": "#ffffff", "desc": "Color de acento por defecto en la UI para el vehículo" },
+    "defaultWheelR": { "value": 0.34, "desc": "Radio de rueda por defecto (m)" },
+    "defaultShaderSrc": { "value": "mat_car_default", "desc": "Shader WGSL de material por defecto para vehículos" }
+  }
+}

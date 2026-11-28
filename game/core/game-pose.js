@@ -53,15 +53,21 @@ function gamePose() {
     f[o2 + 1] = 0.0;
   }
   f[o2 + 2] = 0.0; f[o2 + 3] = 0.0;
-  R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
+  const POSE_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_GAME_POSE)
+    || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/game-pose.json'); } catch { return {}; } })() : {});
+  const _gpC = POSE_CFG.gamePose || {};
+  const _cH = _gpC.cubePosHeight ? _gpC.cubePosHeight.value : 1.15;
+  R.cube.pos[0] = B[4] * _cH + B[12]; R.cube.pos[1] = B[5] * _cH + B[13]; R.cube.pos[2] = B[6] * _cH + B[14];
   const m = R.mirror;
   if (m) {
-    m.eye[0] = B[0] * -1.8 + B[4] * 1.35 + B[12];
-    m.eye[1] = B[1] * -1.8 + B[5] * 1.35 + B[13];
-    m.eye[2] = B[2] * -1.8 + B[6] * 1.35 + B[14];
-    m.target[0] = B[0] * -20.0 + B[4] * 1.25 + B[12];
-    m.target[1] = B[1] * -20.0 + B[5] * 1.25 + B[13];
-    m.target[2] = B[2] * -20.0 + B[6] * 1.25 + B[14];
+    const mEye = _gpC.mirrorEye ? _gpC.mirrorEye.value : [-1.8, 1.35];
+    const mTgt = _gpC.mirrorTarget ? _gpC.mirrorTarget.value : [-20.0, 1.25];
+    m.eye[0] = B[0] * mEye[0] + B[4] * mEye[1] + B[12];
+    m.eye[1] = B[1] * mEye[0] + B[5] * mEye[1] + B[13];
+    m.eye[2] = B[2] * mEye[0] + B[6] * mEye[1] + B[14];
+    m.target[0] = B[0] * mTgt[0] + B[4] * mTgt[1] + B[12];
+    m.target[1] = B[1] * mTgt[0] + B[5] * mTgt[1] + B[13];
+    m.target[2] = B[2] * mTgt[0] + B[6] * mTgt[1] + B[14];
     m.up[0] = B[4]; m.up[1] = B[5]; m.up[2] = B[6];
   }
 }

@@ -1,5 +1,5 @@
 (function (RootScope) {
-  'use strict';
+  "use strict";
   /**
    * Proxies & Bridges - Patrones Proxy y Bridge
    * - CarAssetProxy: Carga perezosa y memoización de buffers de mallas 3D.
@@ -7,7 +7,22 @@
    * - VehicleRenderBridge: Desacopla la física a 120Hz del renderizado gráfico WebGPU.
    */
 
-  const getBus = () => (RootScope.EventBusSingleton || (typeof require !== 'undefined' ? require('./event-bus.js').EventBusSingleton : null));
+  const getBus = () =>
+    RootScope.EventBusSingleton ||
+    (typeof require !== "undefined"
+      ? require("./event-bus.js").EventBusSingleton
+      : null);
+  const PROXIES_CFG =
+    (typeof window !== "undefined" && window.__CFG_ENGINE_PATTERNS_PROXIES) ||
+    (typeof require === "function"
+      ? (() => {
+          try {
+            return require("../../config/engine/patterns/proxies.json");
+          } catch {
+            return {};
+          }
+        })()
+      : {});
 
   /**
    * CarAssetProxy: Proxy virtual que retrasa la descompresión y decodificación
@@ -20,11 +35,21 @@
       this._cache = new Map();
     }
 
-    get id() { return this._target.id; }
-    get name() { return this._target.name; }
-    get physics() { return this._target.physics; }
-    get hubs() { return this._target.hubs; }
-    get wheelR() { return this._target.wheelR; }
+    get id() {
+      return this._target.id;
+    }
+    get name() {
+      return this._target.name;
+    }
+    get physics() {
+      return this._target.physics;
+    }
+    get hubs() {
+      return this._target.hubs;
+    }
+    get wheelR() {
+      return this._target.wheelR;
+    }
 
     getBuffer(bufferKey, decoderFn) {
       if (this._cache.has(bufferKey)) {
@@ -37,51 +62,54 @@
       return decoded;
     }
 
-build() {
-  return this._target.build();
-}
+    build() {
+      return this._target.build();
+    }
 
-place(body, spin, susp) {
-  return this._target.place(body, spin, susp);
-}
+    place(body, spin, susp) {
+      return this._target.place(body, spin, susp);
+    }
 
-clearCache() {
-  this._cache.clear();
-}
+    clearCache() {
+      this._cache.clear();
+    }
   }
 
-/**
- * I18nProxy: Proxy dinámico con resolución de fallbacks automáticos para textos localizados.
- */
-class I18nProxy {
-  constructor(dictionary, defaultLang = 'es') {
-    this._dict = dictionary || {};
-    this._currentLang = defaultLang;
-  }
+  /**
+   * I18nProxy: Proxy dinámico con resolución de fallbacks automáticos para textos localizados.
+   */
+  class I18nProxy {
+    constructor(dictionary, defaultLang = null) {
+      const i18nCfg = PROXIES_CFG.I18nProxy || {};
+      this._dict = dictionary || {};
+      this._currentLang =
+        defaultLang || (i18nCfg.defaultLang ? i18nCfg.defaultLang.value : "es");
+    }
 
-setLanguage(lang) {
-  this._currentLang = lang;
-  const bus = getBus();
-  if (bus) bus.emit('i18n:language_changed', lang);
-}
+    setLanguage(lang) {
+      this._currentLang = lang;
+      const bus = getBus();
+      if (bus) bus.emit("i18n:language_changed", lang);
+    }
 
-getLanguage() {
-  return this._currentLang;
-}
+    getLanguage() {
+      return this._currentLang;
+    }
 
-  t(key, replacements = null) {
-    const currentTable = this._dict[this._currentLang];
-    const esTable = this._dict['es'];
-    const enTable = this._dict['en'];
+    t(key, replacements = null) {
+      const currentTable = this._dict[this._currentLang];
+      const esTable = this._dict["es"];
+      const enTable = this._dict["en"];
 
-      let text = (currentTable && currentTable[key]) ||
+      let text =
+        (currentTable && currentTable[key]) ||
         (esTable && esTable[key]) ||
         (enTable && enTable[key]) ||
         key;
 
-      if (replacements && typeof replacements === 'object') {
+      if (replacements && typeof replacements === "object") {
         for (const [k, v] of Object.entries(replacements)) {
-          text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+          text = text.replace(new RegExp(`{${k}}`, "g"), v);
         }
       }
       return text;
@@ -94,32 +122,42 @@ getLanguage() {
    * ranuras de objetos MeshSet, sombras y shaders).
    */
   class VehicleRenderBridge {
-  constructor(carModel, physicsState) {
-    this.carModel = carModel;
-    this.physics = physicsState;
-    this._transformMatrix = new Float32Array(16);
-    this._wheelMatrix = new Float32Array(16);
+    constructor(carModel, physicsState) {
+      this.carModel = carModel;
+      this.physics = physicsState;
+      this._transformMatrix = new Float32Array(16);
+      this._wheelMatrix = new Float32Array(16);
+    }
+
+    syncToRenderer(interpolatedBodyMat, spinArray, suspArray, steerAngle) {
+      if (!this.carModel || typeof this.carModel.place !== "function") return;
+      if (this.carModel.inp) {
+        const brCfg = PROXIES_CFG.VehicleRenderBridge || {};
+        const swMult = brCfg.steeringWheelMultiplier
+          ? brCfg.steeringWheelMultiplier.value
+          : 14;
+        this.carModel.inp[0] = steerAngle;
+        this.carModel.inp[1] = steerAngle * swMult;
+      }
+      this.carModel.place(interpolatedBodyMat, spinArray, suspArray);
+    }
   }
 
-      syncToRenderer(interpolatedBodyMat, spinArray, suspArray, steerAngle) {
-        if (!this.carModel || typeof this.carModel.place !== 'function') return;
-        if (this.carModel.inp) {
-          this.carModel.inp[0] = steerAngle;
-          this.carModel.inp[1] = steerAngle * 14;
-        }
-        this.carModel.place(interpolatedBodyMat, spinArray, suspArray);
-      }
-    }
+  RootScope.CarAssetProxy = CarAssetProxy;
+  RootScope.I18nProxy = I18nProxy;
+  RootScope.VehicleRenderBridge = VehicleRenderBridge;
 
-    RootScope.CarAssetProxy = CarAssetProxy;
-    RootScope.I18nProxy = I18nProxy;
-    RootScope.VehicleRenderBridge = VehicleRenderBridge;
-
-    if (typeof module !== 'undefined' && module.exports) {
-      module.exports = {
-        CarAssetProxy,
-        I18nProxy,
-        VehicleRenderBridge
-      };
-    }
-  })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      CarAssetProxy,
+      I18nProxy,
+      VehicleRenderBridge,
+    };
+  }
+})(
+  typeof window !== "undefined"
+    ? window
+    : typeof globalThis !== "undefined"
+      ? globalThis
+      : this,
+);

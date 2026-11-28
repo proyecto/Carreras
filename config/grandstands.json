@@ -1,0 +1,416 @@
+{
+  "standard": {
+    "_comment": "Parámetros por defecto de la grada escalonada estándar (Haupttribüne)",
+    "s0": {
+      "value": -90,
+      "desc": "Coordenada longitudinal inicial (metros desde meta)"
+    },
+    "s1": {
+      "value": 135,
+      "desc": "Coordenada longitudinal final (metros desde meta)"
+    },
+    "d0": {
+      "value": -15.5,
+      "desc": "Distancia lateral desde el centro de pista (negativo = izquierda)"
+    },
+    "nRows": {
+      "value": 22,
+      "desc": "Número de filas de asientos"
+    },
+    "run": {
+      "value": 0.85,
+      "desc": "Profundidad horizontal de cada fila (metros)"
+    },
+    "rise": {
+      "value": 0.42,
+      "desc": "Altura vertical de cada escalón/fila (metros)"
+    },
+    "yF": {
+      "value": 1.25,
+      "desc": "Altura de la primera fila sobre el suelo (metros)"
+    },
+    "nSec": {
+      "value": 6,
+      "desc": "Número de sectores separados por pasillos"
+    },
+    "aisle": {
+      "value": 2.4,
+      "desc": "Anchura de cada pasillo entre sectores (metros)"
+    },
+    "seatColors": {
+      "value": [
+        [
+          0.78,
+          0.12,
+          0.12
+        ],
+        [
+          0.94,
+          0.94,
+          0.95
+        ]
+      ],
+      "desc": "Colores RGB [0..1] alternos de los asientos"
+    }
+  },
+  "materials": {
+    "_comment": "Colores RGB [0..1] de materiales estructurales de las gradas",
+    "concrete": {
+      "value": [
+        0.52,
+        0.53,
+        0.54
+      ],
+      "desc": "Hormigón principal de huellas y contrahuellas"
+    },
+    "concreteLight": {
+      "value": [
+        0.58,
+        0.59,
+        0.61
+      ],
+      "desc": "Hormigón claro de pasarelas y estructura Mercedes Arena"
+    },
+    "stairs": {
+      "value": [
+        0.65,
+        0.65,
+        0.66,
+        0.9
+      ],
+      "desc": "Hormigón de escaleras laterales de acceso"
+    },
+    "handrail": {
+      "value": [
+        0.80,
+        0.80,
+        0.82
+      ],
+      "desc": "Acero de barandillas de escaleras"
+    },
+    "frontWall": {
+      "value": [
+        0.60,
+        0.60,
+        0.62
+      ],
+      "desc": "Murete frontal de hormigón"
+    },
+    "concreteDark": {
+      "value": [
+        0.32,
+        0.31,
+        0.29
+      ],
+      "desc": "Hormigón oscuro para sombras"
+    },
+    "steel": {
+      "value": [
+        0.22,
+        0.24,
+        0.27
+      ],
+      "desc": "Acero oscuro de pilares y cerchas"
+    },
+    "roof": {
+      "value": [
+        0.85,
+        0.86,
+        0.88
+      ],
+      "desc": "Chapa clara de la cubierta/marquesina"
+    },
+    "vipGlass": {
+      "value": [
+        0.12,
+        0.18,
+        0.26
+      ],
+      "desc": "Cristal tintado de palcos VIP"
+    },
+    "vipTrim": {
+      "value": [
+        0.75,
+        0.78,
+        0.82
+      ],
+      "desc": "Perfil metálico de los palcos VIP"
+    }
+  },
+  "seat": {
+    "_comment": "Dimensiones del asiento y respaldo (metros)",
+    "height": {
+      "value": 0.38,
+      "desc": "Altura de la banqueta del asiento sobre el escalón (m)"
+    },
+    "frontOffset": {
+      "value": 0.22,
+      "desc": "Distancia desde el borde del escalón al frente del asiento (m)"
+    },
+    "backOffset": {
+      "value": 0.72,
+      "desc": "Distancia desde el borde del escalón al fondo del asiento (m)"
+    },
+    "backTopY": {
+      "value": 0.82,
+      "desc": "Altura superior del respaldo sobre el escalón (m)"
+    },
+    "backTopZ": {
+      "value": 0.74,
+      "desc": "Inclinación trasera del respaldo (m)"
+    }
+  },
+  "handrail": {
+    "_comment": "Barandilla tubular de las escaleras de acceso",
+    "height": {
+      "value": 0.95,
+      "desc": "Altura de la barandilla sobre el escalón (m)"
+    },
+    "radius": {
+      "value": 0.035,
+      "desc": "Radio del tubo de la barandilla (m)"
+    },
+    "segments": {
+      "value": 5,
+      "desc": "Número de lados del tubo"
+    }
+  },
+  "frontWall": {
+    "_comment": "Dimensiones del murete frontal de hormigón (metros)",
+    "baseY": {
+      "value": -0.5,
+      "desc": "Profundidad de cimentación bajo el suelo (m)"
+    },
+    "topOffset": {
+      "value": 0.9,
+      "desc": "Altura del murete sobre la primera fila (m)"
+    },
+    "backOffset": {
+      "value": 1.0,
+      "desc": "Borde trasero del murete respecto a d0 (m)"
+    },
+    "frontOffset": {
+      "value": 0.75,
+      "desc": "Borde delantero del murete respecto a d0 (m)"
+    }
+  },
+  "mercedesArena": {
+    "_comment": "Parámetros y colores de la grada radial Mercedes-Benz Arena",
+    "s0": {
+      "value": 865,
+      "desc": "Coordenada longitudinal inicial (metros desde meta)"
+    },
+    "s1": {
+      "value": 1055,
+      "desc": "Coordenada longitudinal final (metros desde meta)"
+    },
+    "step": {
+      "value": 5.5,
+      "desc": "Paso longitudinal entre módulos radiales (metros)"
+    },
+    "seatBlue": {
+      "value": [
+        0.06,
+        0.28,
+        0.76
+      ],
+      "desc": "Color azul Mercedes de los asientos"
+    },
+    "fasciaBlack": {
+      "value": [
+        0.08,
+        0.08,
+        0.10
+      ],
+      "desc": "Color negro de la fascia frontal"
+    },
+    "roofWhite": {
+      "value": [
+        0.93,
+        0.94,
+        0.96
+      ],
+      "desc": "Color blanco de la cubierta"
+    },
+    "steelDark": {
+      "value": [
+        0.18,
+        0.20,
+        0.24
+      ],
+      "desc": "Color acero oscuro de pilares y estructura"
+    },
+    "chrome": {
+      "value": [
+        0.95,
+        0.96,
+        0.98
+      ],
+      "desc": "Color cromado de detalles metálicos"
+    },
+    "fiaWallD": {
+      "value": -24.8,
+      "desc": "Distancia lateral del muro frontal FIA (m)"
+    },
+    "fiaWallHeight": {
+      "value": 0.85,
+      "desc": "Altura del muro frontal blanco (m)"
+    },
+    "fiaWallColor": {
+      "value": [
+        0.94,
+        0.95,
+        0.96
+      ],
+      "desc": "Color blanco del muro frontal"
+    },
+    "fiaStripeColor": {
+      "value": [
+        0.08,
+        0.25,
+        0.65
+      ],
+      "desc": "Color azul de la franja del muro"
+    },
+    "fiaFenceColor": {
+      "value": [
+        0.72,
+        0.74,
+        0.78
+      ],
+      "desc": "Color metálico de postes y cables FIA"
+    },
+    "fiaFenceTop": {
+      "value": 2.5,
+      "desc": "Altura total de la valla FIA (m)"
+    },
+    "fiaCableHeights": {
+      "value": [
+        1.45,
+        1.95,
+        2.45
+      ],
+      "desc": "Alturas de los 3 cables horizontales de la valla (m)"
+    }
+  },
+  "backWall": {
+    "_comment": "Pared trasera de la grada estándar",
+    "color": {
+      "value": [
+        0.48,
+        0.48,
+        0.50
+      ],
+      "desc": "Color hormigón pared trasera"
+    },
+    "height": {
+      "value": 5.8,
+      "desc": "Altura sobre la última fila (m)"
+    },
+    "thickness": {
+      "value": 0.3,
+      "desc": "Grosor de la pared trasera (m)"
+    }
+  },
+  "canopy": {
+    "_comment": "Marquesina superior en voladizo",
+    "roofColor": {
+      "value": [
+        0.72,
+        0.74,
+        0.76
+      ],
+      "desc": "Color chapa de la marquesina"
+    },
+    "steelColor": {
+      "value": [
+        0.22,
+        0.24,
+        0.26
+      ],
+      "desc": "Color acero de pilares y vigas"
+    },
+    "backHeight": {
+      "value": 6.0,
+      "desc": "Altura trasera de la cubierta sobre yB (m)"
+    },
+    "frontHeight": {
+      "value": 3.8,
+      "desc": "Altura delantera de la cubierta sobre yB (m)"
+    },
+    "frontInset": {
+      "value": 0.2,
+      "desc": "Retranqueo frontal respecto a d0 (m)"
+    },
+    "backOverhang": {
+      "value": 0.8,
+      "desc": "Voladizo trasero tras vB (m)"
+    },
+    "maxDist": {
+      "value": 2400,
+      "desc": "Distancia máxima de renderizado de la grada (m)"
+    }
+  },
+  "crowd": {
+    "_comment": "Configuración de densidad, espaciado y altura del público en gradas",
+    "baseOcc": {
+      "value": 0.75,
+      "desc": "Ocupación base de asientos (0..1)"
+    },
+    "waveOcc": {
+      "value": 0.20,
+      "desc": "Variación senoidal de ocupación por fila"
+    },
+    "spacing": {
+      "value": 0.55,
+      "desc": "Separación horizontal entre espectadores (metros)"
+    },
+    "standProb": {
+      "value": 0.12,
+      "desc": "Probabilidad de espectador de pie"
+    },
+    "maxDist": {
+      "value": 950,
+      "desc": "Distancia máxima de renderizado del público (metros)"
+    },
+    "defaultColor": {
+      "value": [
+        0.85,
+        0.2,
+        0.1
+      ],
+      "desc": "Color RGB por defecto si no hay paleta CROWD"
+    },
+    "marginX": {
+      "value": 0.4,
+      "desc": "Margen lateral en cada sector donde no se colocan espectadores (m)"
+    },
+    "standJitter": {
+      "value": 0.2,
+      "desc": "Desplazamiento aleatorio lateral de espectadores de pie (m)"
+    },
+    "standYOffset": {
+      "value": 0.05,
+      "desc": "Altura de los pies sobre el escalón para espectadores de pie (m)"
+    },
+    "standZOffset": {
+      "value": 0.45,
+      "desc": "Posición longitudinal del espectador de pie respecto al escalón (m)"
+    },
+    "scale": {
+      "value": 0.95,
+      "desc": "Escala de tamaño del sprite del espectador"
+    },
+    "sponsors": {
+      "value": [
+        "name",
+        "b0",
+        "b5",
+        "b2",
+        "b7",
+        "name"
+      ],
+      "desc": "Rótulos de patrocinio por sector"
+    }
+  }
+}

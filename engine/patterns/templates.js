@@ -1,5 +1,5 @@
 (function (RootScope) {
-  'use strict';
+  "use strict";
   /**
    * Templates - Patrón Template Method (Ciclo de Simulación Física)
    * Define el esqueleto canónico e invariable de pasos para simulación numérica a 120 Hz.
@@ -13,6 +13,7 @@
   class SimulationLoopTemplate {
     /**
      * Método plantilla que orquesta los pasos en orden estricto.
+     * @param {number} dt - Paso de tiempo fijo de simulación (s)
      */
     tick(dt) {
       const inputs = this.pollInputs();
@@ -26,15 +27,17 @@
       this.afterTick(dt);
     }
 
-    pollInputs() { return 0; }
-    prePhysics(dt, inputs) { }
-    integratePhysics(dt, inputs) { }
-    postPhysics(dt) { }
-    updateAI(dt) { }
-    resolveVehicleCollisions(dt) { }
-    updateSuspensionAndPose(dt) { }
-    checkLapCrossing(dt) { }
-    afterTick(dt) { }
+    pollInputs() {
+      return 0;
+    }
+    prePhysics(dt, inputs) {}
+    integratePhysics(dt, inputs) {}
+    postPhysics(dt) {}
+    updateAI(dt) {}
+    resolveVehicleCollisions(dt) {}
+    updateSuspensionAndPose(dt) {}
+    checkLapCrossing(dt) {}
+    afterTick(dt) {}
   }
 
   /**
@@ -74,10 +77,16 @@
   RootScope.SimulationLoopTemplate = SimulationLoopTemplate;
   RootScope.RaceSimulationLoop = RaceSimulationLoop;
 
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof module !== "undefined" && module.exports) {
     module.exports = {
       SimulationLoopTemplate,
-      RaceSimulationLoop
+      RaceSimulationLoop,
     };
   }
-})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+})(
+  typeof window !== "undefined"
+    ? window
+    : typeof globalThis !== "undefined"
+      ? globalThis
+      : this,
+);

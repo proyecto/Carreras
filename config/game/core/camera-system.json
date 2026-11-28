@@ -1,0 +1,17 @@
+{
+  "ChaseCameraStrategy": {
+    "_comment": "Constantes cinemáticas de la cámara de persecución",
+    "slipMinSpeed": { "value": 4, "desc": "Velocidad mínima (m/s) para aplicar anticipación de derrape" },
+    "slipClamp": { "value": 0.5, "desc": "Ángulo máximo de deriva considerado (rad)" },
+    "slipYawFactor": { "value": 0.55, "desc": "Fracción del ángulo de deriva sumada al yaw objetivo" },
+    "yawSmoothRate": { "value": 5.5, "desc": "Velocidad de suavizado exponencial del yaw de cámara" },
+    "ySmoothRate": { "value": 7, "desc": "Velocidad de suavizado exponencial de la altura de cámara" },
+    "baseDist": { "value": 5.3, "desc": "Distancia base detrás del coche (m)" },
+    "speedDistFactor": { "value": 0.022, "desc": "Incremento de distancia por m/s de velocidad" },
+    "eyeHeight": { "value": 1.62, "desc": "Altura base del ojo de cámara sobre el coche (m)" },
+    "pitchFactor": { "value": 0.6, "desc": "Influencia del cabeceo del coche en la altura de cámara" },
+    "minGroundClearance": { "value": 0.55, "desc": "Altura mínima sobre el terreno (m)" },
+    "rollFactor": { "value": 0.004, "desc": "Factor de alabeo de cámara por aceleración lateral" },
+    "maxRoll": { "value": 0.05, "desc": "Alabeo máximo de cámara (rad)" }
+  }
+}

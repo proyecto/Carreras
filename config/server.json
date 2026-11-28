@@ -1,0 +1,20 @@
+{
+  "server": {
+    "_comment": "Configuración del servidor HTTP y WebSocket local",
+    "defaultPort": { "value": 8000, "desc": "Puerto HTTP por defecto si no se define process.env.PORT" },
+    "mimeTypes": {
+      ".html": "text/html; charset=utf-8",
+      ".js": "text/javascript; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".json": "application/json; charset=utf-8",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".webp": "image/webp",
+      ".svg": "image/svg+xml",
+      ".glb": "model/gltf-binary",
+      ".wasm": "application/wasm",
+      ".ico": "image/x-icon"
+    }
+  }
+}

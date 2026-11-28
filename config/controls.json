@@ -26,5 +26,22 @@
     "gearUp": 1024,
     "gearDown": 2048,
     "tc": 4096
+  },
+  "keyLabels": {
+    "Space": "Espacio",
+    "ArrowUp": "↑",
+    "ArrowDown": "↓",
+    "ArrowLeft": "←",
+    "ArrowRight": "→",
+    "Escape": "Esc",
+    "ShiftLeft": "Shift",
+    "ShiftRight": "Shift",
+    "ControlLeft": "Ctrl",
+    "ControlRight": "Ctrl",
+    "AltLeft": "Alt",
+    "AltRight": "Alt",
+    "Tab": "Tab",
+    "Enter": "Enter",
+    "Backspace": "Backspace"
   }
 }

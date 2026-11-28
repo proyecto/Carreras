@@ -5,9 +5,15 @@
 // y las mallas 3D de arquetipos arbóreos (árboles, palmeras, arbustos, helechos, sotobosque).
 
 (() => {
-  const VEG_TS = 1024, VEG_TW = 4, VEG_TH = 2;   // Baldosas de 1024x1024 (diseño vectorial sobre canvas 2D)
-  const VEG_NT = 6, VEG_NA = 9;   // arquetipos con impostor (árboles + arbusto grande) / total (con sotobosque)
-  const VEG_BARK = [[0.135, 0.108, 0.083], [0.19, 0.172, 0.146], [0.15, 0.128, 0.1]];   // marrom rugosa, cinzenta lisa, palmeira
+  const VEG_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_VEGETATION_FACTORY)
+    || (typeof require === 'function' ? (() => { try { return require('../config/engine/vegetation-factory.json'); } catch { return {}; } })() : {});
+  const _vfC = VEG_CFG.vegetationFactory || {};
+  const VEG_TS = _vfC.tileSize ? _vfC.tileSize.value : 1024;
+  const VEG_TW = _vfC.tileCols ? _vfC.tileCols.value : 4;
+  const VEG_TH = _vfC.tileRows ? _vfC.tileRows.value : 2;
+  const VEG_NT = _vfC.impostorTypes ? _vfC.impostorTypes.value : 6;
+  const VEG_NA = _vfC.totalArchetypes ? _vfC.totalArchetypes.value : 9;
+  const VEG_BARK = _vfC.barkColors ? _vfC.barkColors.value : [[0.135, 0.108, 0.083], [0.19, 0.172, 0.146], [0.15, 0.128, 0.1]];
 
   // Capa de hojas individuales (visión cercana): un quad por hoja, silueta y nervaduras analíticas en el shader.
   // Vértice (32 bytes): pos f32x3 | off snorm16x4 (canto - base da folha, em 0,6 m; w = peso de balanço) | normal snorm8x4 (w = tremor)
@@ -21,7 +27,7 @@
   ]};
 
   class VegLeafBuf {
-    constructor() { this.cap = 4096; this.n = 0; this._mk(); }
+    constructor() { this.cap = _vfC.leafBufCap ? _vfC.leafBufCap.value : 4096; this.n = 0; this._mk(); }
     _mk() { const b = new ArrayBuffer(this.cap * 4 * 32); if (this.u8) new Uint8Array(b).set(this.u8); this.buf = b; this.f32 = new Float32Array(b); this.i16 = new Int16Array(b); this.i8 = new Int8Array(b); this.u8 = new Uint8Array(b); }
     // folha: base b, eixo ax (unitário), lado sd (unitário), normal nl, comprimento L, meia largura hw
     add(b, ax, sd, nl, L, hw, sway, ph, ao, tint, type) {

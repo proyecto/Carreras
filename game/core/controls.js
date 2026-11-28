@@ -2,16 +2,19 @@
 // Sistema de mapeo de controles y teclado
 let DEFAULT_CONTROLS = {};
 let ACTION_BITMASKS = {};
+let KEY_LABELS = {};
 if (typeof require === 'function') {
   const cfg = JSON.parse(require('fs').readFileSync('config/controls.json', 'utf8'));
   DEFAULT_CONTROLS = cfg.defaultControls;
   ACTION_BITMASKS = cfg.actionBitmasks;
+  KEY_LABELS = cfg.keyLabels || {};
 } else if (typeof fetch === 'function') {
   fetch('config/controls.json' + (typeof window !== 'undefined' && window.CACHE_VERSION ? '?v=' + window.CACHE_VERSION : ''))
     .then(r => r.json())
     .then(cfg => {
       DEFAULT_CONTROLS = cfg.defaultControls;
       ACTION_BITMASKS = cfg.actionBitmasks;
+      KEY_LABELS = cfg.keyLabels || {};
       if (typeof CONTROLS !== 'undefined') {
         CONTROLS.keys = JSON.parse(JSON.stringify(DEFAULT_CONTROLS));
         CONTROLS.init();
@@ -96,18 +99,7 @@ const CONTROLS = {
     if (!code) return '—';
     if (code.startsWith('Key')) return code.slice(3).toUpperCase();
     if (code.startsWith('Digit')) return code.slice(5);
-    if (code === 'Space') return 'Espacio';
-    if (code === 'ArrowUp') return '↑';
-    if (code === 'ArrowDown') return '↓';
-    if (code === 'ArrowLeft') return '←';
-    if (code === 'ArrowRight') return '→';
-    if (code === 'Escape') return 'Esc';
-    if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift';
-    if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl';
-    if (code === 'AltLeft' || code === 'AltRight') return 'Alt';
-    if (code === 'Tab') return 'Tab';
-    if (code === 'Enter') return 'Enter';
-    if (code === 'Backspace') return 'Backspace';
+    if (KEY_LABELS[code]) return KEY_LABELS[code];
     return code;
   }
 };

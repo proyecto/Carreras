@@ -1,14 +1,23 @@
 'use strict';
 // ---- 22_sky.js
 // Generación única de texturas de ruido y cielo; color solar; armónicos esféricos ambientales.
+const SKY_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_SKY)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/sky.json'); } catch { return {}; } })() : {});
 let SUN_EL = 17 * PI / 180, SUN_AZ = 180.5 * PI / 180;
 function atmSunColor(dirY) {
   // Misma atmósfera que el shader (atmos.wgsl): transmitancia del sol hasta el suelo
-  const RP = 6360e3, RA = 6440e3, o = RP + 40, n = 32;
+  const aCfg = SKY_CFG.atmosphere || {};
+  const RP = aCfg.planetRadiusM ? aCfg.planetRadiusM.value : 6360e3;
+  const RA = aCfg.atmosphereRadiusM ? aCfg.atmosphereRadiusM.value : 6440e3;
+  const o = RP + (aCfg.observerHeightM ? aCfg.observerHeightM.value : 40);
+  const n = aCfg.steps ? aCfg.steps.value : 32;
   const b = o * dirY, cc = o * o - RA * RA, t = -b + Math.sqrt(b * b - cc), dt = t / n; let oR = 0, oM = 0, oO = 0;
   for (let i = 0; i < n; i++) { const s = (i + 0.5) * dt, h = Math.sqrt(o * o + s * s + 2 * o * s * dirY) - RP; oR += Math.exp(-h / 8000) * dt; oM += Math.exp(-h / 1300) * dt; oO += Math.max(0, 1 - Math.abs(h - 25000) / 15000) * dt; }
-  const BR = [5.8e-6, 13.6e-6, 33.1e-6], BO = [0.65e-6, 1.881e-6, 0.085e-6], BM = 26e-6 * 1.11;
-  return [0, 1, 2].map(i => 22 * Math.exp(-(BR[i] * oR + BM * oM + BO[i] * oO)));
+  const BR = aCfg.rayleighBeta ? aCfg.rayleighBeta.value : [5.8e-6, 13.6e-6, 33.1e-6];
+  const BO = aCfg.ozoneBeta ? aCfg.ozoneBeta.value : [0.65e-6, 1.881e-6, 0.085e-6];
+  const BM = aCfg.mieBeta ? aCfg.mieBeta.value : (26e-6 * 1.11);
+  const sunI = aCfg.sunIntensity ? aCfg.sunIntensity.value : 22;
+  return [0, 1, 2].map(i => sunI * Math.exp(-(BR[i] * oR + BM * oM + BO[i] * oO)));
 }
 async function skyInit(progress) {
   const dev = G.dev, T = R.tex, V = R.view;

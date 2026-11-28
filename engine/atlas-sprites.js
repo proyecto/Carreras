@@ -2,7 +2,10 @@
 // Tipografía vectorial y sprites procedurales de público/comisarios
 const _PI = Math.PI;
 const _TAU = Math.PI * 2;
-const GLY = {
+const ATLAS_SPRITES_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_ATLAS_SPRITES)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/atlas-sprites.json'); } catch { return {}; } })() : {});
+const _typoCfg = ATLAS_SPRITES_CFG.typography || {};
+const GLY = _typoCfg.GLY || {
   A: 'M0,0L2,6L4,0M.8,2L3.2,2', B: 'M0,0L0,6L2.2,6C4.2,6 4.2,3.2 2.2,3.2L0,3.2M2.2,3.2C4.7,3.2 4.7,0 2.2,0L0,0', C: 'M4,4.6C3.4,6.4 0,6.6 0,3C0,-.6 3.4,-.4 4,1.4',
   D: 'M0,0L0,6L1.6,6C5,6 5,0 1.6,0L0,0', E: 'M4,6L0,6L0,0L4,0M0,3.1L3.2,3.1', F: 'M4,6L0,6L0,0M0,3.1L3.2,3.1', G: 'M4,4.6C3.4,6.4 0,6.6 0,3C0,-.6 3.6,-.5 4,1.2L4,2.8L2.2,2.8',
   H: 'M0,0L0,6M4,0L4,6M0,3.1L4,3.1', I: 'M1.1,0L1.1,6M0,0L2.2,0M0,6L2.2,6', J: 'M3.6,6L3.6,1.8C3.6,-.6 .2,-.6 .2,1.6', K: 'M0,0L0,6M4,6L0,2.4M1.5,3.7L4,0', L: 'M0,6L0,0L3.8,0',
@@ -16,14 +19,16 @@ const GLY = {
 };
 
 // Fuente proporcional con interletraje
-const GWID = { I: 2.2, 1: 3.0, ' ': 1.9, '-': 2.8, '.': 1.2, J: 3.7, L: 3.8, M: 4.7, W: 5.0, E: 3.9, F: 3.8, T: 4.0, C: 4.0, S: 3.95 };
+const GWID = _typoCfg.GWID || { I: 2.2, 1: 3.0, ' ': 1.9, '-': 2.8, '.': 1.2, J: 3.7, L: 3.8, M: 4.7, W: 5.0, E: 3.9, F: 3.8, T: 4.0, C: 4.0, S: 3.95 };
+const _defW = _typoCfg.defaultWidth ? _typoCfg.defaultWidth.value : 4.1;
+const _kern = _typoCfg.kerning ? _typoCfg.kerning.value : 1.05;
 
-const gAdv = ch => (GWID[ch] === undefined ? 4.1 : GWID[ch]) + 1.05;
+const gAdv = ch => (GWID[ch] === undefined ? _defW : GWID[ch]) + _kern;
 
 function textW(txt, h) {
   let w = 0;
   for (const ch of txt) w += gAdv(ch);
-  return (w - 1.05) * h / 6;
+  return (w - _kern) * h / 6;
 }
 
 function strokeText(g, txt, x, y, h, color, weight, skew) {

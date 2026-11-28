@@ -1,0 +1,60 @@
+{
+  "GameEngineContext": {
+    "_comment": "Valores iniciales del contexto global del motor",
+    "version": {
+      "value": "2.4.0",
+      "desc": "Versión del motor de simulación"
+    },
+    "targetFps": {
+      "value": 60,
+      "desc": "Frecuencia de refresco objetivo de renderizado (FPS)"
+    },
+    "physicsHz": {
+      "value": 120,
+      "desc": "Frecuencia de actualización del paso de física (Hz)"
+    },
+    "rivalEnabled": {
+      "value": true,
+      "desc": "Indica si el vehículo rival está activado por defecto"
+    },
+    "activeCarId": {
+      "value": "mercedes-amg-gt3-2020",
+      "desc": "Identificador del vehículo del jugador por defecto"
+    },
+    "activeTrackId": {
+      "value": "nurburgring-gp",
+      "desc": "Identificador del circuito activo por defecto"
+    },
+    "rivalCarId": {
+      "value": "audi-r8-lms-evo-2020",
+      "desc": "Identificador del vehículo rival por defecto"
+    },
+    "currentLanguage": {
+      "value": "es",
+      "desc": "Idioma inicial de la interfaz"
+    },
+    "isPaused": {
+      "value": false,
+      "desc": "Estado inicial de pausa del simulador"
+    },
+    "debugTelemetry": {
+      "value": false,
+      "desc": "Activa o desactiva la telemetría de depuración por defecto"
+    }
+  },
+  "VehicleFactory": {
+    "_comment": "Valores iniciales del estado físico de un vehículo",
+    "initialGear": {
+      "value": 1,
+      "desc": "Marcha inicial del vehículo al crear el estado físico"
+    },
+    "initialRpm": {
+      "value": 1000,
+      "desc": "Revoluciones por minuto iniciales del motor"
+    },
+    "wheelCount": {
+      "value": 4,
+      "desc": "Número de ruedas del vehículo para buffers de física y render"
+    }
+  }
+}

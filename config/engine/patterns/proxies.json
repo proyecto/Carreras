@@ -1,0 +1,28 @@
+{
+  "I18nProxy": {
+    "_comment": "Configuración de idioma por defecto y fallbacks",
+    "defaultLang": {
+      "value": "es",
+      "desc": "Idioma por defecto si no se especifica uno al construir I18nProxy"
+    },
+    "fallbackPrimary": {
+      "value": "es",
+      "desc": "Primer idioma de respaldo si falta una clave en el idioma actual"
+    },
+    "fallbackSecondary": {
+      "value": "en",
+      "desc": "Segundo idioma de respaldo si falta una clave en el idioma actual y en el primario"
+    }
+  },
+  "VehicleRenderBridge": {
+    "_comment": "Constantes de sincronización entre física y renderizado del vehículo",
+    "steeringWheelMultiplier": {
+      "value": 14,
+      "desc": "Factor multiplicador del ángulo de dirección para animar el volante interior"
+    },
+    "matrixSize": {
+      "value": 16,
+      "desc": "Número de elementos de una matriz de transformación 4x4"
+    }
+  }
+}

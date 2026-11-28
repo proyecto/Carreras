@@ -1,0 +1,7 @@
+{
+  "i18n": {
+    "_comment": "Constantes de internacionalización",
+    "defaultLang": { "value": "es", "desc": "Idioma por defecto del juego" },
+    "storageKey": { "value": "race_game_lang", "desc": "Clave de localStorage donde se guarda el idioma elegido" }
+  }
+}

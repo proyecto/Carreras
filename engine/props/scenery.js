@@ -6,6 +6,9 @@
  * - createMedievalCastle: Castillo monumental en cumbre de horizonte (Burg Nürburg con torre del homenaje, almenas, muralla y torreones).
  */
 
+const SCENERY_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_PROPS_SCENERY)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/engine/props/scenery.json'); } catch { return {}; } })() : {});
+
 const SceneryProps = {
   setColor(m, r, g, b, a = 1.0) {
     if (typeof PropUtils !== 'undefined' && typeof PropUtils.setColor === 'function') {
@@ -31,43 +34,59 @@ const SceneryProps = {
     const { mb, S1 } = ctx;
     if (!mb) return;
 
-    const cx = config.x ?? 1050.0, cz = config.z ?? -2150.0, cy = config.y ?? 115.0;
+    const cCfg = SCENERY_CFG.createMedievalCastle || {};
+    const defP = cCfg.defaultPos ? cCfg.defaultPos.value : [1050.0, 115.0, -2150.0];
+    const cx = config.x ?? defP[0], cz = config.z ?? defP[2], cy = config.y ?? defP[1];
     const cstI0 = mb.ni;
 
     // Torre del homenaje circular
-    mb.mat(3);
-    this.setColor(mb, 0.44, 0.42, 0.40);
-    mb.cyl(cx, cy, cz, 6.5, cy + 24.0, 6.0, 16, true, true);
+    const kCol = cCfg.keepColor ? cCfg.keepColor.value : [0.44, 0.42, 0.40];
+    const kCyl = cCfg.keepCyl ? cCfg.keepCyl.value : [6.5, 24.0, 6.0, 16];
+    mb.mat(cCfg.keepMat ? cCfg.keepMat.value : 3);
+    this.setColor(mb, kCol[0], kCol[1], kCol[2]);
+    mb.cyl(cx, cy, cz, kCyl[0], cy + kCyl[1], kCyl[2], kCyl[3], true, true);
 
     // Almenas
-    for (let i = 0; i < 12; i++) {
-      const ang = (i / 12) * Math.PI * 2;
-      const ax = cx + Math.cos(ang) * 6.1, az = cz + Math.sin(ang) * 6.1;
-      this.boxMinMax(mb, ax - 0.7, ax + 0.7, cy + 24.0, cy + 25.8, az - 0.7, az + 0.7);
+    const bCnt = cCfg.battlementCount ? cCfg.battlementCount.value : 12;
+    const bRad = cCfg.battlementRadius ? cCfg.battlementRadius.value : 6.1;
+    const bHW = cCfg.battlementHalfW ? cCfg.battlementHalfW.value : 0.7;
+    const bH = cCfg.battlementHeight ? cCfg.battlementHeight.value : 1.8;
+    for (let i = 0; i < bCnt; i++) {
+      const ang = (i / bCnt) * Math.PI * 2;
+      const ax = cx + Math.cos(ang) * bRad, az = cz + Math.sin(ang) * bRad;
+      this.boxMinMax(mb, ax - bHW, ax + bHW, cy + kCyl[1], cy + kCyl[1] + bH, az - bHW, az + bHW);
     }
 
     // Mástil y bandera
-    mb.mat(1);
-    this.setColor(mb, 0.85, 0.85, 0.85);
-    mb.cyl(cx, cy + 24.0, cz, 0.12, cy + 34.0, 0.06, 6, false, true);
-    mb.mat(17);
-    this.setColor(mb, 0.85, 0.15, 0.12);
-    this.boxMinMax(mb, cx, cx + 3.2, cy + 30.5, cy + 33.5, cz - 0.05, cz + 0.05);
+    const fpCol = cCfg.flagpoleColor ? cCfg.flagpoleColor.value : [0.85, 0.85, 0.85];
+    const fpCyl = cCfg.flagpoleCyl ? cCfg.flagpoleCyl.value : [0.12, 34.0, 0.06, 6];
+    const flCol = cCfg.flagColor ? cCfg.flagColor.value : [0.85, 0.15, 0.12];
+    const flBox = cCfg.flagBox ? cCfg.flagBox.value : [3.2, 30.5, 33.5, 0.05];
+    mb.mat(cCfg.flagpoleMat ? cCfg.flagpoleMat.value : 1);
+    this.setColor(mb, fpCol[0], fpCol[1], fpCol[2]);
+    mb.cyl(cx, cy + kCyl[1], cz, fpCyl[0], cy + fpCyl[1], fpCyl[2], fpCyl[3], false, true);
+    mb.mat(cCfg.flagMat ? cCfg.flagMat.value : 17);
+    this.setColor(mb, flCol[0], flCol[1], flCol[2]);
+    this.boxMinMax(mb, cx, cx + flBox[0], cy + flBox[1], cy + flBox[2], cz - flBox[3], cz + flBox[3]);
 
     // Muralla almenada
-    const hw_wall = 22.0, hd_wall = 19.0, h_wall = 8.5;
-    mb.mat(3);
-    this.setColor(mb, 0.40, 0.38, 0.36);
-    this.boxMinMax(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz - hd_wall + 2.5);
-    this.boxMinMax(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz + hd_wall - 2.5, cz + hd_wall);
-    this.boxMinMax(mb, cx - hw_wall, cx - hw_wall + 2.5, cy, cy + h_wall, cz - hd_wall, cz + hd_wall);
-    this.boxMinMax(mb, cx + hw_wall - 2.5, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz + hd_wall);
+    const wDims = cCfg.wallHalfDims ? cCfg.wallHalfDims.value : [22.0, 19.0, 8.5, 2.5];
+    const hw_wall = wDims[0], hd_wall = wDims[1], h_wall = wDims[2], t_wall = wDims[3];
+    const wCol = cCfg.wallColor ? cCfg.wallColor.value : [0.40, 0.38, 0.36];
+    mb.mat(cCfg.keepMat ? cCfg.keepMat.value : 3);
+    this.setColor(mb, wCol[0], wCol[1], wCol[2]);
+    this.boxMinMax(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz - hd_wall + t_wall);
+    this.boxMinMax(mb, cx - hw_wall, cx + hw_wall, cy, cy + h_wall, cz + hd_wall - t_wall, cz + hd_wall);
+    this.boxMinMax(mb, cx - hw_wall, cx - hw_wall + t_wall, cy, cy + h_wall, cz - hd_wall, cz + hd_wall);
+    this.boxMinMax(mb, cx + hw_wall - t_wall, cx + hw_wall, cy, cy + h_wall, cz - hd_wall, cz + hd_wall);
 
     // Torreones
+    const tCyl = cCfg.turretCyl ? cCfg.turretCyl.value : [3.2, 11.0, 3.0, 10];
     for (const [tx, tz] of [[-hw_wall, -hd_wall], [hw_wall, -hd_wall], [hw_wall, hd_wall], [-hw_wall, hd_wall]]) {
-      mb.cyl(cx + tx, cy, cz + tz, 3.2, cy + 11.0, 3.0, 10, true, true);
+      mb.cyl(cx + tx, cy, cz + tz, tCyl[0], cy + tCyl[1], tCyl[2], tCyl[3], true, true);
     }
-    if (S1) S1.add(mb, cstI0, 7, 5000);
+    const cS1 = cCfg.cullS1 ? cCfg.cullS1.value : [7, 5000];
+    if (S1) S1.add(mb, cstI0, cS1[0], cS1[1]);
   }
 };
 

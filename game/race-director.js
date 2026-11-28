@@ -10,6 +10,9 @@
  *   y activación/desactivación del Launch Control (bloqueo físico en parrilla).
  */
 
+const RACE_DIR_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_RACE_DIRECTOR)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/race-director.json'); } catch { return {}; } })() : {});
+const _rdC = RACE_DIR_CFG.raceDirector || {};
 const RaceState = Object.freeze({
   IDLE: 'idle',
   COUNTDOWN: 'countdown',
@@ -39,8 +42,12 @@ class RaceDirector {
     this.lightsCount = 0;
     this.lastBeep = -1;
     // 5 luces rojas (1s cada una) + pausa tensa aleatoria (0.8s a 2.0s)
-    this.goTime = 5.0 + 0.8 + Math.random() * 1.2;
-    this.doneTime = this.goTime + 1.8;
+    const lTot = _rdC.lightsTotal ? _rdC.lightsTotal.value : 5;
+    const minP = _rdC.minPauseS ? _rdC.minPauseS.value : 0.8;
+    const spanP = _rdC.maxPauseSpanS ? _rdC.maxPauseSpanS.value : 1.2;
+    const doneEx = _rdC.doneExtraS ? _rdC.doneExtraS.value : 1.8;
+    this.goTime = lTot + minP + Math.random() * spanP;
+    this.doneTime = this.goTime + doneEx;
 
     if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
       Patterns.EventBusSingleton.emit('race:countdown_start', { goTime: this.goTime });

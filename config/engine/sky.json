@@ -1,0 +1,31 @@
+{
+  "atmosphere": {
+    "_comment": "Parámetros físicos de dispersión atmosférica",
+    "planetRadiusM": { "value": 6360000, "desc": "Radio del planeta en metros" },
+    "atmosphereRadiusM": { "value": 6440000, "desc": "Radio exterior de la atmósfera en metros" },
+    "observerHeightM": { "value": 40, "desc": "Altura del observador sobre el nivel del mar (m)" },
+    "steps": { "value": 32, "desc": "Número de pasos de integración de transmitancia" },
+    "rayleighBeta": { "value": [5.8e-6, 13.6e-6, 33.1e-6], "desc": "Coeficientes de dispersión Rayleigh RGB" },
+    "ozoneBeta": { "value": [0.65e-6, 1.881e-6, 0.085e-6], "desc": "Coeficientes de absorción de ozono RGB" },
+    "mieBeta": { "value": 2.886e-5, "desc": "Coeficiente de dispersión Mie (26e-6 * 1.11)" },
+    "sunIntensity": { "value": 22, "desc": "Intensidad base del disco solar" }
+  },
+  "skyInit": {
+    "_comment": "Configuración de sol, niebla nocturna y horneado de cielo",
+    "daySunElDeg": { "value": 17, "desc": "Elevación solar por defecto de día (grados)" },
+    "nightSunElDeg": { "value": 58, "desc": "Elevación lunar/proyectores por defecto de noche (grados)" },
+    "defaultAzDeg": { "value": 180.5, "desc": "Acimut solar por defecto (grados)" },
+    "dayColorElDeg": { "value": 14.5, "desc": "Elevación usada para calcular el color solar diurno (grados)" },
+    "nightColorElDeg": { "value": -10, "desc": "Elevación usada para calcular el color nocturno (grados)" },
+    "nightSunColor": { "value": [0.28, 0.34, 0.48], "desc": "Color RGB de luz nocturna (proyectores F1 y luna)" },
+    "nightFogDensity": { "value": 0.00015, "desc": "Densidad de niebla nocturna" },
+    "nightFogColor": { "value": [0.001, 0.0015, 0.0035, 0.2], "desc": "Color RGBA de niebla nocturna" },
+    "daySunBoost": { "value": 1.5, "desc": "Realce artístico multiplicativo del color solar diurno" },
+    "skyStrips": { "value": 16, "desc": "Número de franjas para hornear el cielo sin timeout de GPU" }
+  },
+  "computeSH": {
+    "_comment": "Proyección en armónicos esféricos del cubemap ambiental",
+    "mipLevel": { "value": 3, "desc": "Nivel de mipmap del cubemap leído para SH" },
+    "maxRadiance": { "value": 50, "desc": "Tope máximo de radiancia por texel al proyectar SH" }
+  }
+}

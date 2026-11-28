@@ -1,0 +1,15 @@
+{
+  "physics": {
+    "_comment": "Paso de simulación y parámetros físicos por defecto del vehículo (VP)",
+    "hz": { "value": 120, "desc": "Frecuencia de actualización física (Hz)" },
+    "defaultVehicleParams": {
+      "m": 900, "Izz": 1250, "L": 2.362, "a": 0.96, "b": 1.402, "tw": 1.33, "h": 0.5, "R": 0.281,
+      "mu": 1.42, "B": 9.5, "C": 1.42, "driveF": 1.0,
+      "gears": [3.91, 2.16, 1.48, 1.12, 0.9], "final": 4.07, "rev": 3.9, "eff": 0.9,
+      "cdA": 0.62, "crr": 0.014, "brakeF": 0.64, "halfW": 0.78, "front": 1.92, "rear": 1.72,
+      "clA": 0.0, "aeroSplitF": 0.40,
+      "torqueBase": 180, "torquePeak": 118, "torqueDrop": 110, "torquePeakStart": 0.6, "torquePeakSpan": 5.4, "torqueDropRpm": 6.0,
+      "shiftUpRpm": 6250, "shiftDownRpm": 5350, "revLimitRpm": 6500, "maxRpm": 6700, "idleRpm": 900
+    }
+  }
+}

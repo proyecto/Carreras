@@ -1,0 +1,14 @@
+{
+  "ai": {
+    "_comment": "Constantes de cálculo de trazada ideal y perfil de velocidad de la IA",
+    "trackMargin": { "value": 2.0, "desc": "Margen de seguridad respecto al borde de pista (m)" },
+    "maxLatAccel": { "value": 11.4, "desc": "Aceleración lateral máxima estimada en curva (m/s²)" },
+    "maxBrakeAccel": { "value": 7.6, "desc": "Deceleración máxima de frenada estimada (m/s²)" },
+    "maxSpeed": { "value": 62, "desc": "Velocidad máxima objetivo de la IA (m/s)" },
+    "lookaheadBase": { "value": 4.5, "desc": "Distancia base de anticipación (lookahead) sobre la trazada (m)" },
+    "lookaheadSpeedFactor": { "value": 0.3, "desc": "Incremento de lookahead por m/s de velocidad" },
+    "overtakeMinDist": { "value": 0.8, "desc": "Distancia mínima por detrás del jugador para iniciar adelantamiento (m)" },
+    "overtakeMaxDist": { "value": 24, "desc": "Distancia máxima por detrás del jugador para iniciar adelantamiento (m)" },
+    "overtakeOffset": { "value": 1.8, "desc": "Desplazamiento lateral de adelantamiento (m)" }
+  }
+}

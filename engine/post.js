@@ -1,7 +1,11 @@
 'use strict';
 // ---- 21_post.js
 // Passes de pantalla completa: media resolución (AO + niebla), iluminación, transparentes, TAA, motion blur, bloom y salida final.
-const MB_TILE = 20, BLOOM_N = 6;
+const POST_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_POST)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/post.json'); } catch { return {}; } })() : {});
+const _postC = POST_CFG.post || {};
+const MB_TILE = _postC.motionBlurTileSize ? _postC.motionBlurTileSize.value : 20;
+const BLOOM_N = _postC.bloomMipCount ? _postC.bloomMipCount.value : 6;
 function postInit() {
   const dev = G.dev, T = R.tex, V = R.view, W = G.W, H = G.H, D = R.pd, P = R.post = {};
   const HDR = 'rgba16float';

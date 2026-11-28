@@ -2,9 +2,12 @@
 // ---- 42_ai.js
 // Trazada ideal y piloto automático. La IA utiliza las mismas entradas que el jugador;
 // se utiliza para trazar vueltas guiadas y demostraciones automáticas.
+const AI_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_AI)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/ai.json'); } catch { return {}; } })() : {});
+const _aiC = AI_CFG.ai || {};
 const AI = { line: null, vt: null, kline: null, enabled: false, script: null };
 function aiBuild() {
-  const N = TRK.N, ds = TRK.ds, hw = TRK.hw, lim = hw - 2.0;
+  const N = TRK.N, ds = TRK.ds, hw = TRK.hw, lim = hw - (_aiC.trackMargin ? _aiC.trackMargin.value : 2.0);
   const o = new Float64Array(N), px = new Float64Array(N), pz = new Float64Array(N);
   const upd = i => { px[i] = TRK.x[i] - TRK.tz[i] * o[i]; pz[i] = TRK.z[i] + TRK.tx[i] * o[i]; };
   for (let i = 0; i < N; i++) upd(i);
@@ -32,7 +35,9 @@ function aiBuild() {
     kl[i] = 2 * cr / (l1 * l2 * l3 + 1e-9);
   }
   // Perfil de velocidad: límite lateral, seguido de pases de frenada y aceleración
-  const aLat = 11.4, aBrk = 7.6, vMax = 62;
+  const aLat = _aiC.maxLatAccel ? _aiC.maxLatAccel.value : 11.4;
+  const aBrk = _aiC.maxBrakeAccel ? _aiC.maxBrakeAccel.value : 7.6;
+  const vMax = _aiC.maxSpeed ? _aiC.maxSpeed.value : 62;
   for (let i = 0; i < N; i++) { let k = 0; for (let q = -3; q <= 3; q++) k = Math.max(k, Math.abs(kl[(i + q + N) % N])); vt[i] = Math.min(vMax, Math.sqrt(aLat / Math.max(k, 1e-4))); }
   for (let pass = 0; pass < 2; pass++) for (let i = N - 1; i >= 0; i--) { const nx = (i + 1) % N; const g = -9.81 * TRK.slope[i]; vt[i] = Math.min(vt[i], Math.sqrt(vt[nx] * vt[nx] + 2 * Math.max(2, aBrk + g) * ds)); }
 }

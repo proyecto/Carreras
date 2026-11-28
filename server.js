@@ -14,8 +14,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const PORT = process.env.PORT || 8000;
-const MIME_TYPES = {
+const SERVER_CFG = (() => { try { return require('./config/server.json').server || {}; } catch { return {}; } })();
+const PORT = process.env.PORT || (SERVER_CFG.defaultPort ? SERVER_CFG.defaultPort.value : 8000);
+const MIME_TYPES = SERVER_CFG.mimeTypes || {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',

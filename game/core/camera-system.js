@@ -9,6 +9,10 @@
  * - Desacopla la lógica de cámara del bucle de física y del renderizador WebGPU.
  */
 
+const CAM_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_CAMERA_SYSTEM)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/camera-system.json'); } catch { return {}; } })() : {});
+const _chaseC = CAM_CFG.ChaseCameraStrategy || {};
+
 class ChaseCameraStrategy {
   constructor() {
     this.id = 0;
@@ -18,10 +22,13 @@ class ChaseCameraStrategy {
   update(gs, veh, dt, q, lb) {
     const c = Math.cos(gs.yaw), s = Math.sin(gs.yaw);
     let tgt = gs.yaw;
-    if (gs.speed > 4) {
+    const sMin = _chaseC.slipMinSpeed ? _chaseC.slipMinSpeed.value : 4;
+    const sCl = _chaseC.slipClamp ? _chaseC.slipClamp.value : 0.5;
+    const sFac = _chaseC.slipYawFactor ? _chaseC.slipYawFactor.value : 0.55;
+    if (gs.speed > sMin) {
       let sa = Math.atan2(veh.vy, veh.vx > 1 ? veh.vx : 1);
-      sa = sa < -0.5 ? -0.5 : sa > 0.5 ? 0.5 : sa;
-      tgt = gs.yaw + sa * 0.55;
+      sa = sa < -sCl ? -sCl : sa > sCl ? sCl : sa;
+      tgt = gs.yaw + sa * sFac;
     }
     if (!gs.chaseInit) {
       gs.chaseYaw = tgt;
@@ -31,23 +38,25 @@ class ChaseCameraStrategy {
     let dy = tgt - gs.chaseYaw;
     while (dy > Math.PI) dy -= Math.PI * 2;
     while (dy < -Math.PI) dy += Math.PI * 2;
-    gs.chaseYaw += dy * (1 - Math.exp(-dt * 5.5));
-    gs.chaseY += (gs.cy - gs.chaseY) * (1 - Math.exp(-dt * 7));
+    gs.chaseYaw += dy * (1 - Math.exp(-dt * (_chaseC.yawSmoothRate ? _chaseC.yawSmoothRate.value : 5.5)));
+    gs.chaseY += (gs.cy - gs.chaseY) * (1 - Math.exp(-dt * (_chaseC.ySmoothRate ? _chaseC.ySmoothRate.value : 7)));
 
-    const dist = 5.3 + gs.speed * 0.022;
+    const dist = (_chaseC.baseDist ? _chaseC.baseDist.value : 5.3) + gs.speed * (_chaseC.speedDistFactor ? _chaseC.speedDistFactor.value : 0.022);
     const cc = Math.cos(gs.chaseYaw), ss = Math.sin(gs.chaseYaw);
     const ex = gs.cx + c * 0.2 * lb - cc * dist * lb;
     const ez = gs.cz + s * 0.2 * lb - ss * dist * lb;
-    let ey = gs.chaseY + 1.62 - veh.gPitch * dist * 0.6;
+    let ey = gs.chaseY + (_chaseC.eyeHeight ? _chaseC.eyeHeight.value : 1.62) - veh.gPitch * dist * (_chaseC.pitchFactor ? _chaseC.pitchFactor.value : 0.6);
 
+    const minClr = _chaseC.minGroundClearance ? _chaseC.minGroundClearance.value : 0.55;
     if (typeof _gq !== 'undefined' && typeof hfAtQ === 'function') {
       _gq[0] = ex; _gq[1] = ez;
       hfAtQ(_gq);
-      if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
+      if (ey < _gq[6] + minClr) ey = _gq[6] + minClr;
     }
 
-    let rl = -veh.ay * 0.004;
-    rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
+    let rl = -veh.ay * (_chaseC.rollFactor ? _chaseC.rollFactor.value : 0.004);
+    const maxR = _chaseC.maxRoll ? _chaseC.maxRoll.value : 0.05;
+    rl = rl < -maxR ? -maxR : rl > maxR ? maxR : rl;
 
     q[0] = ex; q[1] = ey; q[2] = ez;
     q[3] = gs.cx + c * 1.6 * lb;

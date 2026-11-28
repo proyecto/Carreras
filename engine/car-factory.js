@@ -1,5 +1,8 @@
 'use strict';
 // Factoría de vehículos (definición, registro y carga)
+const CAR_FACTORY_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_CAR_FACTORY)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/car-factory.json'); } catch { return {}; } })() : {});
+const _cfCfg = CAR_FACTORY_CFG.CarFactory || {};
 const CarFactory = {
   /**
    * Decodificador canónico base64 a Uint8Array compatible con Browser (atob) y Node (Buffer).
@@ -47,9 +50,10 @@ const CarFactory = {
    * Crea un atlas de texturas GPU con precarga asíncrona y generación de mipmaps.
    * Acepta base64 data URI o URLs de imagen tradicionales.
    */
-  createAtlasTexture(atlasSource, W = 2048, H = 2048, defaultColor = 40) {
+  createAtlasTexture(atlasSource, W = (_cfCfg.defaultAtlasW ? _cfCfg.defaultAtlasW.value : 2048), H = (_cfCfg.defaultAtlasH ? _cfCfg.defaultAtlasH.value : 2048), defaultColor = (_cfCfg.defaultAtlasColor ? _cfCfg.defaultAtlasColor.value : 40)) {
     if (typeof mkTex !== 'function') return null;
-    const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 7 });
+    const mips = _cfCfg.atlasMipLevels ? _cfCfg.atlasMipLevels.value : 7;
+    const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: mips });
     const initData = new Uint8Array(W * H * 4);
     initData.fill(defaultColor);
     if (typeof G !== 'undefined' && G.dev && G.dev.queue) {

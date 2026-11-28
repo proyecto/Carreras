@@ -1,5 +1,8 @@
 'use strict';
 // Clonado de modelos y pose de rivales en parrilla
+const GAME_GRID_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_GAME_GRID)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/game-grid.json'); } catch { return {}; } })() : {});
+const _ggC = GAME_GRID_CFG.poseRival || {};
 function cloneCarModelForGrid(baseModel, instanceIndex) {
   if (!baseModel) return null;
   const isPlayerCar = (typeof CAR !== 'undefined' && baseModel === CAR) ||
@@ -97,19 +100,21 @@ function poseRival(CR, VR, gsR, kr, al) {
   GR0[0] = cr; GR0[1] = 0; GR0[2] = sr; GR0[3] = 0; GR0[4] = 0; GR0[5] = 1; GR0[6] = 0; GR0[7] = 0; GR0[8] = -sr; GR0[9] = 0; GR0[10] = cr; GR0[11] = 0; GR0[12] = gsR.cx; GR0[13] = gsR.cy; GR0[14] = gsR.cz; GR0[15] = 1;
   ROTQ[0] = gpr; rotZQ(TR); m4mul(GR0, GR0, TR); ROTQ[0] = -grr; rotXQ(TR); m4mul(GR0, GR0, TR);
   BR[0] = GR0[0]; BR[1] = GR0[1]; BR[2] = GR0[2]; BR[3] = 0; BR[4] = GR0[4]; BR[5] = GR0[5]; BR[6] = GR0[6]; BR[7] = 0; BR[8] = GR0[8]; BR[9] = GR0[9]; BR[10] = GR0[10]; BR[11] = 0; BR[12] = GR0[12]; BR[13] = GR0[13]; BR[14] = GR0[14]; BR[15] = 1;
-  m4ident(TR); TR[13] = 0.18 + heaver; m4mul(BR, GR0, TR);
+  const pivH = _ggC.pivotHeight ? _ggC.pivotHeight.value : 0.18;
+  m4ident(TR); TR[13] = pivH + heaver; m4mul(BR, GR0, TR);
   ROTQ[0] = -pitchr; rotZQ(TR); m4mul(BR, BR, TR); ROTQ[0] = -rollr; rotXQ(TR); m4mul(BR, BR, TR);
-  m4ident(TR); TR[13] = -0.18; m4mul(BR, BR, TR);
+  m4ident(TR); TR[13] = -pivH; m4mul(BR, BR, TR);
   if (CR.hubs) {
     const wheelR = CR.wheelR || PR.R;
+    const suspCl = _ggC.suspClamp ? _ggC.suspClamp.value : 0.09;
     for (let i = 0; i < 4; i++) {
       const h = CR.hubs[i], hy = BR[1] * h[0] + BR[5] * h[1] + BR[9] * h[2] + BR[13];
-      let su = VR.wy[i] + wheelR - hy; su = su < -0.09 ? -0.09 : su > 0.09 ? 0.09 : su;
+      let su = VR.wy[i] + wheelR - hy; su = su < -suspCl ? -suspCl : su > suspCl ? suspCl : su;
       gsR.susp[i] = su; gsR.spin[i] = VR.pspin[i] + (VR.spin[i] - VR.pspin[i]) * al;
     }
   }
   if (!CR.inp) CR.inp = new Float64Array(2);
-  CR.inp[0] = gsR.steer; CR.inp[1] = gsR.steer * 14;
+  CR.inp[0] = gsR.steer; CR.inp[1] = gsR.steer * (_ggC.steeringWheelMultiplier ? _ggC.steeringWheelMultiplier.value : 14);
   if (typeof CR.place === 'function') {
     CR.place(BR, gsR.spin, gsR.susp);
   }

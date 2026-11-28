@@ -1,0 +1,8 @@
+{
+  "poseRival": {
+    "_comment": "Constantes cinemáticas de pose de los vehículos rivales en parrilla",
+    "pivotHeight": { "value": 0.18, "desc": "Altura del pivote de cabeceo y alabeo de la carrocería (m)" },
+    "suspClamp": { "value": 0.09, "desc": "Recorrido máximo de suspensión por rueda (m)" },
+    "steeringWheelMultiplier": { "value": 14, "desc": "Multiplicador de ángulo para animar el volante interior" }
+  }
+}

@@ -1,8 +1,18 @@
 'use strict';
 // ---- 20_renderer.js
 // Núcleo del renderizador diferido (Deferred): recursos, uniforms de frame, familias de materiales y grafo de passes.
-const SHADOW_RES = 2048, SHADOW_S_RES = 4096, ENV_RES = 512, ENV_MIPS = 7, SKY_W = 4096, SKY_H = 1024, VOL_DIST = 220;
-const SKY_EL0 = -0.14, SKY_ELR = PI / 2 + 0.14;
+const RENDERER_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_RENDERER)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/renderer.json'); } catch { return {}; } })() : {});
+const _rCfg = RENDERER_CFG.renderer || {};
+const SHADOW_RES = _rCfg.shadowRes ? _rCfg.shadowRes.value : 2048;
+const SHADOW_S_RES = _rCfg.shadowStaticRes ? _rCfg.shadowStaticRes.value : 4096;
+const ENV_RES = _rCfg.envRes ? _rCfg.envRes.value : 512;
+const ENV_MIPS = _rCfg.envMips ? _rCfg.envMips.value : 7;
+const SKY_W = _rCfg.skyW ? _rCfg.skyW.value : 4096;
+const SKY_H = _rCfg.skyH ? _rCfg.skyH.value : 1024;
+const VOL_DIST = _rCfg.volDist ? _rCfg.volDist.value : 220;
+const SKY_EL0 = _rCfg.skyEl0 ? _rCfg.skyEl0.value : -0.14;
+const SKY_ELR = PI / 2 - SKY_EL0;
 const SH_DEFS = { SHADOW_RES: SHADOW_RES + '.0', ENV_MIPS: ENV_MIPS + '.0', ENV_MIP_K: (ENV_RES * 2 / (PI * 1.5)).toFixed(2), VOL_DIST: VOL_DIST + '.0', SKY_EL0: SKY_EL0.toFixed(5), SKY_ELR: SKY_ELR.toFixed(5) };
 const KIND = { GBUF: 0, SHADOW: 1, CUBE: 2 };
 

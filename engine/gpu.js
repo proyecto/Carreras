@@ -1,88 +1,219 @@
-'use strict';
+"use strict";
 // ---- 01_gpu.js
 // Dispositivo WebGPU, utilidades de recursos y preprocesador de WGSL.
 const Q = new URLSearchParams(location.search);
-const BUILD = [];           // constructores de escena registrados por los demás módulos: async fn(), ejecutados en orden por main()
-const GAME = { ready: false, mode: Q.get('scene') || 'game', capture: Q.has('cap'), tick: null, init: null, minFrameMs: 0, gpuWorstMs: 0, ui: false };
+const BUILD = []; // constructores de escena registrados por los demás módulos: async fn(), ejecutados en orden por main()
+const GAME = {
+  ready: false,
+  mode: Q.get("scene") || "game",
+  capture: Q.has("cap"),
+  tick: null,
+  init: null,
+  minFrameMs: 0,
+  gpuWorstMs: 0,
+  ui: false,
+};
 // Modo interactivo de usuario (menú de inicio, paneles, audio) frente a herramientas (benchmarks, poses, pruebas automatizadas):
 // trabalho/ usam ?cap, ?perf, ?replay ou rodam num navegador automatizado, e para elas nada muda — sem menu, sem painel.
 // ?ui=1 fuerza el juego completo interactivo; ?ui=0 fuerza el modo de herramienta desatendida.
-GAME.ui = Q.has('ui') ? Q.get('ui') !== '0' : !(Q.has('cap') || Q.has('perf') || Q.has('replay') || Q.has('auto') || Q.has('scene') || navigator.webdriver);
+GAME.ui = Q.has("ui")
+  ? Q.get("ui") !== "0"
+  : !(
+      Q.has("cap") ||
+      Q.has("perf") ||
+      Q.has("replay") ||
+      Q.has("auto") ||
+      Q.has("scene") ||
+      navigator.webdriver
+    );
+const GPU_CFG =
+  (typeof window !== "undefined" && window.__CFG_ENGINE_GPU) ||
+  (typeof require === "function"
+    ? (() => {
+        try {
+          return require("../config/engine/gpu.json");
+        } catch {
+          return {};
+        }
+      })()
+    : {});
+const _gpuInitCfg = GPU_CFG.gpuInit || {};
+const _defDt = _gpuInitCfg.defaultDt ? _gpuInitCfg.defaultDt.value : 1 / 60;
 // Tiempo en vector tipado (escritura por frame sin asignaciones en heap): RT[0] = tiempo acumulado (s), RT[1] = dt renderizado, RT[2] = dt solicitado al juego
-const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real del último frame (ms), para estadísticas
-const G = { dev: null, ctx: null, fmt: 'bgra8unorm', W: 0, H: 0, hasTS: false, canvas: null };
+const RT = new Float64Array([0, _defDt, _defDt, 0]); // RT[3] = intervalo real del último frame (ms), para estadísticas
+const G = {
+  dev: null,
+  ctx: null,
+  fmt: "bgra8unorm",
+  W: 0,
+  H: 0,
+  hasTS: false,
+  canvas: null,
+};
 
 async function gpuInit() {
-  if (!navigator.gpu) throw new Error('WebGPU no disponible en este navegador o dispositivo móvil. En iOS requiere iOS 18.2+ o activar WebGPU en Ajustes > Safari; en Android requiere Chrome 121+ con soporte Vulkan.');
-  const ad = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-  if (!ad) throw new Error('Ningún adaptador WebGPU disponible.');
+  if (!navigator.gpu)
+    throw new Error(
+      "WebGPU no disponible en este navegador o dispositivo móvil. En iOS requiere iOS 18.2+ o activar WebGPU en Ajustes > Safari; en Android requiere Chrome 121+ con soporte Vulkan.",
+    );
+  const ad = await navigator.gpu.requestAdapter({
+    powerPreference: "high-performance",
+  });
+  if (!ad) throw new Error("Ningún adaptador WebGPU disponible.");
   const feats = [];
   // "timestamp-query" se solicita para medición de rendimiento (?perf) y juego interactivo
   // (muestra el tiempo de GPU si el navegador lo permite); ?nots lo desactiva.
-  for (const f of ['float32-filterable', 'rg11b10ufloat-renderable'].concat((Q.has('perf') || GAME.ui) && !Q.has('nots') ? ['timestamp-query'] : [])) if (ad.features.has(f)) feats.push(f);
-  if (!ad.features.has('float32-filterable')) throw new Error('GPU sin soporte para float32-filterable (requerido por el mapa de elevación WGSL).');
-  G.hasTS = feats.includes('timestamp-query');
+  for (const f of ["float32-filterable", "rg11b10ufloat-renderable"].concat(
+    (Q.has("perf") || GAME.ui) && !Q.has("nots") ? ["timestamp-query"] : [],
+  ))
+    if (ad.features.has(f)) feats.push(f);
+  if (!ad.features.has("float32-filterable"))
+    throw new Error(
+      "GPU sin soporte para float32-filterable (requerido por el mapa de elevación WGSL).",
+    );
+  G.hasTS = feats.includes("timestamp-query");
   G.dev = await ad.requestDevice({
     requiredFeatures: feats,
     requiredLimits: {
-      maxColorAttachmentBytesPerSample: Math.min(64, ad.limits.maxColorAttachmentBytesPerSample || 32),
-      maxSampledTexturesPerShaderStage: Math.min(24, ad.limits.maxSampledTexturesPerShaderStage || 16),
-      maxBufferSize: Math.min(ad.limits.maxBufferSize || 268435456, 1073741824),
-      maxTextureDimension2D: Math.min(8192, ad.limits.maxTextureDimension2D || 4096)
-    }
+      maxColorAttachmentBytesPerSample: Math.min(
+        _gpuInitCfg.maxColorAttachmentBytesPerSample
+          ? _gpuInitCfg.maxColorAttachmentBytesPerSample.value
+          : 64,
+        ad.limits.maxColorAttachmentBytesPerSample || 32,
+      ),
+      maxSampledTexturesPerShaderStage: Math.min(
+        _gpuInitCfg.maxSampledTexturesPerShaderStage
+          ? _gpuInitCfg.maxSampledTexturesPerShaderStage.value
+          : 24,
+        ad.limits.maxSampledTexturesPerShaderStage || 16,
+      ),
+      maxBufferSize: Math.min(
+        ad.limits.maxBufferSize || 268435456,
+        _gpuInitCfg.maxBufferSize
+          ? _gpuInitCfg.maxBufferSize.value
+          : 1073741824,
+      ),
+      maxTextureDimension2D: Math.min(
+        _gpuInitCfg.maxTextureDimension2D
+          ? _gpuInitCfg.maxTextureDimension2D.value
+          : 8192,
+        ad.limits.maxTextureDimension2D || 4096,
+      ),
+    },
   });
-  G.dev.addEventListener('uncapturederror', e => { console.error('GPU: ' + e.error.message); G.lastErr = e.error.message; });
-  G.canvas = document.getElementById('c');
-  const res = (Q.get('res') || '').split('x');
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.15);
+  G.dev.addEventListener("uncapturederror", (e) => {
+    console.error("GPU: " + e.error.message);
+    G.lastErr = e.error.message;
+  });
+  G.canvas = document.getElementById("c");
+  const res = (Q.get("res") || "").split("x");
+  const dpr = Math.min(
+    window.devicePixelRatio || 1,
+    _gpuInitCfg.maxDpr ? _gpuInitCfg.maxDpr.value : 1.0,
+  );
+  const wB = _gpuInitCfg.widthBounds
+    ? _gpuInitCfg.widthBounds.value
+    : [320, 5120];
+  const hB = _gpuInitCfg.heightBounds
+    ? _gpuInitCfg.heightBounds.value
+    : [180, 2880];
   G.W = res.length === 2 ? +res[0] : Math.round(innerWidth * dpr);
   G.H = res.length === 2 ? +res[1] : Math.round(innerHeight * dpr);
-  G.W = clamp(G.W & ~1, 320, 5120); G.H = clamp(G.H & ~1, 180, 2880);
-  G.canvas.width = G.W; G.canvas.height = G.H;
-  G.ctx = G.canvas.getContext('webgpu');
+  G.W = clamp(G.W & ~1, wB[0], wB[1]);
+  G.H = clamp(G.H & ~1, hB[0], hB[1]);
+  G.canvas.width = G.W;
+  G.canvas.height = G.H;
+  G.ctx = G.canvas.getContext("webgpu");
   G.fmt = navigator.gpu.getPreferredCanvasFormat();
-  G.ctx.configure({ device: G.dev, format: G.fmt, alphaMode: 'opaque' });
+  G.ctx.configure({ device: G.dev, format: G.fmt, alphaMode: "opaque" });
 }
 
 const TU = { RT: 0x10, TB: 0x04, CS: 0x01, CD: 0x02, ST: 0x08 };
 function mkTex(w, h, format, usage, extra) {
-  const d = { size: [w, h, 1], format, usage: usage ?? (TU.RT | TU.TB), mipLevelCount: 1 };
+  const d = {
+    size: [w, h, 1],
+    format,
+    usage: usage ?? TU.RT | TU.TB,
+    mipLevelCount: 1,
+  };
   if (extra) Object.assign(d, extra);
   return G.dev.createTexture(d);
 }
 function mkBuf(size, usage, data) {
-  const b = G.dev.createBuffer({ size: (size + 3) & ~3, usage, mappedAtCreation: !!data });
-  if (data) { new Uint8Array(b.getMappedRange()).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength)); b.unmap(); }
+  const b = G.dev.createBuffer({
+    size: (size + 3) & ~3,
+    usage,
+    mappedAtCreation: !!data,
+  });
+  if (data) {
+    new Uint8Array(b.getMappedRange()).set(
+      new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+    );
+    b.unmap();
+  }
   return b;
 }
-const BU = { V: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST, I: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST, U: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, S: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST };
+const BU = {
+  V: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+  I: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+  U: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  S: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+};
 
 // Preprocesador: #include nombre, #define NOMBRE [valor], #ifdef/#ifndef/#else/#endif. Sustituye macros por palabra completa.
 function wgslPP(name, defs) {
   defs = Object.assign({}, defs);
   const seen = {};
   const run = (nm) => {
-    const src = WGSL[nm]; if (src === undefined) throw new Error('wgsl ausente: ' + nm);
-    const out = []; const st = []; let on = true;
-    for (const line of src.split('\n')) {
+    const src = WGSL[nm];
+    if (src === undefined) throw new Error("wgsl ausente: " + nm);
+    const out = [];
+    const st = [];
+    let on = true;
+    for (const line of src.split("\n")) {
       const t = line.trim();
-      if (t[0] === '#') {
+      if (t[0] === "#") {
         const p = t.split(/\s+/);
-        if (p[0] === '#ifdef') { st.push(on); on = on && (p[1] in defs); continue; }
-        if (p[0] === '#ifndef') { st.push(on); on = on && !(p[1] in defs); continue; }
-        if (p[0] === '#else') { on = st[st.length - 1] && !on; continue; }
-        if (p[0] === '#endif') { on = st.pop(); continue; }
+        if (p[0] === "#ifdef") {
+          st.push(on);
+          on = on && p[1] in defs;
+          continue;
+        }
+        if (p[0] === "#ifndef") {
+          st.push(on);
+          on = on && !(p[1] in defs);
+          continue;
+        }
+        if (p[0] === "#else") {
+          on = st[st.length - 1] && !on;
+          continue;
+        }
+        if (p[0] === "#endif") {
+          on = st.pop();
+          continue;
+        }
         if (!on) continue;
-        if (p[0] === '#include') { if (!seen[p[1]]) { seen[p[1]] = 1; out.push(run(p[1])); } continue; }
-        if (p[0] === '#define') { defs[p[1]] = p.slice(2).join(' '); continue; }
+        if (p[0] === "#include") {
+          if (!seen[p[1]]) {
+            seen[p[1]] = 1;
+            out.push(run(p[1]));
+          }
+          continue;
+        }
+        if (p[0] === "#define") {
+          defs[p[1]] = p.slice(2).join(" ");
+          continue;
+        }
         continue;
       }
       if (on) out.push(line);
     }
-    return out.join('\n');
+    return out.join("\n");
   };
-  let code = 'diagnostic(off, derivative_uniformity);\n' + run(name);
-  for (const k in defs) if (defs[k] !== '' && defs[k] !== true) code = code.replace(new RegExp('\\b' + k + '\\b', 'g'), defs[k]);
+  let code = "diagnostic(off, derivative_uniformity);\n" + run(name);
+  for (const k in defs)
+    if (defs[k] !== "" && defs[k] !== true)
+      code = code.replace(new RegExp("\\b" + k + "\\b", "g"), defs[k]);
   return code;
 }
 const _modCache = {};
@@ -91,52 +222,114 @@ function mkShader(name, defs) {
   if (_modCache[key]) return _modCache[key];
   const code = wgslPP(name, defs);
   const m = G.dev.createShaderModule({ code, label: name });
-  m.getCompilationInfo().then(info => {
-    for (const msg of info.messages) if (msg.type === 'error') {
-      const ln = code.split('\n'); console.error(`WGSL ${name}:${msg.lineNum}: ${msg.message}\n${ln.slice(Math.max(0, msg.lineNum - 3), msg.lineNum + 1).join('\n')}`);
-      G.lastErr = `WGSL ${name}:${msg.lineNum}: ${msg.message}`;
-    }
+  m.getCompilationInfo().then((info) => {
+    for (const msg of info.messages)
+      if (msg.type === "error") {
+        const ln = code.split("\n");
+        console.error(
+          `WGSL ${name}:${msg.lineNum}: ${msg.message}\n${ln.slice(Math.max(0, msg.lineNum - 3), msg.lineNum + 1).join("\n")}`,
+        );
+        G.lastErr = `WGSL ${name}:${msg.lineNum}: ${msg.message}`;
+      }
   });
-  return _modCache[key] = m;
+  return (_modCache[key] = m);
 }
 // Pipeline de pantalla completa (triángulo único) con layout automático.
 function mkFsPipe(name, defs, targets, opts) {
   const mod = mkShader(name, defs);
   return G.dev.createRenderPipeline({
-    label: name, layout: 'auto',
-    vertex: { module: mod, entryPoint: 'vs' },
-    fragment: { module: mod, entryPoint: (opts && opts.entry) || 'fs', targets: targets.map(t => typeof t === 'string' ? { format: t } : t) },
-    primitive: { topology: 'triangle-list' },
+    label: name,
+    layout: "auto",
+    vertex: { module: mod, entryPoint: "vs" },
+    fragment: {
+      module: mod,
+      entryPoint: (opts && opts.entry) || "fs",
+      targets: targets.map((t) => (typeof t === "string" ? { format: t } : t)),
+    },
+    primitive: { topology: "triangle-list" },
   });
 }
 function mkBG(pipe, idx, entries) {
-  return G.dev.createBindGroup({ layout: pipe.getBindGroupLayout(idx), entries: entries.map((r, i) => ({ binding: i, resource: (r instanceof GPUBuffer) ? { buffer: r } : r })) });
+  return G.dev.createBindGroup({
+    layout: pipe.getBindGroupLayout(idx),
+    entries: entries.map((r, i) => ({
+      binding: i,
+      resource: r instanceof GPUBuffer ? { buffer: r } : r,
+    })),
+  });
 }
 function mkBGL(layout, entries) {
-  return G.dev.createBindGroup({ layout, entries: entries.map((r, i) => ({ binding: i, resource: (r instanceof GPUBuffer) ? { buffer: r } : (r && r.buffer instanceof GPUBuffer) ? r : r })) });
+  return G.dev.createBindGroup({
+    layout,
+    entries: entries.map((r, i) => ({
+      binding: i,
+      resource:
+        r instanceof GPUBuffer
+          ? { buffer: r }
+          : r && r.buffer instanceof GPUBuffer
+            ? r
+            : r,
+    })),
+  });
 }
 // Descriptor de render pass reutilizable (cero asignaciones por frame: solo conmuta .view)
 function mkPassDesc(nColor, depth, clear, label) {
   const d = { label, colorAttachments: [] };
-  for (let i = 0; i < nColor; i++) d.colorAttachments.push({ view: null, loadOp: clear ? 'clear' : 'load', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } });
-  if (depth) d.depthStencilAttachment = { view: null, depthLoadOp: depth === 'load' || depth === 'ro' ? 'load' : 'clear', depthStoreOp: 'store', depthClearValue: depth === 'clear1' ? 1 : 0 };
-  if (depth === 'ro') { const a = d.depthStencilAttachment; delete a.depthLoadOp; delete a.depthStoreOp; delete a.depthClearValue; a.depthReadOnly = true; }
+  for (let i = 0; i < nColor; i++)
+    d.colorAttachments.push({
+      view: null,
+      loadOp: clear ? "clear" : "load",
+      storeOp: "store",
+      clearValue: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  if (depth)
+    d.depthStencilAttachment = {
+      view: null,
+      depthLoadOp: depth === "load" || depth === "ro" ? "load" : "clear",
+      depthStoreOp: "store",
+      depthClearValue: depth === "clear1" ? 1 : 0,
+    };
+  if (depth === "ro") {
+    const a = d.depthStencilAttachment;
+    delete a.depthLoadOp;
+    delete a.depthStoreOp;
+    delete a.depthClearValue;
+    a.depthReadOnly = true;
+  }
   return d;
 }
 // Genera mipmaps mediante blit lineal (uso durante inicialización)
 let _mipPipe = {};
 function genMips(tex, format, layers) {
   const dev = G.dev;
-  if (!_mipPipe[format]) _mipPipe[format] = mkFsPipe('blit', {}, [format]);
+  if (!_mipPipe[format]) _mipPipe[format] = mkFsPipe("blit", {}, [format]);
   const pipe = _mipPipe[format];
-  const samp = dev.createSampler({ minFilter: 'linear', magFilter: 'linear' });
+  const samp = dev.createSampler({ minFilter: "linear", magFilter: "linear" });
   const enc = dev.createCommandEncoder();
-  for (let L = 0; L < (layers || 1); L++) for (let m = 1; m < tex.mipLevelCount; m++) {
-    const srcV = tex.createView({ dimension: '2d', baseMipLevel: m - 1, mipLevelCount: 1, baseArrayLayer: L, arrayLayerCount: 1 });
-    const dstV = tex.createView({ dimension: '2d', baseMipLevel: m, mipLevelCount: 1, baseArrayLayer: L, arrayLayerCount: 1 });
-    const p = enc.beginRenderPass({ colorAttachments: [{ view: dstV, loadOp: 'clear', storeOp: 'store' }] });
-    p.setPipeline(pipe); p.setBindGroup(0, mkBG(pipe, 0, [srcV, samp])); p.draw(3); p.end();
-  }
+  for (let L = 0; L < (layers || 1); L++)
+    for (let m = 1; m < tex.mipLevelCount; m++) {
+      const srcV = tex.createView({
+        dimension: "2d",
+        baseMipLevel: m - 1,
+        mipLevelCount: 1,
+        baseArrayLayer: L,
+        arrayLayerCount: 1,
+      });
+      const dstV = tex.createView({
+        dimension: "2d",
+        baseMipLevel: m,
+        mipLevelCount: 1,
+        baseArrayLayer: L,
+        arrayLayerCount: 1,
+      });
+      const p = enc.beginRenderPass({
+        colorAttachments: [{ view: dstV, loadOp: "clear", storeOp: "store" }],
+      });
+      p.setPipeline(pipe);
+      p.setBindGroup(0, mkBG(pipe, 0, [srcV, samp]));
+      p.draw(3);
+      p.end();
+    }
   dev.queue.submit([enc.finish()]);
 }
 const mipCount = (w, h) => 1 + Math.floor(Math.log2(Math.max(w, h)));

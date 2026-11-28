@@ -13,8 +13,12 @@
 // Capas: 0 motor, 1 neumáticos, 2 viento, 3 rodadura/pianos/impactos, 4 ambiente, 5 público.
 // Niveles: VOL = volumen general; AMB = ganancia de capas ambientales.
 
+const AUDIO_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_AUDIO)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/audio.json'); } catch { return {}; } })() : {});
+const _auC = AUDIO_CFG.audio || {};
 function sndCore(sr) {
-  const VOL = 0.4, AMB = 0.5;
+  const VOL = 0.4;
+  const AMB = 0.5;
   const NC = 32, PI = Math.PI, NPH = 40, PH0 = 128, ctl = new Float32Array(16), st = new Float64Array(PH0 + NPH * 22), F = new Float64Array(120), Z = new Float64Array(80);
   const RS = new Int32Array(2), BI = new Int32Array(6), PHN = new Int32Array(NPH), mix = new Float32Array(6).fill(1);
   const mk = () => new Float32Array(NC);
@@ -26,20 +30,15 @@ function sndCore(sr) {
   const kc = t => 1 - Math.exp(-NC / (sr * t)), K8 = kc(0.008), K20 = kc(0.02), K50 = kc(0.05), K200 = kc(0.2), K30 = kc(0.03);
   const fset = (k, hz, Q, g) => { F[3 * k] = 2 * Math.sin(PI * Math.min(hz, sr * 0.16) / sr); F[3 * k + 1] = 1 / Q; F[3 * k + 2] = g; };
   // Filtros de frecuencia
-  fset(0, 22, 0.7, 1); fset(1, 105, 2.2, 1); fset(2, 235, 3, 1); fset(3, 470, 3.5, 1); fset(4, 980, 3, 1); fset(5, 2100, 2.5, 1); fset(6, 1400, 1.1, 1); fset(7, 3400, 0.8, 1);
-  fset(8, 1900, 1.4, 1); fset(9, 1900, 1.4, 1);      // Fricción de neumático izq/der
-  fset(10, 300, 0.7, 1); fset(11, 300, 0.7, 1);       // Viento izq/der (frecuencia variable)
-  fset(12, 200, 0.7, 1);                              // Rodadura (variable)
-  fset(13, 650, 0.8, 1); fset(14, 2600, 1.6, 1);      // Hierba/grava: cuerpo y gravilla
-  fset(15, 82, 5, 1); fset(16, 310, 2.2, 1);          // Piano / bordillo
-  fset(17, 190, 1.2, 1); fset(18, 1300, 1.5, 1);      // Impacto
-  fset(19, 3100, 0.6, 1); fset(20, 3600, 0.6, 1);     // Follaje izq/der
-  fset(21, 5200, 22, 1); fset(22, 6300, 26, 1);       // Cigarras ambientales
-  fset(23, 540, 2.4, 1); fset(24, 1150, 3, 0.8); fset(25, 2500, 3, 0.35); fset(26, 600, 2.4, 1); fset(27, 1250, 3, 0.8); fset(28, 2700, 3, 0.35);   // Público izq/der (formantes de voz)
-  fset(29, 1750, 1.1, 1);                             // Aplausos
-  fset(30, 8000, 0.7, 1); fset(31, 8000, 0.7, 1);     // Absorción del aire con la distancia
-  fset(32, 90, 3, 1);                                 // Golpe de cambio de marcha
-  fset(33, 20, 0.7, 1);                               // tira o nível contínuo que a saturação do motor cria
+  const _flt = [
+    [0, 22, 0.7, 1], [1, 105, 2.2, 1], [2, 235, 3, 1], [3, 470, 3.5, 1], [4, 980, 3, 1], [5, 2100, 2.5, 1], [6, 1400, 1.1, 1], [7, 3400, 0.8, 1],
+    [8, 1900, 1.4, 1], [9, 1900, 1.4, 1], [10, 300, 0.7, 1], [11, 300, 0.7, 1], [12, 200, 0.7, 1], [13, 650, 0.8, 1], [14, 2600, 1.6, 1],
+    [15, 82, 5, 1], [16, 310, 2.2, 1], [17, 190, 1.2, 1], [18, 1300, 1.5, 1], [19, 3100, 0.6, 1], [20, 3600, 0.6, 1],
+    [21, 5200, 22, 1], [22, 6300, 26, 1], [23, 540, 2.4, 1], [24, 1150, 3, 0.8], [25, 2500, 3, 0.35],
+    [26, 600, 2.4, 1], [27, 1250, 3, 0.8], [28, 2700, 3, 0.35], [29, 1750, 1.1, 1], [30, 8000, 0.7, 1], [31, 8000, 0.7, 1],
+    [32, 90, 3, 1], [33, 20, 0.7, 1]
+  ];
+  for (let i = 0; i < _flt.length; i++) fset(_flt[i][0], _flt[i][1], _flt[i][2], _flt[i][3]);
   // índices do estado
   const MG = 0, RP = 1, LD = 2, FP = 3, AMP = 4, CYL = 5, GP = 6, SHT = 7, DG = 8, DP = 9, SPD = 10, SQ = 11, SQP = 13, SQJ = 15, LSP = 17, GUST = 18, LOO = 19, KRB = 20, KPH = 21,
     CRW = 22, CPN = 23, HIT = 24, HITE = 25, CLK = 26, TM = 27, CRE = 28, VGS = 32, NEXT = 40, BV = 44, FOL = 41, SQA = 100, SQW = 102;
@@ -47,6 +46,36 @@ function sndCore(sr) {
   // estado inicial (também usado para zerar o sintetizador depois do aquecimento)
   function reset() { st.fill(0, 0, PH0); Z.fill(0); BI.fill(0); ctl.fill(0); RS[0] = 0x2F6E2B1; RS[1] = 0x1B873593; st[RP] = 900; st[DG] = 1; st[DP] = 1; st[GP] = 1; st[NEXT] = sr * 0.7; for (let k = 0; k < 8; k++) st[VGS + k] = VG[k]; st[CART] = -1; st[TPH] = 0; st[EPH] = 0; }
   reset();
+  const carSound = {
+    freq: [105, 235, 470, 980, 2100],
+    q: [2.2, 3.0, 3.5, 3.0, 2.5],
+    cDiv: 30,
+    nCyl: 4,
+    cylGains: [1.0, 0.80, 0.92, 0.74],
+    drvBase: 1.4,
+    turbo: null,
+    hybridWhine: false
+  };
+  function setCarSound(s) {
+    if (!s) return;
+    if (s.freq) carSound.freq = s.freq;
+    if (s.q) carSound.q = s.q;
+    if (s.cDiv != null) carSound.cDiv = s.cDiv;
+    if (s.nCyl != null) carSound.nCyl = s.nCyl;
+    if (s.cylGains) carSound.cylGains = s.cylGains;
+    if (s.drvBase != null) carSound.drvBase = s.drvBase;
+    carSound.turbo = s.turbo || null;
+    carSound.hybridWhine = !!s.hybridWhine;
+    for (let k = 0; k < 5; k++) fset(k + 1, carSound.freq[k], carSound.q[k], 1);
+  }
+  const trackAmbient = { foliage: 1.0, cicadas: 1.0, birds: 1.0, crowd: 1.0 };
+  function setTrackAmbient(a) {
+    if (!a) return;
+    if (a.foliage != null) trackAmbient.foliage = a.foliage;
+    if (a.cicadas != null) trackAmbient.cicadas = a.cicadas;
+    if (a.birds != null) trackAmbient.birds = a.birds;
+    if (a.crowd != null) trackAmbient.crowd = a.crowd;
+  }
   function noise(o) { let x = RS[0]; for (let i = 0; i < NC; i++) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; o[i] = x * 4.656612873e-10; } RS[0] = x; }
   function rnd16() { let x = RS[1]; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; RS[1] = x; return (x >>> 8) & 0xffff; }
   // filtro de estado variável em bloco. modo 0 passa-baixa, 1 passa-banda (pico unitário), 2 passa-alta; acc soma em y
@@ -64,9 +93,10 @@ function sndCore(sr) {
   // raro (nunca chega a ser otimizado), por isso só usa inteiros e cópias dentro do vetor de estado: assim não aloca nada.
   {
     let q = 20261116; const r = () => (q = (q * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const _bp = [[0.11, 2350, 2550, 0.035, 0], [0.09, 3050, 2900, 0.035, 0], [0.27, 2750, 2050, 0.035, 0]];
     for (let p = 0; p < NPH; p++) {
       const o = PH0 + p * 22, ty = p % 5 === 0 ? 1 : p % 5 === 1 ? 2 : 0, base = 2300 + 2400 * r(), tr = 0.95 + 0.1 * r(); st[o] = 0.009 + 0.03 * r(); st[o + 1] = r();
-      const N = [[0.11, 2350 * tr, 2550 * tr, 0.035, 0], [0.09, 3050 * tr, 2900 * tr, 0.035, 0], [0.27, 2750 * tr, 2050 * tr, 0.035, 0]];
+      const N = _bp.map(x => [x[0], x[1] * tr, x[2] * tr, x[3], x[4]]);
       PHN[p] = ty === 1 ? 3 : ty === 2 ? 1 : 1 + Math.floor(r() * 4);
       for (let k = 0; k < PHN[p]; k++) {
         const f0 = base * (0.92 + 0.16 * r()), n = ty === 1 ? N[k] : ty === 2 ? [0.3 + 0.35 * r(), 3200 + 1700 * r(), 0, 0.3, 380] : [0.07 + 0.14 * r(), f0, f0 * (0.72 + 0.5 * r()), 0.05 + 0.12 * r(), 0];
@@ -97,49 +127,10 @@ function sndCore(sr) {
     const dg = st[DG] += (Math.pow(9 / (9 + (dist > 7 ? dist - 7 : 0)), 0.85) - st[DG]) * K20;
     const spd = st[SPD] += (ctl[4] * 0.01 - st[SPD]) * K20, lsp = st[LSP] += (ctl[11] * 0.01 - st[LSP]) * K50;
     for (let k = 0; k < 8; k++) st[VGS + k] += (VG[view * 8 + k] - st[VGS + k]) * K20;
-    // ---- Motor: pulsos de presión acústica y resonancias afinadas por modelo (ctl[15])
-    let ctype = (ctl[15] | 0);
-    if (ctype < 0 || ctype > 8) ctype = 0;
-    if (st[CART] !== ctype) {
-      st[CART] = ctype;
-      const fRoots = [
-        [105, 235, 470, 980, 2100],  // Uno: 4 cil em linha 1.0L
-        [140, 280, 560, 1120, 2350], // Porsche 911: Flat-6 boxer biturbo
-        [68, 142, 285, 620, 1380],   // BMW M8: V8 4.0L biturbo grave
-        [115, 245, 510, 1250, 2700], // McLaren: V8 flat-plane de corrida
-        [62, 128, 260, 580, 1280],   // Mercedes-AMG GT3 / SLS GT3: V8 6.2L atmosférico atronador
-        [145, 290, 580, 1180, 2480], // Porsche 992 GT3 R: 4.2L Flat-6 aullador
-        [88, 185, 380, 820, 1850],   // Nissan GT-R: V6 3.8L Twin-Turbo potente
-        [175, 350, 710, 1550, 3100], // Audi R8 LMS Evo: 5.2L V10 FSI atmosférico aullador
-        [98, 205, 430, 960, 2050]    // BMW M3 Touring: 3.0L S58 Twin-Turbo 6 en línea
-      ][ctype];
-      const qRoots = [
-        [2.2, 3.0, 3.5, 3.0, 2.5],
-        [2.6, 3.2, 3.8, 3.2, 2.8],
-        [2.0, 2.8, 3.4, 2.9, 2.2],
-        [2.4, 3.0, 3.6, 3.1, 2.6],
-        [2.1, 2.7, 3.3, 2.8, 2.1],
-        [2.7, 3.4, 4.0, 3.4, 2.9],
-        [2.3, 2.9, 3.5, 3.0, 2.4],
-        [2.8, 3.5, 4.2, 3.6, 3.0],
-        [2.4, 3.0, 3.6, 3.1, 2.6]
-      ][ctype];
-      for (let k = 0; k < 5; k++) fset(k + 1, fRoots[k], qRoots[k], 1);
-    }
-
-    const cDiv = (ctype === 1 || ctype === 5 || ctype === 6 || ctype === 8) ? 20 : (ctype === 2 || ctype === 3 || ctype === 4) ? 15 : ctype === 7 ? 12 : 30;
-    const nCyl = (ctype === 1 || ctype === 5 || ctype === 6 || ctype === 8) ? 6 : (ctype === 2 || ctype === 3 || ctype === 4) ? 8 : ctype === 7 ? 10 : 4;
-    const cgList = [
-      [1.0, 0.80, 0.92, 0.74],
-      [1.0, 0.92, 0.88, 1.04, 0.90, 0.86],
-      [1.0, 0.76, 0.96, 0.72, 1.02, 0.74, 0.94, 0.76],
-      [1.0, 0.98, 1.0, 0.97, 1.0, 0.98, 1.0, 0.97],
-      [1.0, 0.74, 0.98, 0.70, 1.04, 0.72, 0.96, 0.74],
-      [1.0, 0.94, 0.86, 1.06, 0.92, 0.84],
-      [1.0, 0.88, 1.02, 0.85, 0.98, 0.90],
-      [1.0, 0.94, 0.98, 0.92, 1.02, 0.96, 1.0, 0.95, 0.97, 0.93],
-      [1.0, 0.90, 0.96, 1.02, 0.88, 0.94]
-    ][ctype];
+    // ---- Motor: pulsos de presión acústica y resonancias agnósticas del vehículo (carSound)
+    const cDiv = carSound.cDiv;
+    const nCyl = carSound.nCyl;
+    const cgList = carSound.cylGains;
 
     const fc = (rp / cDiv) * dp / sr, ifc = 1 / fc; let tp = (0.0035 - 0.0027 * ld) * sr; if (tp > 0.85 * ifc) tp = 0.85 * ifc;
     const itp = 1 / tp, itk = 1 / (0.0007 * sr), idle = rp < 2500 ? (2500 - rp) / 1600 : 0, jit = 0.07 + (0.22 * (1 - ld) + 0.1) * idle + 0.1 * (1 - ld);
@@ -157,13 +148,14 @@ function sndCore(sr) {
     F[20] = st[VGS + 6] * ld * (0.25 + 0.75 * ld) * 0.5; svf(ni, eg, m, 6, 1, 1);    // ruído de admissão: só com o pé embaixo
     F[23] = st[VGS + 7] * (0.5 + rp / 6500); svf(tk, eg, m, 7, 2, 1);               // tuchos e válvulas
 
-    // Efeitos específicos por modelo:
-    // 1. Silbido de Turbo (Porsche 911 Turbo e McLaren):
-    if ((ctype === 1 || ctype === 3) && ld > 0.15) {
-      const turboBoost = Math.max(0, ld - 0.15) * 1.18 * (0.4 + 0.6 * rp / 6800);
-      const tf = (ctype === 1 ? 2600 + (rp / 7000) * 1800 : 2200 + (rp / 8000) * 1600) * dp / sr;
+    // Efeitos configurados por carSound:
+    // 1. Silbido de Turbo:
+    if (carSound.turbo && ld > 0.15) {
+      const tb = carSound.turbo;
+      const turboBoost = Math.max(0, ld - 0.15) * 1.18 * (0.4 + 0.6 * rp / (tb.maxRpm || 7000));
+      const tf = ((tb.baseHz || 2600) + (rp / (tb.maxRpm || 7000)) * (tb.rpmSpan || 1800)) * dp / sr;
       let tph = st[TPH];
-      const tg = turboBoost * (ctype === 1 ? 0.045 : 0.035);
+      const tg = turboBoost * (tb.gain || 0.045);
       for (let i = 0; i < m; i++) {
         tph += tf; if (tph >= 1) tph -= 1;
         eg[i] += Math.sin(6.283185307 * tph) * tg;
@@ -171,8 +163,8 @@ function sndCore(sr) {
       st[TPH] = tph;
     }
 
-    // 2. Silbido de motor eléctrico híbrido (McLaren Ultimate Vision GT):
-    if (ctype === 3 && spd > 2) {
+    // 2. Silbido de motor eléctrico híbrido:
+    if (carSound.hybridWhine && spd > 2) {
       const ef = (480 + spd * 32) * dp / sr;
       const egain = Math.min(1.0, spd / 25) * (0.25 + 0.75 * ld) * 0.042;
       let eph = st[EPH];
@@ -185,7 +177,7 @@ function sndCore(sr) {
 
     // tranco e estalo da troca de marcha
     let clk = st[CLK]; if (clk > 1e-4) { for (let i = 0; i < m; i++) { t2[i] = wB[i] * clk * clk; clk *= 0.9992; } st[CLK] = clk * (clk < 0.02 ? 0 : 1); F[98] = 1.6; svf(t2, eg, m, 32, 1, 1); }
-    const drvBase = ctype === 2 ? 1.85 : ctype === 1 ? 1.6 : 1.4;
+    const drvBase = carSound.drvBase;
     const drv = drvBase + 2.6 * ld, ev = (0.3 + 0.7 * Math.pow(ld, 0.8)) * (0.45 + 0.55 * rp / 6500) * dg * 0.4 / (drv / (1 + drv * 0.5));
     for (let i = 0; i < m; i++) { const x = eg[i] * drv; eg[i] = x / (1 + (x < 0 ? -x : x) * 0.5) * ev; }   // saturação: mais harmônicos com carga
     svf(eg, eg, m, 33, 2, 0);
@@ -216,16 +208,17 @@ function sndCore(sr) {
     }
     const hits = ctl[14] | 0; if (hits !== st[HIT]) { st[HIT] = hits; if (st[HITE] < 0.05) st[HITE] = 1; }
     let he = st[HITE]; if (he > 1e-4) { for (let i = 0; i < m; i++) { t2[i] = wA[i] * he * he; he *= 0.9984; } st[HITE] = he < 0.01 ? 0 : he; F[53] = 2.2 * dg; F[56] = 0.7 * dg; svf(t2, cb, m, 17, 0, 1); svf(t2, cb, m, 18, 1, 1); }
-    // ---- Ambiente: follaje, viento y pájaros
-    const fol = st[FOL] += ((rnd16() / 65536) - st[FOL]) * 0.0015, fg = 0.024 * (0.5 + fol), tm = st[TM] += m, ts = tm / sr;
+    // ---- Ambiente: follaje, viento y pájaros (configurado por trackAmbient)
+    const fol = st[FOL] += ((rnd16() / 65536) - st[FOL]) * 0.0015, fg = 0.024 * (0.5 + fol) * trackAmbient.foliage, tm = st[TM] += m, ts = tm / sr;
     F[59] = fg; F[62] = fg; svf(wA, L4, m, 19, 1, 0); svf(wB, R4, m, 20, 1, 0);
-    const c1 = Math.sin(ts * 0.48), c2 = Math.sin(ts * 0.37 + 2), a1 = c1 > 0 ? c1 * c1 * 0.07 : 0, a2 = c2 > 0 ? c2 * c2 * 0.055 : 0;
+    const cic = trackAmbient.cicadas;
+    const c1 = Math.sin(ts * 0.48), c2 = Math.sin(ts * 0.37 + 2), a1 = c1 > 0 ? c1 * c1 * 0.07 * cic : 0, a2 = c2 > 0 ? c2 * c2 * 0.055 * cic : 0;
     if (a1 > 1e-5) { for (let i = 0; i < m; i++) { const q = Math.sin(ts * 327 + i * 327 / sr); t1[i] = wA[i] * q * q * a1; } svf(t1, t2, m, 21, 1, 0); for (let i = 0; i < m; i++) { L4[i] += t2[i] * 0.8; R4[i] += t2[i] * 0.3; } }
     if (a2 > 1e-5) { for (let i = 0; i < m; i++) { const q = Math.sin(ts * 270 + i * 270 / sr); t1[i] = wB[i] * q * q * a2; } svf(t1, t2, m, 22, 1, 0); for (let i = 0; i < m; i++) { L4[i] += t2[i] * 0.25; R4[i] += t2[i] * 0.8; } }
-    if ((st[NEXT] -= m) <= 0) { st[NEXT] = (0.35 + 2.4 * (rnd16() / 65536)) * sr; birdStart(); }
+    if (trackAmbient.birds > 0 && (st[NEXT] -= m) <= 0) { st[NEXT] = (0.35 + 2.4 * (rnd16() / 65536)) * sr; birdStart(); }
     for (let v = 0; v < 3; v++) {
       if (BI[v * 2] <= 0) continue;
-      const b = BV + v * 10, dur = st[b + 1], f0 = st[b + 2], df = st[b + 3] - f0, vd = st[b + 5], a = st[b + 8], pan = st[b + 9], idur = 1 / dur; let t = st[b], ph = st[b + 6];
+      const b = BV + v * 10, dur = st[b + 1], f0 = st[b + 2], df = st[b + 3] - f0, vd = st[b + 5], a = st[b + 8] * trackAmbient.birds, pan = st[b + 9], idur = 1 / dur; let t = st[b], ph = st[b + 6];
       if (t < 0) { t += m; st[b] = t; if (t >= 0) birdNote(v); continue; }                // Pausa entre trinos
       for (let i = 0; i < m && t < dur; i++, t++) {
         const u = t * idur, e = u < 0.2 ? u * 5 : (1 - u) * 1.25, f = f0 + df * u + (vd ? vd * Math.sin(t * 190 / sr) : 0);
@@ -236,7 +229,7 @@ function sndCore(sr) {
       if (t >= dur) { if (--BI[v * 2] > 0) st[b] = -st[b + 4]; } else st[b] = t;
     }
     // ---- Gradas: murmullo y aplausos según proximidad
-    const crw = st[CRW] += (ctl[12] * 0.001 - st[CRW]) * K200;
+    const crw = (st[CRW] += (ctl[12] * 0.001 - st[CRW]) * K200) * trackAmbient.crowd;
     if (crw > 0.004) {
       const cp = st[CPN] += (ctl[13] * 0.001 - st[CPN]) * K200, sw = st[CRE] += ((rnd16() / 65536) - st[CRE]) * 0.003, cg = crw * (0.45 + 1.1 * sw) * (1 + 0.5 * (spd < 40 ? spd / 40 : 1)) * 0.75, gl = cg * (1 - 0.6 * cp) * 0.5, gr = cg * (1 + 0.6 * cp) * 0.5;
       svf(wB, t1, m, 23, 1, 0); svf(wB, t1, m, 24, 1, 1); svf(wB, t1, m, 25, 1, 1); svf(wA, t2, m, 26, 1, 0); svf(wA, t2, m, 27, 1, 1); svf(wA, t2, m, 28, 1, 1);
@@ -314,7 +307,7 @@ function sndStart() {
   };
   if (!ctx.audioWorklet) { fallback(); return; }
   // Precalentamiento del sintetizador para optimización anticipada en V8
-  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|(i>>8)%3<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
+  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;this.port.onmessage=e=>{if(e.data&&e.data.type==="carSound")s.setCarSound(e.data.sound);if(e.data&&e.data.type==="trackAmbient")s.setTrackAmbient(e.data.ambient);};for(let i=0;i<1600;i++){c[0]=1|(i>>8)%3<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
   // Carga de AudioWorklet vía URL data: o blob: con fallback robusto
   const mod = u => ctx.audioWorklet.addModule(u);
   mod('data:application/javascript;charset=utf-8,' + encodeURIComponent(code)).catch(() => mod(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })))).then(() => {
@@ -368,5 +361,5 @@ function sndBeep(freq = 440, duration = 0.12, gainVal = 0.22) {
     g.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  } catch (e) {}
+  } catch (e) { }
 }

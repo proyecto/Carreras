@@ -13,6 +13,9 @@
  *   7. Farolas de iluminación nocturna F1 cada 35m y puentes peatonales con pantallas LED.
  */
 
+const URBAN_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_PROPS_URBAN_CONTAINMENT)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/engine/props/urban-containment.json'); } catch { return {}; } })() : {});
+
 const UrbanContainmentProps = {
   setColor(m, r, g, b, a = 1.0) {
     if (typeof PropUtils !== 'undefined' && typeof PropUtils.setColor === 'function') {
@@ -39,7 +42,9 @@ const UrbanContainmentProps = {
   createVegasUrbanProps(ctx, config = {}) {
     const { mb, md, mp, S1, S2, SP, TRK, hw, frame, P, col, sign, REG, Bx, gantry, figure, sitter, stander, CROWD, mkRng } = ctx;
     if (!mb || !TRK) return;
-    const rnd = typeof mkRng === 'function' ? mkRng(777) : Math.random;
+    const ucCfg = URBAN_CFG.createVegasUrbanProps || {};
+    const seed = ucCfg.rngSeed ? ucCfg.rngSeed.value : 777;
+    const rnd = typeof mkRng === 'function' ? mkRng(seed) : Math.random;
     const PI = Math.PI, PI2 = PI * 2;
     const sI = s => (((Math.round(s / TRK.ds)) % TRK.N) + TRK.N) % TRK.N;
     const locQ = new Float64Array(6);
@@ -63,7 +68,7 @@ const UrbanContainmentProps = {
     // =========================================================================
     // 1. SISTEMA DE VALLADO CONTINUO Y TÚNEL DE CONTENCIÓN EN LÍNEA (Muro Jersey + Catch Fencing)
     // =========================================================================
-    const wallStep = config.perimeterJerseyWall?.step || 4.0;
+    const wallStep = config.perimeterJerseyWall?.step || (ucCfg.defaultWallStep ? ucCfg.defaultWallStep.value : 4.0);
     const nSegs = Math.round(TRK.L / wallStep);
     const dS = TRK.L / nSegs;
 
@@ -75,7 +80,7 @@ const UrbanContainmentProps = {
       return side * (b0 + (b1 - b0) * f);
     };
 
-    const th = 0.42; // Espesor del muro Jersey hacia el exterior
+    const th = ucCfg.jerseyThickness ? ucCfg.jerseyThickness.value : 0.42; // Espesor del muro Jersey hacia el exterior
 
     if (md) {
       for (const side of [-1, 1]) {

@@ -1,0 +1,10 @@
+{
+  "raceDirector": {
+    "_comment": "Constantes de la secuencia de salida FIA",
+    "lightsTotal": { "value": 5, "desc": "Número de focos rojos de la cuenta atrás FIA" },
+    "minPauseS": { "value": 0.8, "desc": "Pausa mínima aleatoria tras encender los 5 focos (s)" },
+    "maxPauseSpanS": { "value": 1.2, "desc": "Rango adicional aleatorio de pausa antes de apagar luces (s)" },
+    "doneExtraS": { "value": 1.8, "desc": "Tiempo tras Lights Out antes de finalizar la secuencia (s)" },
+    "lightsOutBeep": { "value": [1150, 0.38, 0.36], "desc": "Pitido de salida [freqHz, durS, gain]" }
+  }
+}

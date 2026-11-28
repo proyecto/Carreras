@@ -1,0 +1,13 @@
+{
+  "renderer": {
+    "_comment": "Resoluciones de sombras, entorno, cielo y distancia volumétrica del renderizador diferido",
+    "shadowRes": { "value": 2048, "desc": "Resolución de cada cascada de sombras dinámicas (px)" },
+    "shadowStaticRes": { "value": 4096, "desc": "Resolución del mapa de sombras estáticas (px)" },
+    "envRes": { "value": 512, "desc": "Resolución base de cada cara del cubemap ambiental (px)" },
+    "envMips": { "value": 7, "desc": "Número de niveles de mipmap prefiltrados del cubemap" },
+    "skyW": { "value": 4096, "desc": "Anchura de la textura equirectangular del cielo (px)" },
+    "skyH": { "value": 1024, "desc": "Altura de la textura equirectangular del cielo (px)" },
+    "volDist": { "value": 220, "desc": "Distancia máxima de niebla volumétrica (m)" },
+    "skyEl0": { "value": -0.14, "desc": "Elevación mínima del cielo bajo el horizonte (rad)" }
+  }
+}

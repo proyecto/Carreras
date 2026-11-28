@@ -1,0 +1,6 @@
+{
+  "vegetationAtlas": {
+    "_comment": "Constantes de generación procedural del atlas de vegetación",
+    "rngSeed": { "value": 90210, "desc": "Semilla pseudoaleatoria para generar hojas, ramas y cortezas" }
+  }
+}

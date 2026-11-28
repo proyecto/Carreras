@@ -1,0 +1,13 @@
+{
+  "gpuInit": {
+    "_comment": "Límites de dispositivo WebGPU y resolución de lienzo",
+    "defaultDt": { "value": 0.016666666666666666, "desc": "Paso de tiempo inicial por defecto (1/60 s)" },
+    "maxColorAttachmentBytesPerSample": { "value": 64, "desc": "Límite máximo de bytes por muestra en G-buffer" },
+    "maxSampledTexturesPerShaderStage": { "value": 24, "desc": "Máximo de texturas muestreadas por etapa de shader" },
+    "maxBufferSize": { "value": 1073741824, "desc": "Tamaño máximo de buffer GPU solicitado (1 GB)" },
+    "maxTextureDimension2D": { "value": 8192, "desc": "Dimensión máxima de textura 2D solicitada" },
+    "maxDpr": { "value": 1.0, "desc": "Tope de devicePixelRatio para el canvas WebGPU" },
+    "widthBounds": { "value": [320, 5120], "desc": "Ancho mínimo y máximo del canvas [minW, maxW] (px)" },
+    "heightBounds": { "value": [180, 2880], "desc": "Alto mínimo y máximo del canvas [minH, maxH] (px)" }
+  }
+}

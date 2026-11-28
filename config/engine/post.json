@@ -1,0 +1,7 @@
+{
+  "post": {
+    "_comment": "Constantes de postprocesado (Motion Blur y Bloom)",
+    "motionBlurTileSize": { "value": 20, "desc": "Tamaño de celda en píxeles para el análisis de motion blur" },
+    "bloomMipCount": { "value": 6, "desc": "Número de niveles de mipmap de la pirámide de bloom" }
+  }
+}

@@ -215,6 +215,19 @@ async function bootSimulation(autoDrive) {
     await new Promise(r => setTimeout(r, 16));
 
     setLoadingProgress(55, 'loading_build_world', 'Construyendo pista, vegetación y entorno…');
+    if (typeof fetch === 'function') {
+      const ver = (typeof window !== 'undefined' && window.CACHE_VERSION) ? '?v=' + window.CACHE_VERSION : '';
+      const [pCfg, gCfg, vCfg] = await Promise.all([
+        fetch('config/paddock.json' + ver).then(r => r.json()).catch(() => null),
+        fetch('config/grandstands.json' + ver).then(r => r.json()).catch(() => null),
+        fetch('config/vegetation-archetypes.json' + ver).then(r => r.json()).catch(() => null)
+      ]);
+      if (typeof window !== 'undefined') {
+        if (pCfg) window.__CFG_PADDOCK = pCfg;
+        if (gCfg) window.__CFG_GRANDSTANDS = gCfg;
+        if (vCfg) window.__CFG_VEG = vCfg;
+      }
+    }
     const nBuild = BUILD.length;
     for (let i = 0; i < nBuild; i++) {
       await BUILD[i]();

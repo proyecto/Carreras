@@ -1,0 +1,67 @@
+{
+  "StorageAdapter": {
+    "_comment": "Constantes de prueba de disponibilidad de localStorage",
+    "testKey": {
+      "value": "__test__",
+      "desc": "Clave temporal usada para comprobar si localStorage permite escritura"
+    },
+    "testValue": {
+      "value": "1",
+      "desc": "Valor temporal de prueba escrito y borrado en localStorage"
+    }
+  },
+  "KeyboardInputAdapter": {
+    "_comment": "Mapeo de teclado por defecto y máscara de bits del simulador",
+    "defaultBindings": {
+      "value": {
+        "forward": ["KeyW", "ArrowUp"],
+        "brake": ["KeyS", "ArrowDown"],
+        "steerLeft": ["KeyA", "ArrowLeft"],
+        "steerRight": ["KeyD", "ArrowRight"],
+        "handbrake": ["Space", ""],
+        "gearUp": ["KeyE", "KeyX"],
+        "gearDown": ["KeyQ", "KeyZ"],
+        "camera": ["KeyC", ""],
+        "pause": ["Escape", "KeyP"]
+      },
+      "desc": "Teclas por defecto asociadas a cada acción del simulador"
+    },
+    "bitmask": {
+      "value": {
+        "forward": 1,
+        "brake": 2,
+        "steerLeft": 4,
+        "steerRight": 8,
+        "handbrake": 16,
+        "gearUp": 32,
+        "gearDown": 64,
+        "camera": 128,
+        "pause": 256
+      },
+      "desc": "Máscara de bits de entrada correspondiente a cada acción"
+    }
+  },
+  "GamepadInputAdapter": {
+    "_comment": "Constantes de lectura analógica y botones de Gamepad API",
+    "defaultDeadzone": {
+      "value": 0.08,
+      "desc": "Zona muerta por defecto del eje de dirección del mando"
+    },
+    "steerAxis": {
+      "value": 0,
+      "desc": "Índice del eje analógico de dirección (stick izquierdo horizontal)"
+    },
+    "throttleButton": {
+      "value": 7,
+      "desc": "Índice del botón/gatillo de aceleración (RT/R2)"
+    },
+    "brakeButton": {
+      "value": 6,
+      "desc": "Índice del botón/gatillo de freno (LT/L2)"
+    },
+    "handbrakeButton": {
+      "value": 0,
+      "desc": "Índice del botón de freno de mano (A/Cruz)"
+    }
+  }
+}

@@ -1,0 +1,620 @@
+{
+  "gantry": {
+    "_comment": "Pórtico de salida y semáforo FIA",
+    "s": {
+      "value": 0,
+      "desc": "Posición longitudinal en la recta (m)"
+    },
+    "dL": {
+      "value": -7.7,
+      "desc": "Distancia lateral del pilar izquierdo (m)"
+    },
+    "dR": {
+      "value": 7.05,
+      "desc": "Distancia lateral del pilar derecho (m)"
+    },
+    "yBottom": {
+      "value": 6.1,
+      "desc": "Altura inferior de la pasarela del pórtico (m)"
+    },
+    "yTop": {
+      "value": 7.3,
+      "desc": "Altura superior de la pasarela del pórtico (m)"
+    },
+    "beamHalfWidth": {
+      "value": 0.5,
+      "desc": "Semianchura longitudinal de la celosía (m)"
+    },
+    "steelColor": {
+      "value": [
+        0.22,
+        0.24,
+        0.27
+      ],
+      "desc": "Color acero de pilares y celosía"
+    },
+    "towerColor": {
+      "value": [
+        0.17,
+        0.25,
+        0.36
+      ],
+      "desc": "Color azul acero de las torres laterales"
+    },
+    "towerJointColor": {
+      "value": [
+        0.11,
+        0.16,
+        0.24
+      ],
+      "desc": "Color acero oscuro de nudos y placa base"
+    },
+    "plinthColor": {
+      "value": [
+        0.3,
+        0.3,
+        0.29
+      ],
+      "desc": "Color hormigón de la zapata base"
+    },
+    "towerHalfW": {
+      "value": 0.42,
+      "desc": "Semianchura de la torre de celosía (m)"
+    },
+    "anchorBoltOffsets": {
+      "value": [
+        [-0.54, -0.54],
+        [0.54, -0.54],
+        [0.54, 0.54],
+        [-0.54, 0.54],
+        [0, -0.56],
+        [0, 0.56],
+        [-0.56, 0],
+        [0.56, 0]
+      ],
+      "desc": "Posiciones relativas [dx, dz] de los pernos de anclaje de cada torre (m)"
+    },
+    "anchorBoltCyl": {
+      "value": [
+        0.4,
+        0.028,
+        0.47,
+        6
+      ],
+      "desc": "Geometría de cada perno de anclaje [y, radius, height, segs]"
+    },
+    "bannerColor": {
+      "value": [
+        1,
+        1,
+        1
+      ],
+      "desc": "Color base de la pancarta del pórtico"
+    },
+    "bannerOffsets": {
+      "value": [
+        0.07,
+        0.1,
+        0.3
+      ],
+      "desc": "Márgenes de la pancarta [xPad, yPad, zInset] (m)"
+    },
+    "lightCount": {
+      "value": 5,
+      "desc": "Número de columnas del semáforo FIA"
+    },
+    "lightRowsY": {
+      "value": [
+        5.2,
+        5.55
+      ],
+      "desc": "Alturas Y de las filas de luces del semáforo (m)"
+    },
+    "lightXOffset": {
+      "value": 0.46,
+      "desc": "Desplazamiento frontal en X del semáforo respecto a s - hwB (m)"
+    },
+    "lightZStart": {
+      "value": -2,
+      "desc": "Posición Z inicial de la primera columna del semáforo (m)"
+    },
+    "lightHousingMat": {
+      "value": [
+        2,
+        150,
+        60
+      ],
+      "desc": "Material de la carcasa del semáforo [mat, p1, p2]"
+    },
+    "lightHousingColor": {
+      "value": [
+        0.02,
+        0.02,
+        0.022
+      ],
+      "desc": "Color oscuro de la carcasa del semáforo"
+    },
+    "lightColor": {
+      "value": [
+        1,
+        0.02,
+        0.01
+      ],
+      "desc": "Color rojo de las ópticas del semáforo"
+    },
+    "lightSegs": {
+      "value": 16,
+      "desc": "Segmentos radiales de cada óptica del semáforo"
+    },
+    "lightOuterCyl": {
+      "value": [
+        0.185,
+        0.2,
+        0.195
+      ],
+      "desc": "Visera exterior de cada óptica [rBot, height, rTop] (m)"
+    },
+    "lightInnerCyl": {
+      "value": [
+        0.17,
+        0.2,
+        0.18
+      ],
+      "desc": "Visera interior de cada óptica [rBot, height, rTop] (m)"
+    },
+    "lightLensCyl": {
+      "value": [
+        0.165,
+        0.04,
+        0.145
+      ],
+      "desc": "Lente emisiva de cada óptica [rBot, height, rTop] (m)"
+    },
+    "cullS1": {
+      "value": [
+        3,
+        900
+      ],
+      "desc": "Parámetros de culling S1 del pórtico [radius, dist]"
+    },
+    "cullS2": {
+      "value": [
+        5,
+        1500
+      ],
+      "desc": "Parámetros de culling S2 de la pancarta [radius, dist]"
+    },
+    "anchorBoltOffsets": {
+      "value": [
+        [-0.54, -0.54],
+        [0.54, -0.54],
+        [0.54, 0.54],
+        [-0.54, 0.54],
+        [0, -0.56],
+        [0, 0.56],
+        [-0.56, 0],
+        [0.56, 0]
+      ],
+      "desc": "Posiciones relativas [dx, dz] de los pernos de anclaje de cada torre (m)"
+    },
+    "anchorBoltCyl": {
+      "value": [
+        0.4,
+        0.028,
+        0.47,
+        6
+      ],
+      "desc": "Geometría de cada perno de anclaje [y, radius, height, segs]"
+    },
+    "towerStepY": {
+      "value": 0.95,
+      "desc": "Paso vertical entre tramos de la torre (m)"
+    },
+    "towerPostR": {
+      "value": 0.095,
+      "desc": "Radio de los 4 pilares de cada torre (m)"
+    },
+    "maxDist": {
+      "value": 2400,
+      "desc": "Distancia máxima de renderizado (m)"
+    }
+  },
+  "tent": {
+    "_comment": "Carpa de hospitalidad de paddock (techo piramidal)",
+    "halfSize": {
+      "value": 3.5,
+      "desc": "Semianchura/semilargo de la base de la carpa (m)"
+    },
+    "eaveHeight": {
+      "value": 2.5,
+      "desc": "Altura del alero donde empieza el techo (m)"
+    },
+    "peakHeight": {
+      "value": 4,
+      "desc": "Altura de la cúspide central del techo (m)"
+    },
+    "poleOffset": {
+      "value": 3.4,
+      "desc": "Posición X/Z de los 4 postes de esquina (m)"
+    },
+    "poleRadius": {
+      "value": 0.05,
+      "desc": "Radio de cada poste de la carpa (m)"
+    }
+  },
+  "truck": {
+    "_comment": "Camión trailer de competición en paddock",
+    "trailerBox": {
+      "value": [
+        -6.5,
+        3.2,
+        1.25,
+        4,
+        -1.25,
+        1.25
+      ],
+      "desc": "Caja del remolque [x0, x1, y0, y1, z0, z1] (m)"
+    },
+    "cabColor": {
+      "value": [
+        0.88,
+        0.88,
+        0.88
+      ],
+      "desc": "Color blanco de la cabina tractora"
+    },
+    "cabBox": {
+      "value": [
+        3.6,
+        5.9,
+        0.9,
+        3.3,
+        -1.2,
+        1.2
+      ],
+      "desc": "Caja de la cabina tractora (m)"
+    },
+    "chassisColor": {
+      "value": [
+        0.08,
+        0.08,
+        0.09
+      ],
+      "desc": "Color oscuro del chasis inferior"
+    },
+    "chassisBox": {
+      "value": [
+        -6.3,
+        5.6,
+        0.75,
+        1.25,
+        -1.1,
+        1.1
+      ],
+      "desc": "Caja del chasis inferior (m)"
+    },
+    "tireColor": {
+      "value": [
+        0.02,
+        0.02,
+        0.02
+      ],
+      "desc": "Color negro de los neumáticos"
+    },
+    "wheelX": {
+      "value": [
+        -5.4,
+        -4.2,
+        2.2,
+        4.9
+      ],
+      "desc": "Posiciones longitudinales de los 4 ejes (m)"
+    },
+    "wheelZ": {
+      "value": [
+        -1.22,
+        0.92
+      ],
+      "desc": "Posiciones laterales izquierda/derecha de ruedas (m)"
+    },
+    "wheelRadius": {
+      "value": 0.5,
+      "desc": "Radio de las ruedas del camión (m)"
+    },
+    "wheelWidth": {
+      "value": 0.3,
+      "desc": "Anchura de cada rueda del camión (m)"
+    },
+    "windshield": {
+      "value": [
+        5.92,
+        2,
+        3.1,
+        1.1
+      ],
+      "desc": "Parabrisas del camión [x, y0, y1, halfZ] (m)"
+    },
+    "windshieldColor": {
+      "value": [
+        1,
+        1,
+        1
+      ],
+      "desc": "Color del parabrisas del camión"
+    },
+    "wheelSegs": {
+      "value": 12,
+      "desc": "Segmentos radiales de cada rueda del camión"
+    },
+    "bodyMat": {
+      "value": [
+        2,
+        89,
+        51
+      ],
+      "desc": "Material de la carrocería del camión [mat, p1, p2]"
+    },
+    "chassisMat": {
+      "value": [
+        2,
+        153,
+        76
+      ],
+      "desc": "Material del chasis del camión [mat, p1, p2]"
+    }
+  },
+  "pitBuilding": {
+    "_comment": "Edificio oficial de boxes (planta superior y barandillas acristaladas)",
+    "slabColor": {
+      "value": [
+        0.58,
+        0.58,
+        0.59
+      ],
+      "desc": "Color hormigón del forjado de la planta superior"
+    },
+    "slabThickness": {
+      "value": 0.35,
+      "desc": "Grosor del forjado de la planta superior (m)"
+    },
+    "terraceInset": {
+      "value": 1.8,
+      "desc": "Retranqueo de la terraza respecto a la fachada (m)"
+    },
+    "railGlassInset": {
+      "value": 1.75,
+      "desc": "Posición de la barandilla acristalada (m)"
+    },
+    "railTopOffset": {
+      "value": 1.45,
+      "desc": "Altura total de la barandilla sobre hS (m)"
+    },
+    "facadeOffset": {
+      "value": 1,
+      "desc": "Avance de la cristalera superior sobre vF (m)"
+    },
+    "cabinetMat": {
+      "value": [
+        2,
+        110,
+        150
+      ],
+      "desc": "Material del armario de herramientas en box abierto [mat, p1, p2]"
+    },
+    "cabinetColorScale": {
+      "value": 0.8,
+      "desc": "Factor de oscurecimiento del color de equipo en el armario"
+    },
+    "cabinetBox": {
+      "value": [
+        0.4,
+        1.6,
+        0,
+        1.05,
+        1.1,
+        0.4
+      ],
+      "desc": "Dimensiones del armario [x0Off0, x0Off1, y0, y1, backOff0, backOff1] (m)"
+    },
+    "tireStackMat": {
+      "value": 4,
+      "desc": "Material de la pila de neumáticos en box abierto"
+    },
+    "tireStackColor": {
+      "value": [
+        0.02,
+        0.02,
+        0.02
+      ],
+      "desc": "Color de la pila de neumáticos en box abierto"
+    },
+    "tireStackCyl": {
+      "value": [
+        0.6,
+        1.2,
+        0.32,
+        0.85,
+        10
+      ],
+      "desc": "Pila de neumáticos [x1Off, vFOff, radius, height, segs]"
+    },
+    "shutterMat": {
+      "value": 13,
+      "desc": "Material de la persiana en box cerrado"
+    },
+    "shutterColor": {
+      "value": [
+        0.7,
+        0.72,
+        0.74
+      ],
+      "desc": "Color de la persiana en box cerrado"
+    },
+    "shutterOffset": {
+      "value": 0.1,
+      "desc": "Desplazamiento frontal de la persiana sobre vF (m)"
+    },
+    "teamColors": {
+      "value": [
+        [0.12, 0.45, 0.95],
+        [0.98, 0.85, 0.05],
+        [0.85, 0.12, 0.12],
+        [0.1, 0.68, 0.35]
+      ],
+      "desc": "Paleta de colores de los equipos en la fachada de boxes"
+    },
+    "fasciaMat": {
+      "value": 17,
+      "desc": "Material de la banda de equipo en la fachada de boxes"
+    },
+    "fasciaDepth": {
+      "value": [
+        -0.12,
+        0.35
+      ],
+      "desc": "Desplazamiento en V de la banda de equipo [vMinOff, vMaxOff] (m)"
+    },
+    "bayDepth": {
+      "value": 7.5,
+      "desc": "Profundidad interior de cada box (m)"
+    },
+    "bayWallMargin": {
+      "value": 0.25,
+      "desc": "Margen lateral interior de cada box (m)"
+    },
+    "interiorMat": {
+      "value": 3,
+      "desc": "Material de las paredes y suelo interior de cada box"
+    },
+    "interiorColor": {
+      "value": [
+        0.38,
+        0.38,
+        0.39,
+        0.8
+      ],
+      "desc": "Color RGBA del interior de cada box"
+    },
+    "columnColor": {
+      "value": [
+        0.62,
+        0.63,
+        0.64
+      ],
+      "desc": "Color hormigón de los pilares entre boxes"
+    },
+    "columnDims": {
+      "value": [
+        0.22,
+        -0.5,
+        -0.15,
+        0.35
+      ],
+      "desc": "Dimensiones de los pilares [halfW, yMin, vMinOff, vMaxOff] (m)"
+    },
+    "cabinetMat": {
+      "value": [
+        2,
+        110,
+        150
+      ],
+      "desc": "Material del armario de herramientas en box abierto [mat, p1, p2]"
+    },
+    "cabinetColorScale": {
+      "value": 0.8,
+      "desc": "Factor de oscurecimiento del color de equipo en el armario"
+    },
+    "cabinetBox": {
+      "value": [
+        0.4,
+        1.6,
+        0,
+        1.05,
+        1.1,
+        0.4
+      ],
+      "desc": "Dimensiones del armario [x0Off0, x0Off1, y0, y1, backOff0, backOff1] (m)"
+    },
+    "tireStackMat": {
+      "value": 4,
+      "desc": "Material de la pila de neumáticos en box abierto"
+    },
+    "tireStackColor": {
+      "value": [
+        0.02,
+        0.02,
+        0.02
+      ],
+      "desc": "Color de la pila de neumáticos en box abierto"
+    },
+    "tireStackCyl": {
+      "value": [
+        0.6,
+        1.2,
+        0.32,
+        0.85,
+        10
+      ],
+      "desc": "Pila de neumáticos [x1Off, vFOff, radius, height, segs]"
+    },
+    "shutterMat": {
+      "value": 13,
+      "desc": "Material de la persiana en box cerrado"
+    },
+    "shutterColor": {
+      "value": [
+        0.7,
+        0.72,
+        0.74
+      ],
+      "desc": "Color de la persiana en box cerrado"
+    },
+    "shutterOffset": {
+      "value": 0.1,
+      "desc": "Desplazamiento frontal de la persiana sobre vF (m)"
+    }
+  },
+  "controlTower": {
+    "_comment": "Torre de Control (Rennleitung)",
+    "u0Offset": {
+      "value": -8.5,
+      "desc": "Desplazamiento longitudinal izquierdo respecto a u0 (m)"
+    },
+    "u1Offset": {
+      "value": 4.5,
+      "desc": "Desplazamiento longitudinal derecho respecto a u0 (m)"
+    },
+    "v0Offset": {
+      "value": -3.5,
+      "desc": "Desplazamiento frontal respecto a vF (m)"
+    },
+    "v1Offset": {
+      "value": 4.5,
+      "desc": "Desplazamiento trasero respecto a vF (m)"
+    },
+    "color": {
+      "value": [
+        0.35,
+        0.36,
+        0.38
+      ],
+      "desc": "Color hormigón de la torre de control"
+    },
+    "height": {
+      "value": 18.5,
+      "desc": "Altura de la torre de control (m)"
+    },
+    "antennaColor": {
+      "value": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "desc": "Color de la antena superior"
+    },
+    "antennaHeight": {
+      "value": 26.5,
+      "desc": "Altura total de la antena (m)"
+    }
+  }
+}

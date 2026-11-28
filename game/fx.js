@@ -1,7 +1,11 @@
 'use strict';
 // ---- 44_fx.js
 // Efectos: marcas de neumáticos (calcomanías en quads) y humo/polvo (partículas instanciadas). Todo preasignado.
-const SK_N = 4096, PT_N = 900;
+const FX_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_FX)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/fx.json'); } catch { return {}; } })() : {});
+const _fxC = FX_CFG.fx || {};
+const SK_N = _fxC.maxSkidSegments ? _fxC.maxSkidSegments.value : 4096;
+const PT_N = _fxC.maxParticles ? _fxC.maxParticles.value : 900;
 const FX = {
   sk: new Float32Array(SK_N * 6 * 5), skHead: 0, skLo: 1e9, skHi: -1, skBuf: null, skPipe: null,
   last: new Float32Array(4 * 8), active: new Uint8Array(4),

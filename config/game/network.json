@@ -1,0 +1,14 @@
+{
+  "network": {
+    "_comment": "Constantes del motor multijugador P2P WebRTC",
+    "defaultRemotePlayerName": { "value": "Rival P2P", "desc": "Nombre por defecto del jugador remoto" },
+    "iceServers": {
+      "value": [
+        { "urls": "stun:stun.l.google.com:19302" },
+        { "urls": "stun:stun1.l.google.com:19302" },
+        { "urls": "stun:stun.cloudflare.com:3478" }
+      ],
+      "desc": "Servidores STUN públicos para negociación WebRTC"
+    }
+  }
+}

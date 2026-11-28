@@ -12,6 +12,9 @@
  */
 
 const RootNetwork = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
+const NET_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_NETWORK)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/network.json'); } catch { return {}; } })() : {});
+const _netC = NET_CFG.network || {};
 
 const NET = {
   active: false,
@@ -22,7 +25,7 @@ const NET = {
   roomId: '',
   ping: 0,
   lastPingSent: 0,
-  remotePlayerName: 'Rival P2P',
+  remotePlayerName: _netC.defaultRemotePlayerName ? _netC.defaultRemotePlayerName.value : 'Rival P2P',
   remoteCarId: null,
 
   // Canales WebRTC
@@ -47,7 +50,7 @@ const NET = {
 
   // Configuración STUN pública gratuita de Google y Cloudflare
   rtcConfig: {
-    iceServers: [
+    iceServers: _netC.iceServers ? _netC.iceServers.value : [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' }

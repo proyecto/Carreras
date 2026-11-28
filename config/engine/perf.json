@@ -1,0 +1,9 @@
+{
+  "PERF": {
+    "_comment": "Constantes de medición de rendimiento GPU/CPU",
+    "cap": { "value": 16384, "desc": "Capacidad máxima de muestras de frametime por sesión" },
+    "poolSize": { "value": 6, "desc": "Número de buffers de lectura asíncrona en el pool de timestamps" },
+    "spikeThresholdMs": { "value": 14, "desc": "Umbral en ms para considerar un frame como pico lento" },
+    "maxSpikes": { "value": 24, "desc": "Número máximo de picos lentos detallados a registrar" }
+  }
+}

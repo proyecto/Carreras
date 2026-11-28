@@ -1,0 +1,14 @@
+{
+  "createVegasUrbanProps": {
+    "_comment": "Escenografía urbana y muro Jersey continuo de Las Vegas Strip F1",
+    "rngSeed": { "value": 777, "desc": "Semilla del generador pseudoaleatorio para edificios urbanos" },
+    "defaultWallStep": { "value": 4.0, "desc": "Paso longitudinal por defecto del muro Jersey continuo (m)" },
+    "jerseyThickness": { "value": 0.42, "desc": "Espesor del muro Jersey hacia el exterior (m)" },
+    "jerseyHeight": { "value": 1.0, "desc": "Altura del muro Jersey sobre la rasante (m)" },
+    "jerseyBaseDepth": { "value": 0.25, "desc": "Profundidad de cimentación bajo la rasante (m)" },
+    "jerseyMat": { "value": [2, 90, 80], "desc": "Material hormigón del muro Jersey [mat, p1, p2]" },
+    "jerseyColor": { "value": [0.74, 0.75, 0.77], "desc": "Color hormigón del muro Jersey" },
+    "wallCullS1": { "value": [3, 750], "desc": "Parámetros de culling S1 del muro Jersey [radius, dist]" },
+    "wallCullS2": { "value": [7, 950], "desc": "Parámetros de culling S2 de la valla superior [radius, dist]" }
+  }
+}

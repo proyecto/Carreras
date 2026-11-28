@@ -1,0 +1,149 @@
+{
+  "canvas": {
+    "_comment": "Dimensiones y formato del atlas de texturas",
+    "width": { "value": 4096, "desc": "Ancho físico del canvas y textura WebGPU (px)" },
+    "height": { "value": 2048, "desc": "Alto físico del canvas y textura WebGPU (px)" },
+    "logicalWidth": { "value": 2048, "desc": "Ancho lógico de coordenadas del atlas (px)" },
+    "logicalHeight": { "value": 1024, "desc": "Alto lógico de coordenadas del atlas (px)" },
+    "scale": { "value": 2, "desc": "Factor de escala HiDPI aplicado al contexto 2D" },
+    "bgColor": { "value": "#888", "desc": "Color de fondo neutro del atlas" },
+    "mipLevels": { "value": 12, "desc": "Niveles de mipmap de la textura WebGPU del atlas" }
+  },
+  "circuitBanners": {
+    "_comment": "Cabeceras oficiales de cada circuito en el atlas",
+    "layout": {
+      "width": 1024, "height": 128, "stripe1H": 8, "stripe2H": 4, "singleStripeH": 10,
+      "desc": "Dimensiones de la cabecera y grosor de las bandas superior/inferior (px)"
+    },
+    "vegas": {
+      "bg": "#070b14", "stripe1": "#e10600", "stripe2": "#d4af37",
+      "title": "LAS VEGAS STRIP CIRCUIT", "fontSize": 52, "textColor": "#ffffff", "weight": 1.85, "skew": 0.08
+    },
+    "nurburgring-gp": {
+      "bg": "#09131f", "stripe1": "#de0000", "stripe2": "#ffcc00",
+      "title": "NÜRBURGRING GP-STRECKE", "fontSize": 50, "textColor": "#ffffff", "weight": 1.8, "skew": 0.08
+    },
+    "spa-francorchamps": {
+      "bg": "#0b1626", "stripe1": "#ffcc00", "stripe2": "#de0000",
+      "title": "SPA-FRANCORCHAMPS", "fontSize": 52, "textColor": "#f5f5f5", "weight": 1.8, "skew": 0.08
+    },
+    "default": {
+      "bg": "#0b2a4a", "stripe1": "#e8b21c", "stripe2": null,
+      "title": "CIRCUIT GP", "fontSize": 50, "textColor": "#f4f1e6", "weight": 1.75, "skew": 0.1
+    }
+  },
+  "chevrons": {
+    "_comment": "Flechas de curva (chevrons)",
+    "bg": { "value": "#e9e6dc", "desc": "Color de fondo de la señal de curva" },
+    "fg": { "value": "#b3160f", "desc": "Color rojo de las flechas de curva" },
+    "count": { "value": 5, "desc": "Número de flechas repetidas en la franja" },
+    "xStart": { "value": 1034, "desc": "Posición X inicial de la primera flecha (px)" },
+    "step": { "value": 102, "desc": "Separación horizontal entre flechas (px)" },
+    "shape": { "value": [8, 48, 92, 64, 120, 44], "desc": "Geometría de cada flecha [yTop, dxMid, dxTip, yMid, yBot, dxInner] (px)" }
+  },
+  "pitLane": {
+    "_comment": "Cartel de entrada a boxes",
+    "bg": { "value": "#161a22", "desc": "Color de fondo del cartel de pit lane" },
+    "vegasStripe": { "value": "#00a3e0", "desc": "Color de banda para Las Vegas" },
+    "defaultStripe": { "value": "#e8b21c", "desc": "Color de banda para otros circuitos" },
+    "textColor": { "value": "#ffffff", "desc": "Color del texto de pit lane" },
+    "fontSize": { "value": 68, "desc": "Tamaño de fuente del texto de pit lane (px)" },
+    "layout": { "value": [1536, 0, 512, 128, 8], "desc": "Posición, tamaño y grosor de bandas [x, y, w, h, stripeH] (px)" }
+  },
+  "brands": {
+    "_comment": "Patrocinadores oficiales por circuito [nombre, fondo, texto, iconoId]",
+    "layout": {
+      "tileW": 512, "tileH": 128, "textXOffset": 116, "textW": 388,
+      "maxFontSize": 62, "maxTextW": 376, "weight": 1.8, "skew": 0.1,
+      "iconXOffset": 62, "iconYOffset": 64, "iconLineWidth": 7,
+      "ellipseIcon": [26, 38, 0.5],
+      "circleIcon": [36, 14],
+      "desc": "Dimensiones de cada cartel de patrocinador, icono y tipografía (px)"
+    },
+    "vegas": [
+      ["HEINEKEN 0.0", "#007A33", "#ffffff", 0],
+      ["TAG HEUER", "#0d0f12", "#00d2be", 1],
+      ["ARAMCO", "#002044", "#00A3E0", 3],
+      ["DHL", "#D40511", "#FFCC00", 4],
+      ["PIRELLI", "#D52B1E", "#FFD100", 6],
+      ["ROLEX", "#004d30", "#c8a85c", 5],
+      ["CAESARS PALACE", "#221230", "#e5c158", 3],
+      ["BELLAGIO", "#0e1e36", "#e5c158", 2],
+      ["MGM GRAND", "#0a2e1d", "#e5c158", 0],
+      ["WYNN LAS VEGAS", "#45131b", "#f5d688", 1],
+      ["LVMH", "#141416", "#f5f5f5", 5],
+      ["F1 LAS VEGAS", "#e10600", "#ffffff", 4]
+    ],
+    "nurburgring-gp": [
+      ["BILSTEIN", "#005bac", "#ffd000", 0],
+      ["ADAC", "#ffcc00", "#111111", 1],
+      ["RAVENOL", "#003087", "#ffd100", 3],
+      ["BBS", "#15171c", "#c8c8c8", 6],
+      ["MICHELIN", "#002060", "#ffea00", 2],
+      ["DEKRA", "#008754", "#ffffff", 4],
+      ["TOTAL ENERGIES", "#da291c", "#ffffff", 5],
+      ["RECARO", "#16181d", "#e30613", 0],
+      ["H&R SPRINGS", "#16181d", "#ed1c24", 1],
+      ["ROWE MOTOR OIL", "#002f6c", "#ff6600", 3],
+      ["PUMA MOTORSPORT", "#111111", "#ffffff", 2],
+      ["BOSCH", "#e2001a", "#ffffff", 4]
+    ],
+    "spa-francorchamps": [
+      ["ROLEX", "#004d30", "#c8a85c", 5],
+      ["TOTAL ENERGIES", "#da291c", "#ffffff", 2],
+      ["PIRELLI", "#D52B1E", "#FFD100", 6],
+      ["MOOBLUZ", "#0c1e38", "#ffffff", 3],
+      ["DHL", "#D40511", "#FFCC00", 4],
+      ["ARAMCO", "#002044", "#00A3E0", 1],
+      ["SPA-FRANCORCHAMPS", "#162238", "#dfba60", 0],
+      ["TAG HEUER", "#0d0f12", "#00d2be", 1],
+      ["HEINEKEN 0.0", "#007A33", "#ffffff", 0],
+      ["MICHELIN", "#002060", "#ffea00", 2],
+      ["AWS", "#1b2432", "#ff9900", 5],
+      ["LIQUI MOLY", "#003e7e", "#e30613", 3]
+    ],
+    "default": [
+      ["PIRELLI", "#D52B1E", "#FFD100", 6],
+      ["TAG HEUER", "#0d0f12", "#00d2be", 1],
+      ["ARAMCO", "#002044", "#00A3E0", 3],
+      ["DHL", "#D40511", "#FFCC00", 4],
+      ["MICHELIN", "#002060", "#ffea00", 2],
+      ["ROLEX", "#004d30", "#c8a85c", 5],
+      ["TOTAL ENERGIES", "#da291c", "#ffffff", 2],
+      ["BILSTEIN", "#005bac", "#ffd000", 0],
+      ["BOSCH", "#e2001a", "#ffffff", 4],
+      ["BBS", "#15171c", "#c8c8c8", 6],
+      ["PUMA", "#111111", "#ffffff", 1],
+      ["HEINEKEN 0.0", "#007A33", "#ffffff", 0]
+    ]
+  },
+  "distanceSigns": {
+    "_comment": "Placas de distancia de frenada",
+    "values": { "value": ["150", "100", "50"], "desc": "Distancias impresas en las placas (m)" },
+    "bg": { "value": "#f1efe6", "desc": "Color de fondo de las placas" },
+    "fg": { "value": "#141414", "desc": "Color de borde y texto de las placas" },
+    "layout": { "value": [960, 256, 512, 208, 9, 10], "desc": "Caja y borde [x0, stepW, y, h, lineWidth, inset] (px)" },
+    "font": { "value": [78, 104, 1.75], "desc": "Tipografía [size3Digits, size2Digits, weight]" }
+  },
+  "garageNumbers": {
+    "_comment": "Números de garaje en boxes",
+    "count": { "value": 20, "desc": "Cantidad de dorsales de garaje generados (01..N)" },
+    "bg": { "value": "#16181c", "desc": "Color de fondo del dorsal de garaje" },
+    "fg": { "value": "#f2c318", "desc": "Color amarillo del número de garaje" }
+  },
+  "hazardStripe": {
+    "_comment": "Franjas diagonales de peligro",
+    "bg": { "value": "#e9e6dc", "desc": "Color claro de fondo" },
+    "fg": { "value": "#c9281c", "desc": "Color rojo de las franjas diagonales" }
+  },
+  "crowdStrips": {
+    "_comment": "Parámetros de generación de tiras de público [count, stand, seed, w, h, originX, originY]",
+    "sitting": { "value": [16, 0, 31, 128, 224, 0, 1600], "desc": "Tira de espectadores sentados" },
+    "standing": { "value": [3, 1, 57, 104, 288, 3456, 1024], "desc": "Tira de comisarios/público de pie" }
+  },
+  "crowdRegions": {
+    "_comment": "Regiones UV de los sprites de público en el atlas lógico",
+    "sitting": { "value": [16, 128, 3, 803, 122, 218], "desc": "Región de espectadores sentados [count, stepX, padX, y, w, h]" },
+    "standing": { "value": [3, 1728, 104, 3, 515, 98, 282], "desc": "Región de público de pie [count, x0, stepX, padX, y, w, h]" }
+  }
+}

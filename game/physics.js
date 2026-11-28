@@ -3,7 +3,10 @@
 // Física de vehículos: modelo de 4 ruedas con transferencia de carga, elipse de rozamiento,
 // tracción delantera/trasera/total, transmisión automática/secuencial, freno de mano, peralte y colisiones.
 // Paso fijo a 120 Hz (1/120 s). Cero asignaciones de memoria durante simulación.
-const PHYS_DT = 1 / 120;
+const PHYSICS_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_PHYSICS)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/physics.json'); } catch { return {}; } })() : {});
+const _phC = PHYSICS_CFG.physics || {};
+const PHYS_DT = 1 / (_phC.hz ? _phC.hz.value : 120);
 const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_GEAR_UP = 1024, K_GEAR_DN = 2048, K_TC = 4096;
 // Entradas analógicas del mando: VIN[0] acelerador 0..1, VIN[1] freno 0..1, VIN[2] dirección -1..1.
 // Registro digital de entradas idéntico para teclado y vueltas guiadas.
@@ -11,7 +14,7 @@ const VIN = new Float64Array(3);
 const VIN_RIVAL = new Float64Array(3);
 const VIN_RIVAL2 = new Float64Array(3);
 const VIN_RIVAL3 = new Float64Array(3);
-const VP = {
+const VP = Object.assign({
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
   mu: 1.42, B: 9.5, C: 1.42, driveF: 1.0,
   gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
@@ -19,7 +22,7 @@ const VP = {
   clA: 0.0, aeroSplitF: 0.40,
   torqueBase: 180, torquePeak: 118, torqueDrop: 110, torquePeakStart: 0.6, torquePeakSpan: 5.4, torqueDropRpm: 6.0,
   shiftUpRpm: 6250, shiftDownRpm: 5350, revLimitRpm: 6500, maxRpm: 6700, idleRpm: 900,
-};
+}, _phC.defaultVehicleParams || {});
 
 function createVehicleState() {
   return {

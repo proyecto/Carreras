@@ -1,8 +1,11 @@
 'use strict';
 // ---- 50_i18n.js
 // Sistema de internacionalización del juego (español e inglés).
+const I18N_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_I18N)
+  || (typeof require === 'function' ? (() => { try { return require('../config/game/i18n.json'); } catch { return {}; } })() : {});
+const _i18nC = I18N_CFG.i18n || {};
 const I18N = {
-  lang: 'es', // Español por defecto
+  lang: _i18nC.defaultLang ? _i18nC.defaultLang.value : 'es', // Español por defecto
 
   locales: {},
 
@@ -35,7 +38,7 @@ const I18N = {
         if (p.has('lang')) saved = p.get('lang');
       }
       if (!saved && typeof localStorage !== 'undefined') {
-        saved = localStorage.getItem('race_game_lang');
+        saved = localStorage.getItem(_i18nC.storageKey ? _i18nC.storageKey.value : 'race_game_lang');
       }
     } catch (e) {}
 

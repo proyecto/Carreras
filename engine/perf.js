@@ -4,8 +4,11 @@
 // Con ?perf las consultas permanecen activadas. En el juego interactivo solo se activan
 // durante el benchmark o cuando las estadísticas están activas (perfAttach); fuera de eso los render passes
 // se ejecutan sin overhead de timestamp queries. Las promesas de mapAsync son la única asignación temporal.
+const PERF_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_PERF)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/perf.json'); } catch { return {}; } })() : {});
+const _pCfg = PERF_CFG.PERF || {};
 const PERF = {
-  on: false, qs: null, resolve: null, pool: [], names: [], n: 0, cap: 16384, count: 0,
+  on: false, qs: null, resolve: null, pool: [], names: [], n: 0, cap: _pCfg.cap ? _pCfg.cap.value : 16384, count: 0,
   gpu: null, span: null, cpu: null, raf: null, perPass: null, lastRaf: 0, t0: 0, pendingIdx: -1,
   rec: false, every: 1, live: new Float32Array(1), tw: null,
 };
@@ -25,7 +28,10 @@ function perfInit() {
   PERF.qs = dev.createQuerySet({ type: 'timestamp', count: PERF.n * 2 });
   for (const d of PERF._d) d.timestampWrites.querySet = PERF.qs;
   PERF.resolve = dev.createBuffer({ size: PERF.n * 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
-  for (let i = 0; i < 6; i++) {
+  const poolSz = _pCfg.poolSize ? _pCfg.poolSize.value : 6;
+  const spikeMs = _pCfg.spikeThresholdMs ? _pCfg.spikeThresholdMs.value : 14;
+  const maxSpk = _pCfg.maxSpikes ? _pCfg.maxSpikes.value : 24;
+  for (let i = 0; i < poolSz; i++) {
     const b = { buf: dev.createBuffer({ size: PERF.n * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }), free: true, frame: 0, cb: null };
     b.cb = () => {
       // En GPUs de tile (Apple Silicon) los intervalos de passes adyacentes se solapan (el vertex stage del
@@ -42,7 +48,7 @@ function perfInit() {
       if (k < PERF.cap) { PERF.gpu[k] = (hi - lo) * 1e-6; }
       PERF.live[0] = (hi - lo) * 1e-6;
       // Diagnóstico: guarda inicio/fin de cada pass (relativos al inicio del frame) de frames lentos
-      if ((hi - lo) * 1e-6 > 14 && PERF.nSpike < 24) { const o = PERF.nSpike++ * (PERF.n * 2 + 1); PERF.spike[o] = k; for (let i = 0; i < PERF.n * 2; i++) { const t = Number(a[i]); PERF.spike[o + 1 + i] = t >= tRef ? (t - lo) * 1e-6 : -1; } }
+      if ((hi - lo) * 1e-6 > spikeMs && PERF.nSpike < maxSpk) { const o = PERF.nSpike++ * (PERF.n * 2 + 1); PERF.spike[o] = k; for (let i = 0; i < PERF.n * 2; i++) { const t = Number(a[i]); PERF.spike[o + 1 + i] = t >= tRef ? (t - lo) * 1e-6 : -1; } }
       PERF.done++; b.buf.unmap(); b.free = true;
     };
     PERF.pool.push(b);

@@ -1,0 +1,17 @@
+{
+  "createMsgSphere": {
+    "_comment": "Orbe monumental MSG Sphere (base, anillo LED y malla Planet Earth)",
+    "defaultPos": { "value": [-750.0, 0.0, -1410.0], "desc": "Posición por defecto del centro de la esfera [x, y, z] (m)" },
+    "defaultRadius": { "value": 64.0, "desc": "Radio por defecto de la esfera (m)" },
+    "defaultHeight": { "value": 88.0, "desc": "Altura por defecto de la cúpula (m)" },
+    "baseMat": { "value": 3, "desc": "Material hormigón de la plataforma base" },
+    "baseColor": { "value": [0.22, 0.24, 0.26], "desc": "Color de la plataforma exterior" },
+    "plinthMat": { "value": 2, "desc": "Material del zócalo intermedio" },
+    "plinthColor": { "value": [0.42, 0.44, 0.46], "desc": "Color del zócalo intermedio" },
+    "ledRingMat": { "value": [6, 255, 0], "desc": "Material emisivo del anillo LED [mat, p1, p2]" },
+    "ledRingColor": { "value": [0.0, 0.88, 1.0], "desc": "Color cian del anillo LED de la base" },
+    "cylSegs": { "value": 48, "desc": "Segmentos radiales de la base cilíndrica" },
+    "gridSegs": { "value": [32, 56], "desc": "Resolución de la cúpula [nLat, nLon]" },
+    "cullS1": { "value": [7, 5000], "desc": "Parámetros de culling S1 de la base [radius, dist]" }
+  }
+}

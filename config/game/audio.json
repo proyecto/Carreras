@@ -1,0 +1,85 @@
+{
+  "audio": {
+    "_comment": "Constantes globales del sintetizador de audio procedural",
+    "masterVolume": { "value": 0.4, "desc": "Volumen general del sintetizador" },
+    "ambientGain": { "value": 0.5, "desc": "Ganancia de las capas ambientales" },
+    "blockSize": { "value": 32, "desc": "Tamaño de bloque de procesamiento de muestras" },
+    "cylinderGains": { "value": [1, 0.8, 0.92, 0.74], "desc": "Ganancias asimétricas de los 4 cilindros del motor" },
+    "cameraResonatorGains": {
+      "value": [0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1],
+      "desc": "Ganancias de resonadores del motor por cámara [directo, 105, 235, 470, 980, 2100 Hz, admisión, escape] x 3 cámaras"
+    },
+    "filters": {
+      "value": [
+        [0, 22, 0.7, 1], [1, 105, 2.2, 1], [2, 235, 3, 1], [3, 470, 3.5, 1], [4, 980, 3, 1], [5, 2100, 2.5, 1], [6, 1400, 1.1, 1], [7, 3400, 0.8, 1],
+        [8, 1900, 1.4, 1], [9, 1900, 1.4, 1],
+        [10, 300, 0.7, 1], [11, 300, 0.7, 1],
+        [12, 200, 0.7, 1],
+        [13, 650, 0.8, 1], [14, 2600, 1.6, 1],
+        [15, 82, 5, 1], [16, 310, 2.2, 1],
+        [17, 190, 1.2, 1], [18, 1300, 1.5, 1],
+        [19, 3100, 0.6, 1], [20, 3600, 0.6, 1],
+        [21, 5200, 22, 1], [22, 6300, 26, 1],
+        [23, 540, 2.4, 1], [24, 1150, 3, 0.8], [25, 2500, 3, 0.35], [26, 600, 2.4, 1], [27, 1250, 3, 0.8], [28, 2700, 3, 0.35],
+        [29, 1750, 1.1, 1],
+        [30, 8000, 0.7, 1], [31, 8000, 0.7, 1],
+        [32, 90, 3, 1],
+        [33, 20, 0.7, 1]
+      ],
+      "desc": "Banco de 34 filtros SVF [índice, frecuenciaHz, Q, ganancia]"
+    },
+    "birdRngSeed": { "value": 20261116, "desc": "Semilla LCG para generar las frases de cantos de pájaros" },
+    "birdPhrases": {
+      "value": [[0.11, 2350, 2550, 0.035, 0], [0.09, 3050, 2900, 0.035, 0], [0.27, 2750, 2050, 0.035, 0]],
+      "desc": "Notas de canto tipo 1 [duraciónS, fInicioHz, fFinHz, pausaS, vibrato]"
+    },
+    "engineFreqProfiles": {
+      "value": [
+        [105, 235, 470, 980, 2100],
+        [140, 280, 560, 1120, 2350],
+        [68, 142, 285, 620, 1380],
+        [115, 245, 510, 1250, 2700],
+        [62, 128, 260, 580, 1280],
+        [145, 290, 580, 1180, 2480],
+        [88, 185, 380, 820, 1850],
+        [175, 350, 710, 1550, 3100],
+        [98, 205, 430, 960, 2050]
+      ],
+      "desc": "Frecuencias de resonadores del motor por tipo de vehículo (Hz)"
+    },
+    "engineQProfiles": {
+      "value": [
+        [2.2, 3.0, 3.5, 3.0, 2.5],
+        [2.6, 3.2, 3.8, 3.2, 2.8],
+        [2.0, 2.8, 3.4, 2.9, 2.2],
+        [2.4, 3.0, 3.6, 3.1, 2.6],
+        [2.1, 2.7, 3.3, 2.8, 2.1],
+        [2.7, 3.4, 4.0, 3.4, 2.9],
+        [2.3, 2.9, 3.5, 3.0, 2.4],
+        [2.8, 3.5, 4.2, 3.6, 3.0],
+        [2.4, 3.0, 3.6, 3.1, 2.6]
+      ],
+      "desc": "Factores Q de resonadores del motor por tipo de vehículo"
+    },
+    "engineCylinders": {
+      "value": [
+        [30, 4], [20, 6], [15, 8], [15, 8], [15, 8], [20, 6], [20, 6], [12, 10], [20, 6]
+      ],
+      "desc": "Divisor de frecuencia y número de cilindros [cDiv, nCyl] por tipo de vehículo"
+    },
+    "engineCylinderGains": {
+      "value": [
+        [1.0, 0.80, 0.92, 0.74],
+        [1.0, 0.92, 0.88, 1.04, 0.90, 0.86],
+        [1.0, 0.76, 0.96, 0.72, 1.02, 0.74, 0.94, 0.76],
+        [1.0, 0.98, 1.0, 0.97, 1.0, 0.98, 1.0, 0.97],
+        [1.0, 0.74, 0.98, 0.70, 1.04, 0.72, 0.96, 0.74],
+        [1.0, 0.94, 0.86, 1.06, 0.92, 0.84],
+        [1.0, 0.88, 1.02, 0.85, 0.98, 0.90],
+        [1.0, 0.94, 0.98, 0.92, 1.02, 0.96, 1.0, 0.95, 0.97, 0.93],
+        [1.0, 0.90, 0.96, 1.02, 0.88, 0.94]
+      ],
+      "desc": "Ganancias individuales de combustión por cilindro para cada tipo de vehículo"
+    }
+  }
+}

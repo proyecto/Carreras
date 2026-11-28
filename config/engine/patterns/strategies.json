@@ -1,0 +1,31 @@
+{
+  "AIDrivingStrategies": {
+    "_comment": "Parámetros de las estrategias de conducción de la IA rival",
+    "RacingLine": {
+      "speedMultiplier": {
+        "value": 1.0,
+        "desc": "Multiplicador de velocidad objetivo en trazada normal"
+      }
+    },
+    "Overtake": {
+      "lateralOffset": {
+        "value": 1.8,
+        "desc": "Desplazamiento lateral de adelantamiento respecto al centro (m)"
+      },
+      "speedMultiplier": {
+        "value": 1.05,
+        "desc": "Multiplicador de velocidad objetivo durante adelantamiento"
+      }
+    },
+    "Defensive": {
+      "targetOffset": {
+        "value": 0.0,
+        "desc": "Desplazamiento lateral defensivo respecto al centro de pista (m)"
+      },
+      "speedMultiplier": {
+        "value": 0.98,
+        "desc": "Multiplicador de velocidad objetivo en modo defensivo"
+      }
+    }
+  }
+}

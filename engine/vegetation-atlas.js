@@ -1,10 +1,13 @@
 'use strict';
 // Atlas procedural de vegetación (hojas, agujas, corteza)
+const VEG_ATLAS_CFG = (typeof window !== 'undefined' && window.__CFG_ENGINE_VEGETATION_ATLAS)
+  || (typeof require === 'function' ? (() => { try { return require('../config/engine/vegetation-atlas.json'); } catch { return {}; } })() : {});
 window.buildVegAtlas = function() {
     const TS = VEG_TS, W = TS * VEG_TW, H = TS * VEG_TH;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const g = cv.getContext('2d', { willReadFrequently: true });
-    const rnd = mkRng(90210);
+    const _vaC = VEG_ATLAS_CFG.vegetationAtlas || {};
+    const rnd = mkRng(_vaC.rngSeed ? _vaC.rngSeed.value : 90210);
     const rr = (a, b) => a + (b - a) * rnd();
     const hsl = (h, s, l, a) => `hsla(${h.toFixed(1)},${s.toFixed(1)}%,${l.toFixed(1)}%,${a === undefined ? 1 : a})`;
 
