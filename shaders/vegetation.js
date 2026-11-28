@@ -1,13 +1,13 @@
 'use strict';
 WGSL["veg_common"] = `// Vegetación — animación de viento y utilidades comunes.
 #include palette
-const VEG_D0 = 90.0;   // Inicio/fin de transición malla → impostor (m)
-const VEG_D1 = 112.0;
-const VEG_U0 = 60.0;   // Sotobosque se atenúa entre U0 y U1
-const VEG_U1 = 80.0;
+const VEG_D0 = 65.0;   // Inicio/fin de transición malla → impostor (m)
+const VEG_D1 = 85.0;
+const VEG_U0 = 42.0;   // Sotobosque se atenúa entre U0 y U1
+const VEG_U1 = 58.0;
 const VEG_NT = 6.0;
-const VEG_L0 = 26.0;   // Hojas individuales se atenúan entre L0 y L1
-const VEG_L1 = 38.0;
+const VEG_L0 = 18.0;   // Hojas individuales se atenúan entre L0 y L1
+const VEG_L1 = 28.0;
 // LOD por tamaño en pantalla: compensado por factor de zoom de la cámara.
 // Distancias de transición escaladas por zoom.
 fn vegZoom() -> f32 { return clamp(F.post.y * 2.0, 0.3, 1.25); }

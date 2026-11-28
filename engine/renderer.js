@@ -153,7 +153,7 @@ class MeshSet {
       const pl = ctx.planes, np = ctx.nPlanes, rr = it.r; let vis = true;   // Test esfera × planos integrado (sin paso de números por argumento)
       for (let k = 0; k < np; k++) if (pl[k * 4] * x + pl[k * 4 + 1] * y + pl[k * 4 + 2] * z + pl[k * 4 + 3] < -rr) { vis = false; break; }
       if (!vis) continue;
-      const dx = x - ctx.cx, dy = y - ctx.cy, dz = z - ctx.cz, md = it.maxDist + it.r; if (dx * dx + dy * dy + dz * dz > md * md) continue;
+      const dx = x - ctx.cx, dy = y - ctx.cy, dz = z - ctx.cz, effMax = ctx.isMirror ? Math.min(it.maxDist, 180) : it.maxDist, md = effMax + it.r; if (dx * dx + dy * dy + dz * dz > md * md) continue;
       if (!set) { pass.setPipeline(pipe); set = true; }
       R.dyn2[0] = it.slot * 256; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
       pass.setVertexBuffer(0, it.vb); pass.setIndexBuffer(it.ib, 'uint32'); pass.drawIndexed(it.count);
@@ -365,38 +365,42 @@ function apiCanvasView() { return G.ctx.getCurrentTexture().createView(); }
 function renderFrame() {
   const dev = G.dev, c = R.cam, D = R.pd;
   frameUniforms();
-  for (let i = 0; i < 3; i++) cascadeSetup(i);
+  for (let i = 0; i < 3; i++) {
+    if (i === 0 || (R.frameIdx & 1) === (i - 1)) { cascadeSetup(i); setPass(1 + i, R.casc.vp[i], c.pos); }
+  }
   setPass(0, c.vpJ, c.pos);
-  for (let i = 0; i < 3; i++) setPass(1 + i, R.casc.vp[i], c.pos);
-  // Una cara del cubemap de entorno por frame (ciclo completo cada 6 frames)
-  // Dos caras del cubemap de entorno por frame en la posición actual del coche (ciclo cada 3 frames)
-  const face = (R.frameIdx * 2) % 6; R.cube.cur.set(R.cube.pos);
-  for (let k = 0; k < 2; k++) { cubeSetup(face + k); setPass(5 + face + k, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, (11 + k) * 64); }
-  if (R.mirrorCtx && R.mirror && R.mirror.active) mirrorSetup();
+  // Una cara del cubemap de entorno por frame en la posición actual del coche (ciclo cada 6 frames)
+  const face = R.frameIdx % 6; R.cube.cur.set(R.cube.pos);
+  cubeSetup(face); setPass(5 + face, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, 11 * 64);
+  const doMirrorRender = (R.mirrorCtx && R.mirror && R.mirror.active && ((R.frameN = (R.frameN || 0) + 1) & 1) === 0);
+  if (doMirrorRender) mirrorSetup();
   dev.queue.writeBuffer(R.frameBuf, 0, FR.data);
   dev.queue.writeBuffer(R.passBuf, 0, R.passData, 0, 15 * 64);
   dev.queue.writeBuffer(R.objBuf, 0, R.objData, 0, R.objCount * 64);
   for (let i = 0; i < R.preFrame.length; i++) R.preFrame[i]();
   const enc = apiEncoder();
-  // Pase de sombras cascada
+  // Pase de sombras cascada (0 cada frame; 1 y 2 alternas)
   for (let i = 0; i < 3; i++) {
+    if (i > 0 && (R.frameIdx & 1) !== (i - 1)) continue;
     const p = apiPass(enc, D.shadow[i]);
     drawAll(p, ctxFrom(KIND.SHADOW, R.casc.vp[i], 6, c.pos, i), 1 + i, R.passBG); p.end();
   }
   // Pase del espejo retrovisor digital (adelantado en el encoder)
   if (R.mirrorCtx && R.mirror && R.mirror.active) {
-    const pm = apiPass(enc, D.mirrorHdr);
-    cubeSky(pm, 14);
-    drawAll(pm, ctxFrom(KIND.CUBE, R.mirror.vp, 5, R.mirror.eye, 0, true), 13, R.passBGCube);
-    pm.end();
+    if (doMirrorRender) {
+      const pm = apiPass(enc, D.mirrorHdr);
+      cubeSky(pm, 14);
+      drawAll(pm, ctxFrom(KIND.CUBE, R.mirror.vp, 5, R.mirror.eye, 0, true), 13, R.passBGCube);
+      pm.end();
+    }
     D.mirrorOut.colorAttachments[0].view = R.mirrorCtx.getCurrentTexture().createView();
     fsPass(enc, D.mirrorOut, R.post.dbg, R.mirrorBG);
   }
-  // Caras del cubemap de entorno
-  for (let k = 0; k < 2; k++) {
-    const f = face + k; cubeSetup(f);
+  // Cara del cubemap de entorno (1 por frame)
+  {
+    const f = face; cubeSetup(f);
     const p = apiPass(enc, D.cube[f]);
-    cubeSky(p, 11 + k);
+    cubeSky(p, 11);
     drawAll(p, ctxFrom(KIND.CUBE, R.cube.vp, 6, R.cube.cur, 0), 5 + f, R.passBGCube); p.end();
     envMips(enc, f);
   }

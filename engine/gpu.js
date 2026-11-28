@@ -34,7 +34,7 @@ async function gpuInit() {
   G.dev.addEventListener('uncapturederror', e => { console.error('GPU: ' + e.error.message); G.lastErr = e.error.message; });
   G.canvas = document.getElementById('c');
   const res = (Q.get('res') || '').split('x');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.15);
   G.W = res.length === 2 ? +res[0] : Math.round(innerWidth * dpr);
   G.H = res.length === 2 ? +res[1] : Math.round(innerHeight * dpr);
   G.W = clamp(G.W & ~1, 320, 5120); G.H = clamp(G.H & ~1, 180, 2880);

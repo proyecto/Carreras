@@ -241,7 +241,7 @@ async function bootSimulation(autoDrive) {
       // Cadencia: a 120 Hz solo quedan 8,3 ms por frame. Si la vista más pesada no cabe con holgura, los frames se encolan
       // en la GPU y el tiempo de frame oscila; en ese caso el juego corre estable a 60 fps (un frame cada dos
       // del monitor de 120 Hz). ?hz=120 o ?hz=60 fuerza la elección.
-      GAME.gpuWorstMs = worst; GAME.minFrameMs = Q.get('hz') === '120' ? 0 : (Q.get('hz') === '60' || worst > 6.2) ? 14.6 : 0;
+      GAME.gpuWorstMs = worst; GAME.minFrameMs = Q.get('hz') === '60' ? 14.6 : 0;
     }
     for (let i = 0; i < 8; i++) renderFrame();
     R.cam.first = true;
