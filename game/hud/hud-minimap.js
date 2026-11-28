@@ -1,5 +1,8 @@
 "use strict";
 // Renderizado del minimapa, curva y radar
+const HUD_MINIMAP_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_HUD_HUD_MINIMAP)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/hud/hud-minimap.json'); } catch { return {}; } })() : {});
+const _hmC = HUD_MINIMAP_CFG.hudDrawMinimap || {};
 function hudDrawMinimap() {
   const H = HUD,
     m = H.m,

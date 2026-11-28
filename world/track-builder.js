@@ -2,6 +2,9 @@
 // ---- 10_track.js
 // Circuito: trazado, elevación, zonas y altura del terreno (CPU puro, sin GPU).
 // Convenciones: X este, Z sur, Y arriba. Sentido horario. s = distancia longitudinal (m), d = desviación lateral (m, + derecha).
+const TRACK_BUILDER_CFG = (typeof window !== 'undefined' && window.__CFG_WORLD_TRACK_BUILDER)
+  || (typeof require === 'function' ? (() => { try { return require('../config/world/track-builder.json'); } catch { return {}; } })() : {});
+const _tbC = TRACK_BUILDER_CFG.TRK || {};
 const TRK = {
   spec: null,
   N: 0,
@@ -15,7 +18,7 @@ const TRK = {
   k: null,
   bank: null,
   slope: null,
-  hw: 5.5, // semiancho del asfalto
+  hw: _tbC.defaultHalfWidth ? _tbC.defaultHalfWidth.value : 5.5, // semiancho del asfalto
   kerbL: null,
   kerbR: null, // 0..1 presencia de pianos (lado izquierdo / derecho)
   gravL: null,
@@ -31,7 +34,7 @@ const TRK = {
   gridZ0: 0,
   gridW: 0,
   gridH: 0,
-  gridCell: 24,
+  gridCell: _tbC.gridCell ? _tbC.gridCell.value : 24,
   buildingColliders: [],
   // Pit lane y edificaciones (coordenadas s,d respecto a recta principal)
   pit: {
@@ -47,11 +50,11 @@ const TRK = {
     padD1: 52,
   },
   stand: { s0: -75, s1: 75, d0: -15.5, d1: -36 },
-  startS: -14,
-  startD: -1.6,
+  startS: _tbC.defaultStartS ? _tbC.defaultStartS.value : -14,
+  startD: _tbC.defaultStartD ? _tbC.defaultStartD.value : -1.6,
 };
-const KERB_W = 1.3,
-  APRON = 2.6;
+const KERB_W = _tbC.kerbWidth ? _tbC.kerbWidth.value : 1.3,
+  APRON = _tbC.apronWidth ? _tbC.apronWidth.value : 2.6;
 const ZONE = {
   ASPHALT: 0,
   KERB: 1,
@@ -387,14 +390,12 @@ function trackBuild(spec) {
     }
 
     // Las 4 escapatorias urbanas oficiales cerradas al fondo con Tecpro:
-    // 1. Curva 1 (Koval Hairpin, final recta meta, s = 80..160, exterior derecha): cajón 14 m ancho x 45 m largo
-    mark(TRK.barR, 80, 160, 21.0, 12);
-    // 2. Curva 5 (MSG Sphere Entry, s = 1880..2010, exterior izquierda)
-    mark(TRK.barL, 1880, 2010, 21.0, 12);
-    // 3. Curva 12 (Strip Entry, s = 3280..3420, exterior derecha): 14 m ancho x 40 m largo
-    mark(TRK.barR, 3280, 3420, 21.0, 12);
-    // 4. Curva 14 (Harmon Chicane, s = 5000..5180, exterior derecha): 15 m ancho x 65 m largo
-    mark(TRK.barR, 5000, 5180, 22.0, 14);
+    const vRunoffs = _tbC.vegasRunoffs ? _tbC.vegasRunoffs.value : [
+      ['R', 80, 160, 21.0, 12], ['L', 1880, 2010, 21.0, 12], ['R', 3280, 3420, 21.0, 12], ['R', 5000, 5180, 22.0, 14]
+    ];
+    for (const [sd, s0, s1, w, mg] of vRunoffs) {
+      mark(sd === 'L' ? TRK.barL : TRK.barR, s0, s1, w, mg);
+    }
   } else {
     // Barreras: estándar a 8.5 m del borde; tras la grava; limitadas en lado interior
     for (let i = 0; i < N; i++) {
@@ -648,15 +649,18 @@ function trackSurfY(i0, f, d) {
 function naturalH(x, z) {
   if (TRK.spec && typeof TRK.spec.naturalH === "function")
     return TRK.spec.naturalH(x, z, TRK.cx, TRK.cz);
+  const nh = _tbC.naturalHeight || {};
+  const uP = nh.undulation || [0.0065, 3.1, -1.7, 4, 14, 60, 320];
+  const hP = nh.hills || [0.0011, 7.7, 2.2, 5, 120, 380, 1700];
   const dx = x - TRK.cx,
     dz = z - TRK.cz,
     r = Math.hypot(dx, dz);
   const und =
-    (fbm(x * 0.0065 + 3.1, z * 0.0065 - 1.7, 4) - 0.5) *
-    14 *
-    smooth(60, 320, r);
-  const rn = 1 - Math.abs(fbm(x * 0.0011 + 7.7, z * 0.0011 + 2.2, 5) * 2 - 1);
-  const hills = rn * rn * 120 * smooth(380, 1700, r);
+    (fbm(x * uP[0] + uP[1], z * uP[0] + uP[2], uP[3]) - 0.5) *
+    uP[4] *
+    smooth(uP[5], uP[6], r);
+  const rn = 1 - Math.abs(fbm(x * hP[0] + hP[1], z * hP[0] + hP[2], hP[3]) * 2 - 1);
+  const hills = rn * rn * hP[4] * smooth(hP[5], hP[6], r);
   return und + hills;
 }
 // cota del terreno con el trazado de pista integrado. Empleada para rellenar el campo de alturas y la malla del terreno.

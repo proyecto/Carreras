@@ -1,0 +1,17 @@
+{
+  "hudDrawLeaderboard": {
+    "_comment": "Constantes de la tabla de clasificación del HUD",
+    "playerColor": { "value": "#ff5a36", "desc": "Color distintivo del jugador en la clasificación" },
+    "defaultCarName": { "value": "GT3", "desc": "Nombre por defecto si el coche no tiene nombre ni id" }
+  },
+  "hudDraw": {
+    "_comment": "Constantes de los relojes analógicos (velocidad y RPM)",
+    "cockpitCamId": { "value": 3, "desc": "Índice de cámara de cabina (oculta retrovisor virtual y muestra DDU)" },
+    "defaultMaxKmh10": { "value": 2000, "desc": "Velocidad máxima por defecto en décimas de km/h (200 km/h)" },
+    "defaultMaxRpm": { "value": 7000, "desc": "RPM máximas por defecto si el coche no especifica límite" },
+    "dialStartDeg": { "value": 145, "desc": "Ángulo inicial de la escala de los relojes (grados)" },
+    "dialSpanDeg": { "value": 250, "desc": "Recorrido angular total de la escala de los relojes (grados)" },
+    "needleTailRatio": { "value": 0.16, "desc": "Longitud trasera de la aguja relativa al radio del reloj" },
+    "needleTipRatio": { "value": 0.86, "desc": "Longitud delantera de la aguja relativa al radio del reloj" }
+  }
+}

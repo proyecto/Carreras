@@ -1,0 +1,7 @@
+{
+  "WORLD": {
+    "_comment": "Constantes de renderizado del escenario y distancia de copa arbórea",
+    "canopyStart": { "value": 320, "desc": "Distancia a la que el sotobosque empieza a transicionar a textura de copa (m)" },
+    "canopyEnd": { "value": 900, "desc": "Distancia a la que el sotobosque completa la transición a textura de copa (m)" }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "GS": {
+    "_comment": "Constantes iniciales del estado de juego",
+    "tvMaxCams": { "value": 64, "desc": "Número máximo de cámaras de TV en pista" },
+    "tvFov": { "value": 0.3, "desc": "Campo de visión inicial de la cámara TV (rad)" }
+  }
+}

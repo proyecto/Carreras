@@ -53,6 +53,9 @@ function vegArchetypes() {
 
 // ---- 33_veg_c_sys.js
 // Vegetación — distribución de instancias, impostores precomputados en inicialización y renderizado (malla cercana, impostor lejano).
+const WORLD_VEG_CFG = (typeof window !== 'undefined' && window.__CFG_WORLD_VEGETATION)
+  || (typeof require === 'function' ? (() => { try { return require('../config/world/vegetation.json'); } catch { return {}; } })() : {});
+const _wvC = WORLD_VEG_CFG.VEG || {};
 const VEG = {
   on: true,
   onMesh: true,
@@ -61,10 +64,10 @@ const VEG = {
   onShadow: true,
   onGrass: true,
   onCube: true,
-  CELL: 64,
-  SUP: 256,
-  NC: 52,
-  NS: 13,
+  CELL: _wvC.CELL ? _wvC.CELL.value : 64,
+  SUP: _wvC.SUP ? _wvC.SUP.value : 256,
+  NC: _wvC.NC ? _wvC.NC.value : 52,
+  NS: _wvC.NS ? _wvC.NS.value : 13,
   x0: 0,
   z0: 0,
   n: 0,
@@ -100,7 +103,7 @@ const VEG_INST = {
 };
 
 function vegPlace() {
-  const rnd = mkRng(4711),
+  const rnd = mkRng(_wvC.rngSeed ? _wvC.rngSeed.value : 4711),
     V = VEG,
     half = (V.NC * V.CELL) / 2;
   V.x0 = TRK.cx - half;
@@ -860,6 +863,7 @@ queueMicrotask(() =>
 
 // ---- 33_veg_d_grass.js
 // Vegetación — hierba en anillos concéntricos (GPU). Culling por bloque en CPU con cero asignaciones por fotograma.
+const _wgC = WORLD_VEG_CFG.GRASS || {};
 const GRASS = {
   // anel: célula (m), células por bloco, blocos por lado, segmentos, [entra0, entra1, sai0, sai1] em DISTÂNCIA EFETIVA
   // (distância à câmera × zoom da lente: 1 m efetivo = o que a câmera de perseguição vê a 1 m), largura base, anel anterior
@@ -867,7 +871,7 @@ const GRASS = {
   // Los anillos se centran en el PUNTO DE INTERÉS: junto a la cámara en persecución/capó, o sobre el coche en cámaras de TV
   // (a lente longa enquadra um gramado a 30–400 m da câmera: é lá que as lâminas precisam existir).
   // K = 0: anillo de matas de hierba (quad con textura de hierba del atlas: decenas de briznas finas por quad)
-  rings: [
+  rings: (_wgC.rings ? _wgC.rings.value : null) || [
     {
       cell: 0.075,
       bs: 36,

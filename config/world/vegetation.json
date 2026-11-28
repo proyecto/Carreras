@@ -1,0 +1,24 @@
+{
+  "VEG": {
+    "_comment": "Constantes de rejilla espacial de vegetación",
+    "CELL": { "value": 64, "desc": "Tamaño de celda de vegetación (m)" },
+    "SUP": { "value": 256, "desc": "Tamaño de supercelda para impostores (m)" },
+    "NC": { "value": 52, "desc": "Número de celdas por lado" },
+    "NS": { "value": 13, "desc": "Número de superceldas por lado" },
+    "rngSeed": { "value": 4711, "desc": "Semilla pseudoaleatoria de distribución de vegetación" }
+  },
+  "GRASS": {
+    "_comment": "Anillos concéntricos de hierba GPU [cell, bs, B, K, q, w, prev, tele]",
+    "rings": {
+      "value": [
+        { "cell": 0.075, "bs": 36, "B": 10, "K": 3, "q": [-1, -0.5, 7.2, 11.2], "w": 0.0095, "prev": -1 },
+        { "cell": 0.13, "bs": 40, "B": 12, "K": 2, "q": [7.5, 10.5, 26, 31.5], "w": 0.017, "prev": 0 },
+        { "cell": 0.38, "bs": 48, "B": 10, "K": 0, "q": [9, 16, 64, 82], "w": 0.36, "prev": 1 },
+        { "cell": 0.6, "bs": 48, "B": 14, "K": 0, "q": [58, 80, 225, 268], "w": 0.8, "prev": 2 },
+        { "cell": 0.9, "bs": 64, "B": 14, "K": 0, "q": [215, 262, 480, 545], "w": 1.1, "prev": 3, "tele": 1 },
+        { "cell": 0.24, "bs": 40, "B": 16, "K": 1, "q": [23, 30, 58, 74], "w": 0.03, "prev": 1 }
+      ],
+      "desc": "Configuración de los 6 anillos de detalle de hierba"
+    }
+  }
+}

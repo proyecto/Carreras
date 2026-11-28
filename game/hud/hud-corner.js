@@ -1,12 +1,15 @@
 "use strict";
 // Componente HUD: Aviso de próxima curva y radar
+const HUD_CORNER_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_HUD_HUD_CORNER)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/hud/hud-corner.json'); } catch { return {}; } })() : {});
+const _hcC = HUD_CORNER_CFG.HudCornerAdvisory || {};
 const HudCornerAdvisory = {
   draw(m, r, Hh, W, trk, s) {
     if (!trk || !trk.N) return;
     const N = trk.N,
-      ds = trk.ds || 5,
+      ds = trk.ds || (_hcC.defaultDs ? _hcC.defaultDs.value : 5),
       kl = trk.lineK || trk.k;
-    const padX = Math.round(r * 0.12);
+    const padX = Math.round(r * (_hcC.padXRatio ? _hcC.padXRatio.value : 0.12));
     const curTrackS = ((s % trk.L) + trk.L) % trk.L;
     const i0 = ((Math.floor(s / ds) % N) + N) % N;
 
@@ -68,11 +71,12 @@ const HudCornerAdvisory = {
     }
 
     // Dimensiones del radar a la derecha
-    const radarW = Math.round(r * 1.1);
-    const radarH = Math.round(r * 0.74);
+    const rLay = _hcC.radarLayout ? _hcC.radarLayout.value : [1.1, 0.74, 0.08, 0.05];
+    const radarW = Math.round(r * rLay[0]);
+    const radarH = Math.round(r * rLay[1]);
     const radarX = W - padX - radarW;
-    const radarY = Math.round(r * 0.08);
-    const radarR = Math.round(r * 0.05);
+    const radarY = Math.round(r * rLay[2]);
+    const radarR = Math.round(r * rLay[3]);
 
     // Anchura máxima disponible para el bloque de texto izquierdo
     const maxTextW = radarX - padX - Math.round(r * 0.05);

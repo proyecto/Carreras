@@ -1,0 +1,34 @@
+{
+  "TRK": {
+    "_comment": "Constantes por defecto de geometría y zonas del circuito",
+    "defaultHalfWidth": { "value": 5.5, "desc": "Semiancho por defecto del asfalto (m)" },
+    "gridCell": { "value": 24, "desc": "Tamaño de celda de la rejilla espacial del circuito (m)" },
+    "kerbWidth": { "value": 1.3, "desc": "Anchura estándar de los pianos FIA (m)" },
+    "apronWidth": { "value": 2.6, "desc": "Anchura del arcén pavimentado exterior (m)" },
+    "defaultStartS": { "value": -14, "desc": "Posición longitudinal S de salida por defecto (m)" },
+    "defaultStartD": { "value": -1.6, "desc": "Desviación lateral D de salida por defecto (m)" },
+    "defaultPit": {
+      "s0": -100, "s1": 190, "wallD": 7.6, "laneD0": 8.6, "laneD1": 17.0,
+      "bldS0": -62, "bldS1": 78, "bldD0": 17.6, "bldD1": 31, "padD1": 52,
+      "desc": "Coordenadas por defecto del pit lane y edificios de boxes"
+    },
+    "defaultStand": {
+      "s0": -75, "s1": 75, "d0": -15.5, "d1": -36,
+      "desc": "Coordenadas por defecto de la tribuna principal"
+    },
+    "vegasRunoffs": {
+      "value": [
+        ["R", 80, 160, 21.0, 12],
+        ["L", 1880, 2010, 21.0, 12],
+        ["R", 3280, 3420, 21.0, 12],
+        ["R", 5000, 5180, 22.0, 14]
+      ],
+      "desc": "Escapatorias urbanas de Las Vegas [lado(L/R), s0, s1, anchuraBar, margen]"
+    },
+    "naturalHeight": {
+      "undulation": [0.0065, 3.1, -1.7, 4, 14, 60, 320],
+      "hills": [0.0011, 7.7, 2.2, 5, 120, 380, 1700],
+      "desc": "Parámetros fBm de relieve base [freq, offX, offZ, octaves, amp, smoothMinR, smoothMaxR]"
+    }
+  }
+}

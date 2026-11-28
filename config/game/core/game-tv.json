@@ -1,0 +1,7 @@
+{
+  "poseApply": {
+    "_comment": "Constantes de aplicación de poses fijas de verificación visual",
+    "warmupFrames": { "value": 60, "desc": "Número de frames de calentamiento tras aplicar una pose" },
+    "defaultDt": { "value": 0.016666666666666666, "desc": "Paso de tiempo por frame de calentamiento (1/60 s)" }
+  }
+}

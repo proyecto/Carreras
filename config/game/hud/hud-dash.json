@@ -1,0 +1,24 @@
+{
+  "hudDrawDash": {
+    "_comment": "Constantes del display cockpit Porsche DDU (#hdash)",
+    "baseW": { "value": 340, "desc": "Anchura base lógica del display (px)" },
+    "baseH": { "value": 203, "desc": "Altura base lógica del display (px)" },
+    "defaultMaxRpm": { "value": 9000, "desc": "RPM máximas por defecto si el coche no especifica maxRpm" },
+    "minRpm": { "value": 2000, "desc": "RPM mínimas a partir de las cuales se encienden los LEDs" },
+    "nLeds": { "value": 16, "desc": "Número de LEDs de cambio en la barra superior" },
+    "ledColors": { "value": ["#38bdf8", "#22c55e", "#ef4444"], "desc": "Colores de LEDs [bajo, medio, corte]" },
+    "ledOffColor": { "value": "rgba(255,255,255,0.06)", "desc": "Color de LED apagado" },
+    "dduBg": { "value": "#05080f", "desc": "Color de fondo del panel DDU" },
+    "dduY": { "value": 48, "desc": "Desplazamiento vertical del panel DDU bajo la barra LED (px)" },
+    "dduH": { "value": 155, "desc": "Altura del panel DDU bajo la barra LED (px)" },
+    "defaultTemps": {
+      "value": [
+        ["Oil temp", "25.0"],
+        ["Oil press", "0.00"],
+        ["Water temp", "23.00"],
+        ["Water press", "0.4"]
+      ],
+      "desc": "Etiquetas y valores por defecto de temperaturas y presiones del DDU"
+    }
+  }
+}

@@ -1,5 +1,8 @@
 "use strict";
 // Clasificación, relojes (velocidad/RPM) y visibilidad del HUD
+const HUD_GAUGES_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_HUD_HUD_GAUGES)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/hud/hud-gauges.json'); } catch { return {}; } })() : {});
+const _hgC = HUD_GAUGES_CFG.hudDrawLeaderboard || {};
 function hudDrawLeaderboard() {
   const H = HUD;
   if (!H.cp || !H.p) return;
@@ -113,7 +116,8 @@ function hudRead() {
 }
 
 function hudDraw() {
-  const isCockpit = typeof GS !== "undefined" && GS.cam === 3;
+  const hdCfg = HUD_GAUGES_CFG.hudDraw || {};
+  const isCockpit = typeof GS !== "undefined" && GS.cam === (hdCfg.cockpitCamId ? hdCfg.cockpitCamId.value : 3);
   if (HUD.cmirror && HUD.vis) {
     HUD.cmirror.style.display = isCockpit ? "none" : "block";
   }
@@ -151,19 +155,23 @@ function hudDraw() {
       16,
     );
     g.beginPath();
-    const mK = L[8] || 2000,
-      mR = (L[9] || 7000) / 10;
+    const mK = L[8] || (hdCfg.defaultMaxKmh10 ? hdCfg.defaultMaxKmh10.value : 2000),
+      mR = (L[9] || (hdCfg.defaultMaxRpm ? hdCfg.defaultMaxRpm.value : 7000)) / 10;
+    const dStart = hdCfg.dialStartDeg ? hdCfg.dialStartDeg.value : 145;
+    const dSpan = hdCfg.dialSpanDeg ? hdCfg.dialSpanDeg.value : 250;
+    const nTail = hdCfg.needleTailRatio ? hdCfg.needleTailRatio.value : 0.16;
+    const nTip = hdCfg.needleTipRatio ? hdCfg.needleTipRatio.value : 0.86;
     for (let d = 0; d < 2; d++) {
       const a =
-          (145 + (d ? ar * (250 / mR) : an * (250 / mK))) *
+          (dStart + (d ? ar * (dSpan / mR) : an * (dSpan / mK))) *
           0.017453292519943295,
         co = Math.cos(a),
         si = Math.sin(a),
         cx = L[d * 2] * 16,
         cY = cy * 16,
         len = r * 16;
-      g.moveTo((cx - co * len * 0.16) | 0, (cY - si * len * 0.16) | 0);
-      g.lineTo((cx + co * len * 0.86) | 0, (cY + si * len * 0.86) | 0);
+      g.moveTo((cx - co * len * nTail) | 0, (cY - si * len * nTail) | 0);
+      g.lineTo((cx + co * len * nTip) | 0, (cY + si * len * nTip) | 0);
     }
     g.stroke();
     const hr = L[6];

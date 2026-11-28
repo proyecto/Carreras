@@ -1,0 +1,11 @@
+{
+  "HudCornerAdvisory": {
+    "_comment": "Constantes de detección de próxima curva y radar",
+    "defaultDs": { "value": 5, "desc": "Paso longitudinal por defecto si trk.ds no está definido (m)" },
+    "padXRatio": { "value": 0.12, "desc": "Margen horizontal relativo al radio r" },
+    "lookaheadSamples": { "value": 120, "desc": "Muestras por delante para buscar el ápice de curvatura máxima" },
+    "defaultCornerLen": { "value": 30, "desc": "Longitud por defecto de una curva si falta s1 (m)" },
+    "cornerMargin": { "value": 6, "desc": "Margen de entrada/salida para detectar si el coche está en curva (m)" },
+    "radarLayout": { "value": [1.1, 0.74, 0.08, 0.05], "desc": "Dimensiones del radar relativas a r [wRatio, hRatio, yRatio, rRatio]" }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "hudDrawMinimap": {
+    "_comment": "Constantes del minimapa del HUD",
+    "yS1Ratio": { "value": 0.9, "desc": "Posición vertical relativa de la primera línea de estado" },
+    "yS2Ratio": { "value": 1.42, "desc": "Posición vertical relativa de la segunda línea de estado" },
+    "defaultRivalColor": { "value": "#38bdf8", "desc": "Color por defecto del marcador del rival en el minimapa" }
+  }
+}

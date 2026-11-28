@@ -2,6 +2,9 @@
 // ---- 31_world.js
 // Escenario: terreno estático en quadtree (denso junto a la pista, grueso lejos) y cinta de pista (asfalto, pianos, arcén).
 // Todo estático: sin cambios bruscos de LOD en tiempo de ejecución.
+const TRACK_MESH_CFG = (typeof window !== 'undefined' && window.__CFG_WORLD_TRACK_MESH)
+  || (typeof require === 'function' ? (() => { try { return require('../config/world/track-mesh.json'); } catch { return {}; } })() : {});
+const _tmC = TRACK_MESH_CFG.WORLD || {};
 const WORLD = {
   active: !["test", "car", "placeholder"].includes(Q.get("scene") || "game"),
   line: null, // Desviación lateral de la trazada por muestra (usa TRK.line si existe)
@@ -10,8 +13,8 @@ const WORLD = {
   tvCams: [], // preenchido em 32_props.js: {x, y, z, s} (posições sugeridas das câmeras de TV)
   stats: { tris: {}, ranges: {} },
   cnt: new Int32Array(6), // Contadores de diagnóstico [draws, triángulos]
-  canopyStart: 320,
-  canopyEnd: 900, // Distancia en que el sotobosque transiciona a textura de copa
+  canopyStart: _tmC.canopyStart ? _tmC.canopyStart.value : 320,
+  canopyEnd: _tmC.canopyEnd ? _tmC.canopyEnd.value : 900, // Distancia en que el sotobosque transiciona a textura de copa
 };
 // Conjunto de rangos de índices con esfera envolvente para frustum culling por pass.
 // flags: 1 principal, 2 sombra, 4 cubemap. maxDist: distancia de desvanecimiento.

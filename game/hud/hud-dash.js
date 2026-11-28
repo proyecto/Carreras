@@ -1,5 +1,8 @@
 "use strict";
 // Display cockpit Porsche DDU (#hdash)
+const HUD_DASH_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_HUD_HUD_DASH)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/hud/hud-dash.json'); } catch { return {}; } })() : {});
+const _hdC = HUD_DASH_CFG.hudDrawDash || {};
 function hudDrawDash() {
   const H = HUD,
     d = H.dash;
@@ -8,8 +11,8 @@ function hudDrawDash() {
     Hh = H.cdash.height;
   d.clearRect(0, 0, W, Hh);
 
-  const sx = W / 340,
-    sy = Hh / 203;
+  const sx = W / (_hdC.baseW ? _hdC.baseW.value : 340),
+    sy = Hh / (_hdC.baseH ? _hdC.baseH.value : 203);
   d.save();
   d.scale(sx, sy);
 
@@ -39,9 +42,12 @@ function hudDrawDash() {
   }
 
   // Desplazar el DDU negro debajo de PORSCHE (y = 48)
-  d.translate(0, 48);
-  d.fillStyle = "#05080f";
-  d.fillRect(0, 0, 340, 155);
+  const baseW = _hdC.baseW ? _hdC.baseW.value : 340;
+  const dduY = _hdC.dduY ? _hdC.dduY.value : 48;
+  const dduH = _hdC.dduH ? _hdC.dduH.value : 155;
+  d.translate(0, dduY);
+  d.fillStyle = _hdC.dduBg ? _hdC.dduBg.value : "#05080f";
+  d.fillRect(0, 0, baseW, dduH);
 
   const box = (x, y, w, h, stroke, fill) => {
     if (fill) {
@@ -88,7 +94,7 @@ function hudDrawDash() {
   });
 
   // Temperaturas y presiones
-  const temps = [
+  const temps = _hdC.defaultTemps ? _hdC.defaultTemps.value : [
     ["Oil temp", "25.0"],
     ["Oil press", "0.00"],
     ["Water temp", "23.00"],

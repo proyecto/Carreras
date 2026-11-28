@@ -1,4 +1,7 @@
 "use strict";
+const GAME_TV_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_GAME_TV)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/game-tv.json'); } catch { return {}; } })() : {});
+const _gtvC = GAME_TV_CFG.poseApply || {};
 // Cámaras de TV en borde de pista
 BUILD.push(async () => {
   if (GAME.mode === "test" || GAME.mode === "car") return;

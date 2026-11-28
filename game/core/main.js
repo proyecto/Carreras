@@ -1,5 +1,8 @@
 "use strict";
 // ---- 90_main.js
+const MAIN_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_MAIN)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/main.json'); } catch { return {}; } })() : {});
+const _mnC = MAIN_CFG.loading || {};
 // Inicialización, bucle principal y API de captura.
 const msgEl = document.getElementById("msg");
 const loadingBarEl = document.getElementById("loading-bar");
@@ -84,8 +87,11 @@ function buildTestGround() {
   const set = new MeshSet(fam);
   R.drawables.push(set);
   const mb = new MeshBuilder();
-  mb.mat(4).color(0.2, 0.2, 0.2);
-  mb.quad(-300, 0, 300, 300, 0, 300, 300, 0, -300, -300, 0, -300);
+  const tfCfg = MAIN_CFG.testSceneFloor || {};
+  const tfCol = tfCfg.color ? tfCfg.color.value : [0.2, 0.2, 0.2];
+  const tfHS = tfCfg.halfSize ? tfCfg.halfSize.value : 300;
+  mb.mat(tfCfg.mat ? tfCfg.mat.value : 4).color(tfCol[0], tfCol[1], tfCol[2]);
+  mb.quad(-tfHS, 0, tfHS, tfHS, 0, tfHS, tfHS, 0, -tfHS, -tfHS, 0, -tfHS);
   set.add(mb.upload(), 0, 7);
   return set;
 }
@@ -94,11 +100,12 @@ function buildPlaceholderWorld() {
   const fam = R.families.test || mkFamily("test", { src: "mat_test" });
   const set = new MeshSet(fam);
   R.drawables.push(set);
-  const st = 2,
+  const pwCfg = MAIN_CFG.placeholderWorld || {};
+  const st = pwCfg.step ? pwCfg.step.value : 2,
     w = Math.floor((HF.w - 1) / st),
     h = Math.floor((HF.h - 1) / st),
     loc = new Float64Array(4);
-  const cols = [
+  const cols = pwCfg.zoneColors ? pwCfg.zoneColors.value : [
     [0.05, 0.05, 0.055],
     [0.5, 0.1, 0.1],
     [0.105, 0.165, 0.042],

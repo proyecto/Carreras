@@ -1,5 +1,8 @@
 "use strict";
 // ---- 45_game.js
+const GAME_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_CORE_GAME)
+  || (typeof require === 'function' ? (() => { try { return require('../../config/game/core/game.json'); } catch { return {}; } })() : {});
+const _gsC = GAME_CFG.GS || {};
 // Lógica de juego: entradas, simulación a paso fijo, cámaras y pose del coche.
 const GS = {
   held: 0,
@@ -31,11 +34,11 @@ const GS = {
   chaseY: 0,
   chaseInit: false,
   hoodPos: new Float32Array(6),
-  tvData: new Float32Array(64 * 4),
+  tvData: new Float32Array((_gsC.tvMaxCams ? _gsC.tvMaxCams.value : 64) * 4),
   tvN: 0,
   tvCur: -1,
   tvAim: new Float32Array(3),
-  tvFov: 0.3,
+  tvFov: _gsC.tvFov ? _gsC.tvFov.value : 0.3,
   pl: new Float64Array(2),
   v3: new Float32Array(6),
   fxOn: true,
