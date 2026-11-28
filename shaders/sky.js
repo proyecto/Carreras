@@ -1,5 +1,6 @@
-'use strict';
-WGSL["atmos"] = `// Atmósfera (dispersión Rayleigh + Mie + ozono) y nubes volumétricas para horneado del cielo.
+"use strict";
+WGSL["atmos"] =
+  `// Atmósfera (dispersión Rayleigh + Mie + ozono) y nubes volumétricas para horneado del cielo.
 const RP = 6360e3; const RA = 6440e3;
 const BR = vec3f(5.8e-6, 13.6e-6, 33.1e-6); const HR = 8000.0;
 const BM = 26e-6; const HM = 1300.0; const GM = 0.78;
@@ -37,7 +38,8 @@ fn atmosphere(d: vec3f, sun: vec3f, alt: f32, tmax: f32) -> vec4f {
   return vec4f(col, (tt.x + tt.y + tt.z) / 3.0);
 }
 `;
-WGSL["skybake"] = `// Genera el cielo estático al atardecer (atmósfera + cúmulos volumétricos + cirros) en una textura
+WGSL["skybake"] =
+  `// Genera el cielo estático al atardecer (atmósfera + cúmulos volumétricos + cirros) en una textura
 // u = azimut, v = elevación (no lineal, mayor resolución en el horizonte). Alfa = transmitancia de nubes.
 #include fsq
 #include util

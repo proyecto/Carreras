@@ -1,5 +1,6 @@
-'use strict';
-WGSL["world_ground"] = `// Material del suelo (terreno y arcén comparten la misma función → unión invisible).
+"use strict";
+WGSL["world_ground"] =
+  `// Material del suelo (terreno y arcén comparten la misma función → unión invisible).
 // Césped cortado/silvestre, tierra, grava, hormigón, pit lane, sotobosque y copas de bosque.
 #include palette
 fn grHash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
@@ -167,12 +168,14 @@ fn groundSurf(wpos: vec3f, Ng: vec3f, forest: f32) -> Surface {
   return s;
 }
 `;
-WGSL["mat_terrain"] = `// Terreno: malla estática, material de suelo compartido. color.r de vértice = densidad boscosa.
+WGSL["mat_terrain"] =
+  `// Terreno: malla estática, material de suelo compartido. color.r de vértice = densidad boscosa.
 #include mesh_vert
 #include world_ground
 fn surf(in: V2F, ff: bool) -> Surface { return groundSurf(in.wpos, normalize(in.nrm), in.col.r); }
 `;
-WGSL["mat_track"] = `// Cinta de pista. uv = (s, d). color de vértice: r = trazada, g = humedad, b = curvatura, a = presencia de pianos.
+WGSL["mat_track"] =
+  `// Cinta de pista. uv = (s, d). color de vértice: r = trazada, g = humedad, b = curvatura, a = presencia de pianos.
 // Material: 0 asfalto, 1 piano/bordillo, 2 arcén/suelo
 #include mesh_vert
 #include world_ground

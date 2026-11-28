@@ -1,10 +1,11 @@
-'use strict';
+"use strict";
 WGSL["blit"] = `#include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @group(0) @binding(1) var s: sampler;
 @fragment fn fs(in: FsV) -> @location(0) vec4f { return textureSampleLevel(t, s, in.uv, 0.0); }
 `;
-WGSL["bloom"] = `// Bloom: cadena de reducción progresiva (13 muestras, promedio Karis en primer nivel) y carpa 3x3 aditiva.
+WGSL["bloom"] =
+  `// Bloom: cadena de reducción progresiva (13 muestras, promedio Karis en primer nivel) y carpa 3x3 aditiva.
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @group(0) @binding(1) var s: sampler;
@@ -32,7 +33,8 @@ fn kw(c: vec3f) -> f32 { return 1.0 / (1.0 + max(c.r, max(c.g, c.b))); }
 #endif
 }
 `;
-WGSL["expo"] = `// Exposición automática: luminancia media logarítmica suavizada temporalmente.
+WGSL["expo"] =
+  `// Exposición automática: luminancia media logarítmica suavizada temporalmente.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -51,7 +53,8 @@ WGSL["expo"] = `// Exposición automática: luminancia media logarítmica suaviz
   return vec4f(mix(prev, cur, a), 0.0, 0.0, 1.0);
 }
 `;
-WGSL["final"] = `// Salida final: bloom, exposición, mapeo tonal AgX, nitidez, viñeteado, grano cinematográfico y dithering.
+WGSL["final"] =
+  `// Salida final: bloom, exposición, mapeo tonal AgX, nitidez, viñeteado, grano cinematográfico y dithering.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -128,7 +131,8 @@ fn tone(c: vec3f) -> vec3f { return agx(c); }
   return vec4f(o, 1.0);
 }
 `;
-WGSL["taa"] = `// Antialiasing temporal (TAA): reproyección con velocidad dilatada, recorte de varianza en YCoCg e historial bicúbico.
+WGSL["taa"] =
+  `// Antialiasing temporal (TAA): reproyección con velocidad dilatada, recorte de varianza en YCoCg e historial bicúbico.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -201,7 +205,8 @@ struct TOut { @location(0) col: vec4f, @location(1) vel: vec4f }
   return o;
 }
 `;
-WGSL["mbtile"] = `// Motion blur etapa 1: velocidad máxima por tile (TILE px) y vecindad 3x3 (NEIGH).
+WGSL["mbtile"] =
+  `// Motion blur etapa 1: velocidad máxima por tile (TILE px) y vecindad 3x3 (NEIGH).
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
@@ -214,7 +219,8 @@ WGSL["mbtile"] = `// Motion blur etapa 1: velocidad máxima por tile (TILE px) y
   return vec4f(best, 0.0, 0.0);
 }
 `;
-WGSL["mblur"] = `// Motion blur por píxel (reconstrucción McGuire): desenfoque a lo largo del vector dominante,
+WGSL["mblur"] =
+  `// Motion blur por píxel (reconstrucción McGuire): desenfoque a lo largo del vector dominante,
 // ponderando muestras por profundidad y velocidad relativa (coche nítido, entorno desenfocado).
 #include fsq
 #include util

@@ -1,5 +1,6 @@
-if (typeof WGSL !== 'undefined') {
-  WGSL['mat_car_default'] = `// Material PBR estándar universal para carrocerías y piezas de coches
+if (typeof WGSL !== "undefined") {
+  WGSL["mat_car_default"] =
+    `// Material PBR estándar universal para carrocerías y piezas de coches
 #include mesh_vert
 @group(3) @binding(0) var tAtlas: texture_2d<f32>;
 

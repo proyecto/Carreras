@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 // Diccionario global de shaders WGSL (ensamblados por wgslPP en engine/gpu.js).
 const WGSL = {};
 
@@ -25,13 +25,15 @@ fn bumpXZ(n: vec3f, g: vec2f) -> vec3f { return normalize(n - vec3f(g.x, 0.0, g.
 // Base tangente a partir de la normal
 fn tbn(n: vec3f) -> mat3x3f { let s = select(-1.0, 1.0, n.z >= 0.0); let a = -1.0 / (s + n.z); let b = n.x * n.y * a; return mat3x3f(vec3f(1.0 + s * n.x * n.x * a, s * b, -s * n.x), vec3f(b, s + n.y * n.y * a, -n.y), n); }
 `;
-WGSL["fsq"] = `struct FsV { @builtin(position) pos: vec4f, @location(0) uv: vec2f }
+WGSL["fsq"] =
+  `struct FsV { @builtin(position) pos: vec4f, @location(0) uv: vec2f }
 @vertex fn vs(@builtin(vertex_index) i: u32) -> FsV {
   let p = vec2f(f32((i << 1u) & 2u), f32(i & 2u));
   return FsV(vec4f(p * 2.0 - 1.0, 0.0, 1.0), vec2f(p.x, 1.0 - p.y));
 }
 `;
-WGSL["common"] = `// Común a familias de geometría: utilidades + bindings globales del grupo 0.
+WGSL["common"] =
+  `// Común a familias de geometría: utilidades + bindings globales del grupo 0.
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
 @group(0) @binding(1) var sLin: sampler;     // Trilineal, repeat, anisotrópico
@@ -45,7 +47,8 @@ fn wmIn(xz: vec2f) -> bool { let p = xz - F.wm.xy; return p.x >= 0.0 && p.y >= 0
 fn wmHeight(xz: vec2f) -> f32 { return textureSampleLevel(tHeight, sClamp, (xz - F.wm.xy + 0.5) / vec2f(textureDimensions(tHeight)), 0.0).r; }
 fn wmZone(xz: vec2f) -> vec4f { if (!wmIn(xz)) { return vec4f(1.0, 0.0, 1.0, 0.0); } return textureSampleLevel(tZone, sClamp, ((xz - F.wm.xy) * 2.0 + 0.5) / vec2f(textureDimensions(tZone)), 0.0); }
 `;
-WGSL["gbuf"] = `// Interfaz entre familias de materiales y passes de geometría (G-buffer).
+WGSL["gbuf"] =
+  `// Interfaz entre familias de materiales y passes de geometría (G-buffer).
 struct Pass { viewProj: mat4x4f, camPos: vec4f, p: vec4f }
 @group(1) @binding(0) var<uniform> P: Pass; // @dyn
 
@@ -80,7 +83,8 @@ fn matA(m: u32) -> f32 { return f32((m >> 8u) & 255u) / 255.0; }
 fn matB(m: u32) -> f32 { return f32((m >> 16u) & 255u) / 255.0; }
 fn matC(m: u32) -> f32 { return f32((m >> 24u) & 255u) / 255.0; }
 `;
-WGSL["entry"] = `// Puntos de entrada por pase, generados en torno a vert()/surf() de la familia.
+WGSL["entry"] =
+  `// Puntos de entrada por pase, generados en torno a vert()/surf() de la familia.
 @vertex fn vs(in: VIn) -> V2F {
   let o = vert(in);
   var r: V2F;
@@ -118,7 +122,8 @@ struct GOut { @location(0) a: vec4f, @location(1) b: vec4f, @location(2) c: vec4
 }
 #endif
 `;
-WGSL["entry_fwd"] = `// Puntos de entrada para familias directas (pase forward de transparencias): define vert() y shade().
+WGSL["entry_fwd"] =
+  `// Puntos de entrada para familias directas (pase forward de transparencias): define vert() y shade().
 @vertex fn vs(in: VIn) -> V2F {
   let o = vert(in);
   var r: V2F;
@@ -128,7 +133,8 @@ WGSL["entry_fwd"] = `// Puntos de entrada para familias directas (pase forward d
 }
 @fragment fn fs(in: V2F, @builtin(front_facing) ff: bool) -> @location(0) vec4f { return shade(in, ff); }
 `;
-WGSL["fwd_common"] = `// Recursos de iluminación para familias directas (transparentes): grupo 3.
+WGSL["fwd_common"] =
+  `// Recursos de iluminación para familias directas (transparentes): grupo 3.
 @group(3) @binding(0) var tEnv: texture_cube<f32>;
 @group(3) @binding(1) var tShadow: texture_depth_2d_array;
 @group(3) @binding(2) var tShadowS: texture_depth_2d;
@@ -138,7 +144,8 @@ WGSL["fwd_common"] = `// Recursos de iluminación para familias directas (transp
 #include shadow
 #include fog
 `;
-WGSL["mesh_vert"] = `// Vértice estándar para mallas de MeshBuilder con transformación de objeto.
+WGSL["mesh_vert"] =
+  `// Vértice estándar para mallas de MeshBuilder con transformación de objeto.
 struct Obj { model: mat4x4f, prevModel: mat4x4f, p0: vec4f, p1: vec4f, p2: vec4f, p3: vec4f }
 @group(2) @binding(0) var<uniform> O: Obj; // @dyn
 struct VIn { @location(0) pos: vec3f, @location(1) nrm: vec4f, @location(2) uv: vec2f, @location(3) mat: vec4u, @location(4) col: vec4f }
@@ -154,7 +161,8 @@ fn vert(in: VIn) -> VSOut {
   return o;
 }
 `;
-WGSL["noisebake"] = `// Genera texturas de ruido tileables (una sola vez en inicialización).
+WGSL["noisebake"] =
+  `// Genera texturas de ruido tileables (una sola vez en inicialización).
 #include fsq
 struct NB { p: vec4f }   // x = fatia z (0..1) para 3D, y = modo
 @group(0) @binding(0) var<uniform> U: NB; // @dyn
@@ -198,7 +206,8 @@ fn wfbm(p: vec3f, per: f32) -> f32 { return worley(p, per) * 0.625 + worley(p * 
   return vec4f(a, b, c, d);
 }
 `;
-WGSL["palette"] = `// Paleta compartida (albedo lineal) — terreno, vegetación y props.
+WGSL["palette"] =
+  `// Paleta compartida (albedo lineal) — terreno, vegetación y props.
 const COL_GRASS = vec3f(0.105, 0.165, 0.042);       // Césped cortado
 const COL_GRASS_TALL = vec3f(0.165, 0.2, 0.06);     // Puntas de hierba alta (seca)
 const COL_GRASS_ROOT = vec3f(0.04, 0.07, 0.018);    // Base de hierba / suelo sombreado

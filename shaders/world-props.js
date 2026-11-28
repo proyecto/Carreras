@@ -1,4 +1,5 @@
-WGSL["mat_props"] = `// Materiais dos adereços do circuito (barreiras, construções, placas). cor.a do vértice = oclusão de ambiente assada.
+WGSL["mat_props"] =
+  `// Materiais dos adereços do circuito (barreiras, construções, placas). cor.a do vértice = oclusão de ambiente assada.
 // id: 1 aço galvanizado | 2 pintura (a = rugosidade, b = metal) | 3 concreto | 4 pneu (cor = tinta) | 5 vidro de fachada
 //     6 emissivo (a = intensidade) | 7 placa (atlas) | 8 assentos | 9 telha ondulada | 10 lona | 11 poste (some ao longe)
 //     (ids 1, 2 y 11: byte c = distancia de desvanecimiento por tramado / 4 m; 0 = permanente)

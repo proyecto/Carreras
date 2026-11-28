@@ -1,5 +1,6 @@
-'use strict';
-WGSL["glass"] = `// Cristales y ópticas transparentes (pase de transparencia hacia adelante). Dos dibujos por malla:
+"use strict";
+WGSL["glass"] =
+  `// Cristales y ópticas transparentes (pase de transparencia hacia adelante). Dos dibujos por malla:
 //   GLASS_MUL: multiplica el fondo por la transmitancia coloreada; GLASS_ADD: suma reflejo de entorno + brillo solar.
 // material: id 0 = cristal de ventanillas (color de vértice = tinte), 1 = lente transparente estriada (faros)
 #include mesh_vert

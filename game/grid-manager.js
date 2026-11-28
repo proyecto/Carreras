@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * ============================================================================
  * GESTOR DE PARRILLA Y MULTI-COCHE (game/grid-manager.js)
@@ -42,8 +42,14 @@ class GridManager {
       r.lapSeen = 0;
       r.lastLapTime = -1;
       r.bestLapTime = -1;
-      if (typeof vehicleReset === 'function') {
-        vehicleReset(trk.L + playerStartS + r.ds, playerStartD + r.dd, 0, r.veh, r.vin);
+      if (typeof vehicleReset === "function") {
+        vehicleReset(
+          trk.L + playerStartS + r.ds,
+          playerStartD + r.dd,
+          0,
+          r.veh,
+          r.vin,
+        );
       }
     }
   }
@@ -55,8 +61,8 @@ class GridManager {
     for (let i = 0; i < this.rivals.length; i++) {
       const r = this.rivals[i];
       if (!r.veh) continue;
-      if (typeof aiKeys === 'function') {
-        r.keys = (t < 0.5 || raceActive) ? 0 : aiKeys(r.veh.time, r.veh);
+      if (typeof aiKeys === "function") {
+        r.keys = t < 0.5 || raceActive ? 0 : aiKeys(r.veh.time, r.veh);
       } else {
         r.keys = 0;
       }
@@ -67,9 +73,12 @@ class GridManager {
    * Aplica un paso de físicas a 120 Hz para todos los rivales y resuelve colisiones.
    */
   stepPhysics(playerVeh, isNetActive) {
-    if (isNetActive && typeof NET !== 'undefined') {
+    if (isNetActive && typeof NET !== "undefined") {
       if (this.rivals[0] && this.rivals[0].veh) {
-        NET.updateRemoteVehicle(this.rivals[0].veh, typeof PHYS_DT !== 'undefined' ? PHYS_DT : 1 / 120);
+        NET.updateRemoteVehicle(
+          this.rivals[0].veh,
+          typeof PHYS_DT !== "undefined" ? PHYS_DT : 1 / 120,
+        );
         const r = this.rivals[0];
         const laps = r.veh.laps || 0;
         const lapSeen = r.lapSeen || 0;
@@ -91,7 +100,7 @@ class GridManager {
     } else {
       for (let i = 0; i < this.rivals.length; i++) {
         const r = this.rivals[i];
-        if (r.veh && r.vin && typeof vehicleStep === 'function') {
+        if (r.veh && r.vin && typeof vehicleStep === "function") {
           vehicleStep(r.keys || 0, r.veh, r.vin);
         }
         if (r.veh) {
@@ -116,7 +125,7 @@ class GridManager {
     }
 
     // Colisiones físicas entre jugador y rivales
-    if (typeof vehicleCarCollide === 'function' && playerVeh) {
+    if (typeof vehicleCarCollide === "function" && playerVeh) {
       for (let i = 0; i < this.rivals.length; i++) {
         const r = this.rivals[i];
         if (r.veh) {
@@ -139,7 +148,7 @@ class GridManager {
    * Interpola poses y actualiza matrices de ruedas y carrocería para el renderizador.
    */
   poseAll(al) {
-    if (typeof poseRival !== 'function') return;
+    if (typeof poseRival !== "function") return;
     for (let i = 0; i < this.rivals.length; i++) {
       const r = this.rivals[i];
       if (r.model && r.veh && r.gs) {
@@ -154,7 +163,7 @@ class GridManager {
   async buildAll() {
     for (let i = 0; i < this.rivals.length; i++) {
       const r = this.rivals[i];
-      if (r.model && typeof r.model.build === 'function' && !r.model.built) {
+      if (r.model && typeof r.model.build === "function" && !r.model.built) {
         await r.model.build();
         r.model.built = true;
       }
@@ -164,10 +173,10 @@ class GridManager {
 
 const gridManagerInstance = new GridManager();
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.GridManager = GridManager;
   window.gridManagerInstance = gridManagerInstance;
 }
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = { GridManager, gridManagerInstance };
 }

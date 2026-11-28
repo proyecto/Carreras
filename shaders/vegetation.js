@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 WGSL["veg_common"] = `// Vegetación — animación de viento y utilidades comunes.
 #include palette
 const VEG_D0 = 65.0;   // Inicio/fin de transición malla → impostor (m)
@@ -71,7 +71,8 @@ fn vegShadowMesh(base: vec3f, fade: f32) -> bool {
 }
 #endif
 `;
-WGSL["veg_bake"] = `// Vegetación — horneado de impostores ortográficos en 8 azimuts.
+WGSL["veg_bake"] =
+  `// Vegetación — horneado de impostores ortográficos en 8 azimuts.
 struct BU { vp: mat4x4f }
 @group(0) @binding(0) var<uniform> U: BU; // @dyn
 @group(0) @binding(1) var tLeaf: texture_2d<f32>;
@@ -100,7 +101,8 @@ struct BOut { @location(0) a: vec4f, @location(1) n: vec4f }
   return o;
 }
 `;
-WGSL["veg_tree"] = `// Vegetação — malhas de árvore/sub-bosque instanciadas (perto). Troca pontilhada para impostor ao longe.
+WGSL["veg_tree"] =
+  `// Vegetação — malhas de árvore/sub-bosque instanciadas (perto). Troca pontilhada para impostor ao longe.
 #include veg_common
 struct VIn { @location(0) pos: vec3f, @location(1) nrm: vec4f, @location(2) uv: vec2f, @location(3) mat: vec4u, @location(4) col: vec4f, @location(5) i0: vec4f, @location(6) i1: vec4f }
 @group(3) @binding(0) var tLeaf: texture_2d<f32>;
@@ -226,7 +228,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
   return s;
 }
 `;
-WGSL["veg_leaf"] = `// Vegetação — camada de folhas individuais (só de perto): um quad por folha; contorno e nervuras calculados no shader
+WGSL["veg_leaf"] =
+  `// Vegetação — camada de folhas individuais (só de perto): um quad por folha; contorno e nervuras calculados no shader
 // a partir de (u ao longo da folha, v através), então a borda fica nítida em qualquer ampliação (sem textura borrada).
 // Con la distancia cada hoja se repliega hacia su peciolo y se desvanece sin saltos bruscos.
 #include veg_common
@@ -295,7 +298,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
   return s;
 }
 `;
-WGSL["veg_imp"] = `// Vegetação — impostores: um cartão por árvore, virado para a câmera (ou para o sol nos passes de sombra),
+WGSL["veg_imp"] =
+  `// Vegetação — impostores: um cartão por árvore, virado para a câmera (ou para o sol nos passes de sombra),
 // com atlas de 8 azimutes por arquétipo (albedo+alfa e normal+máscara de folha), iluminado no G-buffer.
 #include veg_common
 struct VIn { @builtin(vertex_index) vi: u32, @location(5) i0: vec4f, @location(6) i1: vec4f }
@@ -399,7 +403,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
   return s;
 }
 `;
-WGSL["veg_grass"] = `// Vegetação — grama: lâminas geradas na GPU em anéis centrados na câmera (sem buffers de vértice).
+WGSL["veg_grass"] =
+  `// Vegetação — grama: lâminas geradas na GPU em anéis centrados na câmera (sem buffers de vértice).
 // Cada instância = uma lâmina numa célula da grade (posição por hash da célula, estável no mundo).
 #include veg_common
 struct VIn { @builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32 }

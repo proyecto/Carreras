@@ -1,4 +1,5 @@
-WGSL["world_crowd"] = `// Gente (público, equipes, fiscais): cartões com figura recortada do atlas que giram em torno do eixo vertical para encarar
+WGSL["world_crowd"] =
+  `// Gente (público, equipes, fiscais): cartões com figura recortada do atlas que giram em torno do eixo vertical para encarar
 // a câmera — silhueta humana inteira de qualquer ângulo. pos = pé da figura; nrm.x = canto lateral (m), nrm.y = altura/2 (m).
 // atlas: R sombreamento, G máscara da camisa (cor do vértice), B máscara de cabelo/calça, A recorte. mat.y = tom de pele, mat.z = cabelo.
 struct VIn { @location(0) pos: vec3f, @location(1) nrm: vec4f, @location(2) uv: vec2f, @location(3) mat: vec4u, @location(4) col: vec4f }
@@ -35,7 +36,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
   return s;
 }
 `;
-WGSL["world_fence"] = `// Alambrada (pase forward de transparentes): malla metálica romboidal analítica sin aliasing.
+WGSL["world_fence"] =
+  `// Alambrada (pase forward de transparentes): malla metálica romboidal analítica sin aliasing.
 // UV en metros; hilos nítidos de cerca y opacidad suave de lejos.
 #include mesh_vert
 #include fwd_common
@@ -68,7 +70,8 @@ fn shade(in: V2F, ff: bool) -> vec4f {
   return vec4f(col, alpha * smoothstep(0.7, 2.6, dist));
 }
 `;
-WGSL["mat_test"] = `// Materiais genéricos de teste (será substituído pelos materiais do cenário).
+WGSL["mat_test"] =
+  `// Materiais genéricos de teste (será substituído pelos materiais do cenário).
 #include mesh_vert
 fn surf(in: V2F, ff: bool) -> Surface {
   var s = surfDefault(normalize(in.nrm));
@@ -88,7 +91,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
   return s;
 }
 `;
-WGSL["skid"] = `// Marcas de frenada y derrape: calcomanías oscuras sobre albedo del G-buffer.
+WGSL["skid"] =
+  `// Marcas de frenada y derrape: calcomanías oscuras sobre albedo del G-buffer.
 #include common
 #include gbuf
 struct SIn { @location(0) pos: vec3f, @location(1) au: vec2f }
@@ -105,7 +109,8 @@ struct DOut { @location(0) a: vec4f, @location(1) b: vec4f, @location(2) c: vec4
   var o: DOut; o.a = vec4f(vec3f(0.014), sat(al) * 0.62); o.b = vec4f(0.0); o.c = vec4f(0.0); return o;
 }
 `;
-WGSL["particles"] = `// Humo de neumático y polvo: partículas orientadas a cámara con soft-depth.
+WGSL["particles"] =
+  `// Humo de neumático y polvo: partículas orientadas a cámara con soft-depth.
 #include fwd_common
 struct VIn {
   @builtin(vertex_index) vi: u32,

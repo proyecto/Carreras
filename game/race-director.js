@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * ============================================================================
  * DIRECTOR DE CARRERA Y SEMÁFORO FIA (game/race-director.js)
@@ -10,15 +10,24 @@
  *   y activación/desactivación del Launch Control (bloqueo físico en parrilla).
  */
 
-const RACE_DIR_CFG = (typeof window !== 'undefined' && window.__CFG_GAME_RACE_DIRECTOR)
-  || (typeof require === 'function' ? (() => { try { return require('../config/game/race-director.json'); } catch { return {}; } })() : {});
+const RACE_DIR_CFG =
+  (typeof window !== "undefined" && window.__CFG_GAME_RACE_DIRECTOR) ||
+  (typeof require === "function"
+    ? (() => {
+        try {
+          return require("../config/game/race-director.json");
+        } catch {
+          return {};
+        }
+      })()
+    : {});
 const _rdC = RACE_DIR_CFG.raceDirector || {};
 const RaceState = Object.freeze({
-  IDLE: 'idle',
-  COUNTDOWN: 'countdown',
-  LIGHTS_OUT: 'lights_out',
-  RACING: 'racing',
-  FINISHED: 'finished',
+  IDLE: "idle",
+  COUNTDOWN: "countdown",
+  LIGHTS_OUT: "lights_out",
+  RACING: "racing",
+  FINISHED: "finished",
 });
 
 class RaceDirector {
@@ -49,8 +58,10 @@ class RaceDirector {
     this.goTime = lTot + minP + Math.random() * spanP;
     this.doneTime = this.goTime + doneEx;
 
-    if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
-      Patterns.EventBusSingleton.emit('race:countdown_start', { goTime: this.goTime });
+    if (typeof Patterns !== "undefined" && Patterns.EventBusSingleton) {
+      Patterns.EventBusSingleton.emit("race:countdown_start", {
+        goTime: this.goTime,
+      });
     }
   }
 
@@ -63,10 +74,10 @@ class RaceDirector {
     this.t = this.goTime;
     this.lightsCount = 5;
     this.state = RaceState.LIGHTS_OUT;
-    if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
-    if (typeof LAP !== 'undefined') LAP[0] = performance.now() * 0.001;
-    if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
-      Patterns.EventBusSingleton.emit('race:lights_out', { time: this.t });
+    if (typeof sndBeep === "function") sndBeep(1150, 0.38, 0.36);
+    if (typeof LAP !== "undefined") LAP[0] = performance.now() * 0.001;
+    if (typeof Patterns !== "undefined" && Patterns.EventBusSingleton) {
+      Patterns.EventBusSingleton.emit("race:lights_out", { time: this.t });
     }
   }
 
@@ -87,9 +98,9 @@ class RaceDirector {
         this.lightsCount = curLight;
         if (curLight > 0 && curLight !== this.lastBeep) {
           this.lastBeep = curLight;
-          if (typeof sndBeep === 'function') sndBeep(480, 0.16, 0.28);
-          if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
-            Patterns.EventBusSingleton.emit('race:light', { count: curLight });
+          if (typeof sndBeep === "function") sndBeep(480, 0.16, 0.28);
+          if (typeof Patterns !== "undefined" && Patterns.EventBusSingleton) {
+            Patterns.EventBusSingleton.emit("race:light", { count: curLight });
           }
         }
       }
@@ -97,24 +108,28 @@ class RaceDirector {
       if (this.t >= this.goTime) {
         // ¡LUCES FUERA! Salida de carrera
         this.state = RaceState.LIGHTS_OUT;
-        if (typeof sndBeep === 'function') sndBeep(1150, 0.38, 0.36);
-        if (typeof LAP !== 'undefined') LAP[0] = performance.now() * 0.001;
-        if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
-          Patterns.EventBusSingleton.emit('race:lights_out', { time: this.t });
+        if (typeof sndBeep === "function") sndBeep(1150, 0.38, 0.36);
+        if (typeof LAP !== "undefined") LAP[0] = performance.now() * 0.001;
+        if (typeof Patterns !== "undefined" && Patterns.EventBusSingleton) {
+          Patterns.EventBusSingleton.emit("race:lights_out", { time: this.t });
         }
       } else {
         // Launch Control: Bloqueo de velocidad en parrilla durante la cuenta atrás
         for (let i = 0; i < vehicles.length; i++) {
           const v = vehicles[i];
-          if (v) { v.vx = 0; v.vy = 0; v.vz = 0; }
+          if (v) {
+            v.vx = 0;
+            v.vy = 0;
+            v.vz = 0;
+          }
         }
       }
     } else if (this.state === RaceState.LIGHTS_OUT) {
       if (this.t >= this.doneTime) {
         this.active = false;
         this.state = RaceState.RACING;
-        if (typeof Patterns !== 'undefined' && Patterns.EventBusSingleton) {
-          Patterns.EventBusSingleton.emit('race:racing', { time: this.t });
+        if (typeof Patterns !== "undefined" && Patterns.EventBusSingleton) {
+          Patterns.EventBusSingleton.emit("race:racing", { time: this.t });
         }
       }
     }
@@ -145,13 +160,19 @@ function raceStartTrigger() {
   raceDirectorInstance.triggerStart();
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.RaceState = RaceState;
   window.RaceDirector = RaceDirector;
   window.raceDirectorInstance = raceDirectorInstance;
   window.RACE_START = RACE_START;
   window.raceStartTrigger = raceStartTrigger;
 }
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { RaceState, RaceDirector, raceDirectorInstance, RACE_START, raceStartTrigger };
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    RaceState,
+    RaceDirector,
+    raceDirectorInstance,
+    RACE_START,
+    raceStartTrigger,
+  };
 }

@@ -1,4 +1,5 @@
-WGSL["cube_light"] = `// Iluminación directa simplificada para el cubemap ambiental.
+WGSL["cube_light"] =
+  `// Iluminación directa simplificada para el cubemap ambiental.
 @group(1) @binding(1) var tShadowS: texture_depth_2d;
 @group(1) @binding(2) var sCmp: sampler_comparison;
 fn cubeLit(s: Surface, wp: vec3f) -> vec3f {
@@ -15,7 +16,8 @@ fn cubeLit(s: Surface, wp: vec3f) -> vec3f {
   return mix(max(F.sh[0].rgb + F.sh[1].rgb * 0.25, vec3f(0.0)) * 0.35 + F.fogCol.rgb, col, T);
 }
 `;
-WGSL["envblur"] = `// Prefiltrado de mipmaps para el cubemap ambiental (sin costuras entre caras).
+WGSL["envblur"] =
+  `// Prefiltrado de mipmaps para el cubemap ambiental (sin costuras entre caras).
 #include fsq
 struct EB { ax: vec4f, ay: vec4f, az: vec4f, p: vec4f }
 @group(0) @binding(0) var<uniform> U: EB; // @dyn
@@ -56,7 +58,8 @@ fn shIrr(n: vec3f) -> vec3f {
 // Nivel de mipmap del cubemap para una rugosidad dada
 fn envMip(rough: f32) -> f32 { let a = rough * rough; return clamp(log2(max(1.0, a * 1.2 * ENV_MIP_K)), 0.0, ENV_MIPS); }
 `;
-WGSL["shadow"] = `// Amostragem de sombras: 3 cascatas dinâmicas + mapa estático do mundo. Requer tShadow, tShadowS, sCmp e F.
+WGSL["shadow"] =
+  `// Amostragem de sombras: 3 cascatas dinâmicas + mapa estático do mundo. Requer tShadow, tShadowS, sCmp e F.
 const VOGEL_N = 8;
 fn vogel(i: i32, n: i32, phi: f32) -> vec2f { let r = sqrt((f32(i) + 0.5) / f32(n)); let a = f32(i) * 2.39996323 + phi; return vec2f(cos(a), sin(a)) * r; }
 fn shadowTap(c: i32, uv: vec2f, z: f32, rad: f32, phi: f32) -> f32 {
@@ -100,7 +103,8 @@ fn sunShadowK(wp: vec3f, n: vec3f, px: vec2f, nl: f32, rot: f32) -> f32 {
   return acc + (1.0 - wAcc) * shadowStatic(wp, n, phi, 1.6);
 }
 `;
-WGSL["fog"] = `// Névoa exponencial em altura com dispersão do sol para a frente. Requer F e tEnv/sClamp.
+WGSL["fog"] =
+  `// Névoa exponencial em altura com dispersão do sol para a frente. Requer F e tEnv/sClamp.
 fn fogOD(cam: vec3f, dir: vec3f, dist: f32) -> f32 {
   let a = F.fog.x; let b = F.fog.y; let dy = dir.y * dist;
   let base = a * exp(-b * (cam.y - F.fog.z));

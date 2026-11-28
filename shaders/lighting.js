@@ -1,4 +1,5 @@
-WGSL["half"] = `// Meia resolução: oclusão de ambiente em espaço de tela (r) + visibilidade média do sol na névoa (g) + z linear (b).
+WGSL["half"] =
+  `// Meia resolução: oclusão de ambiente em espaço de tela (r) + visibilidade média do sol na névoa (g) + z linear (b).
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;
@@ -58,7 +59,8 @@ fn sunVis1(wp: vec3f) -> f32 {
   return vec4f(ao, vsum / wsum, min(zl, 30000.0), 1.0);
 }
 `;
-WGSL["bilat"] = `// Desenfoque bilateral sensible a la profundidad para AO y volumen.
+WGSL["bilat"] =
+  `// Desenfoque bilateral sensible a la profundidad para AO y volumen.
 #include fsq
 @group(0) @binding(0) var t: texture_2d<f32>;
 @fragment fn fs(in: FsV) -> @location(0) vec4f {
@@ -73,7 +75,8 @@ WGSL["bilat"] = `// Desenfoque bilateral sensible a la profundidad para AO y vol
   return vec4f(acc / ws, c.b, 1.0);
 }
 `;
-WGSL["light"] = `// Pase de iluminación diferida: sol + sombras + ambiente (SH + cubemap) + reflejos en espacio de pantalla (SSR) + cielo + niebla.
+WGSL["light"] =
+  `// Pase de iluminación diferida: sol + sombras + ambiente (SH + cubemap) + reflejos en espacio de pantalla (SSR) + cielo + niebla.
 #include fsq
 #include util
 @group(0) @binding(0) var<uniform> F: Frame;

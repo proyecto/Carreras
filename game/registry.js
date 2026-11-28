@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 // ---- registry.js
 // Registro central de coches (CARS) y circuitos (TRACKS).
 // Para añadir un coche nuevo: crea un archivo en cars/ que llame a CARS.register({...}) e inclúyelo en index.html.
@@ -9,7 +9,7 @@ let CAR = null;
 let POSES = [];
 let REPLAY_B64 = null;
 
-const SEL_KEY = 'carreras-sel';
+const SEL_KEY = "carreras-sel";
 function loadSelection() {
   try {
     const raw = localStorage.getItem(SEL_KEY);
@@ -21,9 +21,16 @@ function loadSelection() {
 function saveSelection(carId, trackId, extra = {}) {
   try {
     const cur = loadSelection();
-    const merged = Object.assign({}, cur, { car: carId, track: trackId }, extra);
+    const merged = Object.assign(
+      {},
+      cur,
+      { car: carId, track: trackId },
+      extra,
+    );
     localStorage.setItem(SEL_KEY, JSON.stringify(merged));
-  } catch (e) { /* almacenamiento local no disponible */ }
+  } catch (e) {
+    /* almacenamiento local no disponible */
+  }
 }
 
 const CARS = {
@@ -33,7 +40,7 @@ const CARS = {
   rival: null,
 
   register(def) {
-    if (!def || !def.id) throw new Error('Coche inválido: falta el campo id.');
+    if (!def || !def.id) throw new Error("Coche inválido: falta el campo id.");
     if (this.byId[def.id]) {
       Object.assign(this.byId[def.id], def);
       return this.byId[def.id];
@@ -65,7 +72,8 @@ const TRACKS = {
   active: null,
 
   register(def) {
-    if (!def || !def.id) throw new Error('Circuito inválido: falta el campo id.');
+    if (!def || !def.id)
+      throw new Error("Circuito inválido: falta el campo id.");
     if (this.byId[def.id]) {
       Object.assign(this.byId[def.id], def);
       return this.byId[def.id];
@@ -81,13 +89,14 @@ const TRACKS = {
 
   select(id) {
     this.active = this.get(id);
-    POSES = (this.active && this.active.poses) ? this.active.poses : [];
-    REPLAY_B64 = (this.active && this.active.replayB64) ? this.active.replayB64 : null;
+    POSES = this.active && this.active.poses ? this.active.poses : [];
+    REPLAY_B64 =
+      this.active && this.active.replayB64 ? this.active.replayB64 : null;
     return this.active;
   },
 };
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.CARS = CARS;
   window.TRACKS = TRACKS;
 }
