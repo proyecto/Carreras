@@ -70,8 +70,9 @@ const I18N = {
   },
 
   t(key, params) {
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    let val = dict[key] !== undefined ? dict[key] : (I18N.locales.en[key] || key);
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    const enDict = I18N.locales.en || {};
+    let val = dict[key] !== undefined ? dict[key] : (enDict[key] !== undefined ? enDict[key] : key);
     if (typeof val === 'string' && params) {
       for (const [k, v] of Object.entries(params)) {
         val = val.replaceAll('{' + k + '}', String(v));
@@ -82,38 +83,38 @@ const I18N = {
 
   carName(c) {
     if (!c) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.cars[c.id] && dict.cars[c.id].name) || c.name;
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.cars && dict.cars[c.id] && dict.cars[c.id].name) || c.name;
   },
 
   carSub(c) {
     if (!c) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.cars[c.id] && dict.cars[c.id].subtitle) || c.subtitle || c.name;
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.cars && dict.cars[c.id] && dict.cars[c.id].subtitle) || c.subtitle || c.name;
   },
 
   carSpecs(c) {
     if (!c) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.cars[c.id] && dict.cars[c.id].specs) || c.specs || '';
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.cars && dict.cars[c.id] && dict.cars[c.id].specs) || c.specs || '';
   },
 
   trackName(t) {
     if (!t) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.tracks[t.id] && dict.tracks[t.id].name) || t.name;
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.tracks && dict.tracks[t.id] && dict.tracks[t.id].name) || t.name;
   },
 
   trackSub(t) {
     if (!t) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.tracks[t.id] && dict.tracks[t.id].subtitle) || t.subtitle || t.name;
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.tracks && dict.tracks[t.id] && dict.tracks[t.id].subtitle) || t.subtitle || t.name;
   },
 
   trackSpecs(t) {
     if (!t) return '';
-    const dict = I18N.locales[I18N.lang] || I18N.locales.en;
-    return (dict.tracks[t.id] && dict.tracks[t.id].specs) || t.specs || '';
+    const dict = I18N.locales[I18N.lang] || I18N.locales.en || {};
+    return (dict.tracks && dict.tracks[t.id] && dict.tracks[t.id].specs) || t.specs || '';
   },
 
   updateDOM() {

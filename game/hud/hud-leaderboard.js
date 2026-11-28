@@ -1,7 +1,6 @@
 'use strict';
 // Componente HUD: Torre de clasificación
 const _fmtLap = (sec) => {
-  if (typeof HudComponents !== 'undefined' && _fmtLap) return _fmtLap(sec);
   if (!sec || sec <= 0) return '-:--.--';
   const cs = Math.min(59999, Math.round(sec * 100));
   const m = (cs / 6000) | 0, sc = ((cs / 100) | 0) % 60, cc = cs % 100;

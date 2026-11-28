@@ -1,0 +1,20 @@
+{
+  "trees": [
+    {
+      "seed": 11,
+      "params": { "H": 15, "r0": 0.46, "lean": 0.03, "wob": 0.35, "crown0": 0.36, "nB": 11, "bLen": [0.5, 0.26], "bAng": [14, 70], "upCurve": 1, "sub": 5, "tipCards": 10, "subCards": 12, "midCards": 6, "topCards": 15, "card": 0.9, "scat": 0.9, "aspect": 0.95, "droop": 0.12, "tiles": [0, 1, 0], "bark": 0, "leafN": 13, "leafL": 0.155, "leafAsp": 0.46, "leafType": 0 }
+    },
+    {
+      "seed": 23,
+      "params": { "H": 8.5, "r0": 0.25, "lean": 0.05, "wob": 0.25, "crown0": 0.3, "nB": 9, "bLen": [0.56, 0.3], "bAng": [16, 74], "upCurve": 1, "sub": 4, "tipCards": 10, "subCards": 10, "midCards": 4, "topCards": 12, "card": 0.755, "scat": 0.75, "aspect": 0.98, "droop": 0.1, "tiles": [1, 1, 0], "bark": 0, "brRad": 4, "leafN": 15, "leafL": 0.11, "leafAsp": 0.52, "leafType": 1 }
+    },
+    {
+      "seed": 37,
+      "params": { "H": 23, "r0": 0.3, "lean": 0.015, "wob": 0.2, "crown0": 0.6, "nB": 9, "bLen": [0.24, 0.13], "bAng": [22, 66], "upCurve": 1.3, "sub": 3, "tipCards": 10, "subCards": 10, "midCards": 3, "topCards": 12, "card": 0.873, "scat": 0.85, "aspect": 0.95, "droop": 0.2, "tiles": [6, 0, 6], "bark": 1, "flare": 0.3, "leafN": 13, "leafL": 0.175, "leafAsp": 0.2, "leafType": 2, "leafDroop": 0.75 }
+    },
+    {
+      "seed": 53,
+      "params": { "H": 6, "r0": 0.09, "lean": 0.06, "wob": 0.15, "crown0": 0.55, "nB": 5, "bLen": [0.4, 0.25], "bAng": [35, 70], "upCurve": 1.4, "sub": 0, "tipCards": 13, "subCards": 0, "midCards": 0, "topCards": 13, "card": 0.703, "scat": 0.6, "aspect": 0.98, "droop": 0.2, "spread": 1.1, "tiles": [4], "bark": 1, "flare": 0.25, "trunkRad": 6, "brRad": 4, "leafN": 8, "leafL": 0.21, "leafAsp": 0.3, "leafType": 2 }
+    }
+  ]
+}

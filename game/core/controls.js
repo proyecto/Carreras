@@ -2,7 +2,7 @@
 // Sistema de mapeo de controles y teclado
 let DEFAULT_CONTROLS = {};
 let ACTION_BITMASKS = {};
-if (typeof require === 'function' typeof require === 'function' && typeof window === 'undefined'typeof require === 'function' && typeof window === 'undefined' typeof process !== 'undefined' typeof require === 'function' && typeof window === 'undefined'typeof require === 'function' && typeof window === 'undefined' process.versions typeof require === 'function' && typeof window === 'undefined'typeof require === 'function' && typeof window === 'undefined' process.versions.node) {
+if (typeof require === 'function') {
   const cfg = JSON.parse(require('fs').readFileSync('config/controls.json', 'utf8'));
   DEFAULT_CONTROLS = cfg.defaultControls;
   ACTION_BITMASKS = cfg.actionBitmasks;
@@ -12,7 +12,11 @@ if (typeof require === 'function' typeof require === 'function' && typeof window
     .then(cfg => {
       DEFAULT_CONTROLS = cfg.defaultControls;
       ACTION_BITMASKS = cfg.actionBitmasks;
-      if (typeof CONTROLS !== 'undefined') CONTROLS.init();
+      if (typeof CONTROLS !== 'undefined') {
+        CONTROLS.keys = JSON.parse(JSON.stringify(DEFAULT_CONTROLS));
+        CONTROLS.init();
+      }
+      if (typeof uiRenderControls === 'function') uiRenderControls();
     })
     .catch(() => {});
 }

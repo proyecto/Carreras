@@ -9,16 +9,16 @@
   <link rel="icon" type="image/svg+xml"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23111116'/><path d='M4 7h6v5H4zm6 0h6v5h-6zm6 0h6v5h-6zm6 0h6v5h-6z' fill='%23ffffff'/><path d='M4 12h6v5H4zm12 0h6v5h-6z' fill='%23ffffff'/><path d='M10 7h6v5h-6zm12 0h6v5h-6zM4 7h6v5H4z' fill='%23e62020'/><path d='M8 24h16l-3-8H11z' fill='%23e62020'/><circle cx='9' cy='25' r='3.5' fill='%23333338'/><circle cx='23' cy='25' r='3.5' fill='%23333338'/><circle cx='9' cy='25' r='1.5' fill='%23d0d0d8'/><circle cx='23' cy='25' r='1.5' fill='%23d0d0d8'/><path d='M14 17h4v3h-4z' fill='%23ffd700'/></svg>">
   <!-- CSS modular — tokens primero, luego módulos por sección -->
-  <link rel="stylesheet" href="styles/tokens.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/base.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/loading.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/hud.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/menu.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/picker.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/options.css?v=racing_mirror_f1_v72">
-  <link rel="stylesheet" href="styles/multiplayer.css?v=racing_mirror_f1_v72">
+  <link rel="stylesheet" href="styles/tokens.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/base.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/loading.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/hud.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/menu.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/picker.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/options.css?v=racing_mirror_f1_v89">
+  <link rel="stylesheet" href="styles/multiplayer.css?v=racing_mirror_f1_v89">
   <script>
-    window.CACHE_VERSION = 'racing_mirror_f1_v72';
+    window.CACHE_VERSION = 'racing_mirror_f1_v89';
     window.addEventListener('error', function (e) {
       var st = document.getElementById('loading-status');
       var info = document.getElementById('loading-car-track');
@@ -347,46 +347,53 @@
   </div>
 
   <!-- 1. Shaders WGSL del núcleo y mundo -->
-  <script src="shaders/core.js?v=racing_mirror_f1_v72"></script>
-  <script src="shaders/lighting.js?v=racing_mirror_f1_v72"></script>
-  <script src="shaders/post.js?v=racing_mirror_f1_v72"></script>
-  <script src="shaders/world.js?v=racing_mirror_f1_v72"></script>
-  <script src="shaders/glass.js?v=racing_mirror_f1_v72"></script>
+  <script src="shaders/core.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/sky.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/shadow-fog.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/lighting.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/post.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/world-track.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/world-props.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/world.js?v=racing_mirror_f1_v89"></script>
+  <script src="shaders/glass.js?v=racing_mirror_f1_v89"></script>
 
   <!-- 2. Motor gráfico y utilidades -->
-  <script src="engine/math.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/gpu.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/mesh.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/registry.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/renderer.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/post.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/sky.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/forward.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/perf.js?v=racing_mirror_f1_v72"></script>
+  <script src="engine/math.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/gpu.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/mesh.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/registry.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/renderer.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/post.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/sky.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/forward.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/perf.js?v=racing_mirror_f1_v89"></script>
   <!-- Submódulos SOLID de Patrones -->
-  <script src="engine/car-factory.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/track-factory.js?v=racing_mirror_f1_v72"></script>
+  <script src="shaders/car.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/glb-parser.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/car-factory.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/track-factory.js?v=racing_mirror_f1_v89"></script>
   <!-- Submódulos SOLID de Props -->
-  <script src="engine/props/prop-utils.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/props/track-safety.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/props/grandstands.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/props/paddock.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/props/scenery.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/props/urban-containment.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/prop-factory.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v72"></script>
-  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v72"></script>
+  <script src="engine/props/prop-utils.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/props/track-safety.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/props/grandstands.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/props/paddock.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/props/scenery.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/props/urban-containment.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/prop-factory.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/atlas-factory.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/landmark-factory.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/vegetation-atlas.js?v=racing_mirror_f1_v89"></script>
+  <script src="engine/vegetation-factory.js?v=racing_mirror_f1_v89"></script>
 
   <!-- 3. Constructores base del mundo (pista, terreno, objetos base) -->
-  <script src="world/track-builder.js?v=racing_mirror_f1_v72"></script>
-  <script src="world/track-mesh.js?v=racing_mirror_f1_v72"></script>
-  <script src="world/props.js?v=racing_mirror_f1_v72"></script>
-  <script src="world/track-glb.js?v=racing_mirror_f1_v72"></script>
+  <script src="world/track-builder.js?v=racing_mirror_f1_v89"></script>
+  <script src="world/track-mesh.js?v=racing_mirror_f1_v89"></script>
+  <script src="world/props.js?v=racing_mirror_f1_v89"></script>
+  <script src="world/track-glb.js?v=racing_mirror_f1_v89"></script>
 
   <!-- 4. Catálogos JSON puros y carga modular de vegetación y entorno -->
-  <script src="shaders/vegetation.js?v=racing_mirror_f1_v72"></script>
-  <script src="world/vegetation.js?v=racing_mirror_f1_v72"></script>
+  <script src="shaders/vegetation.js?v=racing_mirror_f1_v89"></script>
+  <script src="world/vegetation.js?v=racing_mirror_f1_v89"></script>
   <script>
     window.__manifestPromise = Promise.all([
       fetch('tracks/manifest.json?v=' + window.CACHE_VERSION).then(r => r.json()),
@@ -410,27 +417,34 @@
   </script>
 
   <!-- 5. Física, IA, red, directores y componentes del juego -->
-  <script src="game/i18n.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/physics.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/ai.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/network.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/fx.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/race-director.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/camera-system.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/grid-manager.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/controls.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/game.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/audio.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud-corner.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud-leaderboard.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud-components.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud-dash.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud-gauges.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/hud.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/ui-options.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/ui.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/boot.js?v=racing_mirror_f1_v72"></script>
-  <script src="game/main.js?v=racing_mirror_f1_v72"></script>
+  <script src="game/i18n.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/physics.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ai.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/network.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/fx.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/race-director.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/camera-system.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/grid-manager.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/controls.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/game-tv.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/game-grid.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/game-pose.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/game.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/audio.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-corner.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-leaderboard.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-components.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-dash.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-gauges.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud-minimap.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/hud/hud.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ui/ui-options.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ui/ui-network.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ui/ui-selectors.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ui/ui-race-config.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/ui/ui.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/boot.js?v=racing_mirror_f1_v89"></script>
+  <script src="game/core/main.js?v=racing_mirror_f1_v89"></script>
 </body>
 
 </html>

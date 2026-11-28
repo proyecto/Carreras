@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 
 const buf = fs.readFileSync('tracks/nurburgring-gp.glb');
